@@ -10,6 +10,7 @@ class KategoriInformasiPublikController extends Controller
     private function checkAccess()
     {
         $user = auth()->user();
+        if ($user->hasRole('Super Admin')) return;
         if (!$user->hasRole('Atasan PPID Pelaksana') && !$user->hasRole('PPID Pelaksana')) {
             abort(403, 'Unauthorized action.');
         }

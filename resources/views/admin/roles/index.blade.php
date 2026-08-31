@@ -1,0 +1,86 @@
+@extends('admin.layouts.app')
+
+@section('content')
+<main class="flex-1 p-6 bg-[#f4f6f9] overflow-y-auto min-h-screen">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5">
+        <div>
+            <h2 class="text-lg font-bold text-gray-800 m-0">Pengaturan Hak Akses (Role)</h2>
+            <p class="text-xs text-gray-500 mt-0.5">Kelola jenis peran (role) dan hak akses (permissions) masing-masing.</p>
+        </div>
+        <a href="{{ route('admin.roles.create') }}" class="inline-flex items-center gap-1.5 bg-[#1a2b42] text-white font-semibold rounded px-3 py-1.5 hover:bg-[#121c2e] transition-colors shadow-sm text-xs">
+            <span class="material-symbols-outlined text-[16px]">add_moderator</span>
+            Tambah Role
+        </a>
+    </div>
+
+    @if(session('success'))
+        <div class="p-4 mb-6 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md shadow-sm">
+            {{ session('success') }}
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="p-4 mb-6 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md shadow-sm">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    <div class="bg-white border border-gray-200 rounded shadow-sm overflow-visible mt-2">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px]">
+                    <th class="px-6 py-3 font-bold border-b border-gray-200 w-1/4">Nama Role</th>
+                    <th class="px-6 py-3 font-bold border-b border-gray-200">Deskripsi</th>
+                    <th class="px-6 py-3 font-bold border-b border-gray-200 text-center w-24">Jumlah User</th>
+                    <th class="px-6 py-3 font-bold border-b border-gray-200 text-right w-24">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 text-sm">
+                @forelse($roles as $role)
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-3">
+                        <span class="font-bold text-gray-800">{{ $role->name }}</span>
+                    </td>
+                    <td class="px-6 py-3 text-gray-600 text-xs">
+                        {{ $role->description ?? '-' }}
+                        @if($role->name === 'Super Admin')
+                        <div class="mt-1 text-[10px] text-red-500 font-bold uppercase tracking-wider">Akses Penuh Tanpa Batas</div>
+                        @endif
+                    </td>
+                    <td class="px-6 py-3 text-center text-gray-800 font-semibold text-xs">
+                        {{ $role->users()->count() }}
+                    </td>
+                    <td class="px-6 py-3 text-right">
+                        <div x-data="{ open: false }" class="relative inline-block text-left">
+                            <button @click="open = !open" @click.away="open = false" type="button" class="inline-flex items-center justify-center bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors px-2 py-1 rounded shadow-sm">
+                                <span class="material-symbols-outlined text-[16px]">more_vert</span>
+                            </button>
+                            <div x-show="open" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="origin-top-right absolute right-0 mt-2 w-36 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 divide-y divide-gray-100" style="display: none;">
+                                <div class="py-1">
+                                    <a href="{{ route('admin.roles.edit', $role->id) }}" class="group flex items-center px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 hover:text-blue-600">
+                                        <span class="material-symbols-outlined text-[16px] mr-2">edit</span> Edit Role
+                                    </a>
+                                    
+                                    @if($role->name !== 'Super Admin' && $role->users()->count() == 0)
+                                    <form action="{{ route('admin.roles.destroy', $role->id) }}" method="POST" class="m-0" onsubmit="return confirm('Yakin ingin menghapus role ini?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="group flex w-full items-center px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 hover:text-red-600">
+                                            <span class="material-symbols-outlined text-[16px] mr-2">delete</span> Hapus
+                                        </button>
+                                    </form>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="4" class="px-6 py-8 text-center text-gray-500 text-sm">Belum ada role.</td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</main>
+@endsection

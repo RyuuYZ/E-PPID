@@ -22,10 +22,12 @@ class TurnstileRule implements ValidationRule
 
         $secretKey = config('services.turnstile.secret_key');
 
-        $response = Http::asForm()->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
-            'secret' => $secretKey,
-            'response' => $value,
-        ]);
+        $response = Http::asForm()
+            ->withoutVerifying() // Disable SSL check for local development
+            ->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+                'secret' => $secretKey,
+                'response' => $value,
+            ]);
 
         if (! $response->json('success')) {
             $fail('Verifikasi CAPTCHA gagal. Silakan coba lagi.');

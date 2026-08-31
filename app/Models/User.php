@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'role_id', 'unit_pengolah_id', 'google2fa_secret', 'google2fa_enabled'])]
+#[Fillable(['name', 'email', 'password', 'role_id', 'unit_pengolah_id', 'google2fa_secret', 'google2fa_enabled', 'is_active'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -42,6 +42,23 @@ class User extends Authenticatable
 
     public function hasRole($roleName)
     {
+        if ($this->role && $this->role->name === 'Super Admin') {
+            return true;
+        }
         return $this->role && str_contains($this->role->name, $roleName);
+    }
+
+    public function hasPermissionTo($permission)
+    {
+        // Super Admin bypasses all checks
+        if ($this->hasRole('Super Admin')) {
+            return true;
+        }
+
+        if (!$this->role || empty($this->role->permissions)) {
+            return false;
+        }
+
+        return in_array($permission, $this->role->permissions);
     }
 }

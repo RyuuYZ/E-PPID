@@ -102,8 +102,8 @@
                         <input type="password" id="password" name="password" required
                             class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
                             placeholder="Enter your password">
-                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer hover:text-gray-600">
-                            <span class="material-symbols-outlined text-[20px]">visibility</span>
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 cursor-pointer hover:text-gray-600" id="toggle-password">
+                            <span class="material-symbols-outlined text-[20px]" id="toggle-icon">visibility</span>
                         </div>
                     </div>
                 </div>
@@ -129,5 +129,18 @@
         </div>
     </div>
 
+    <script>
+        document.getElementById('toggle-password').addEventListener('click', function () {
+            const passwordInput = document.getElementById('password');
+            const icon = document.getElementById('toggle-icon');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.textContent = 'visibility_off';
+            } else {
+                passwordInput.type = 'password';
+                icon.textContent = 'visibility';
+            }
+        });
+    </script>
 </body>
 </html>

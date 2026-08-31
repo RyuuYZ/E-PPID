@@ -69,6 +69,17 @@ Route::prefix('admin')->group(function () {
             Route::get('/permohonan/{id}', [\App\Http\Controllers\Admin\PermohonanController::class, 'show'])->name('admin.permohonan.show');
             Route::post('/permohonan/{id}/status', [\App\Http\Controllers\Admin\PermohonanController::class, 'updateStatus'])->name('admin.permohonan.update-status');
 
+            // Super Admin Modules
+            Route::resource('users', \App\Http\Controllers\Admin\UserController::class, ['as' => 'admin']);
+            Route::post('/users/{user}/reset-2fa', [\App\Http\Controllers\Admin\UserController::class, 'reset2fa'])->name('admin.users.reset-2fa');
+            
+            Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class, ['as' => 'admin']);
+            
+            Route::get('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('admin.settings.index');
+            Route::post('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('admin.settings.update');
+            
+            Route::get('/logs', [\App\Http\Controllers\Admin\LogController::class, 'index'])->name('admin.logs.index');
+
             // Master Data routes
             Route::resource('unit-pengolah', \App\Http\Controllers\Admin\UnitPengolahController::class, [
                 'as' => 'admin'

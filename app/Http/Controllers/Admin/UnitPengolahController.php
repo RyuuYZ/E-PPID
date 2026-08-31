@@ -12,6 +12,7 @@ class UnitPengolahController extends Controller
     private function checkAccess()
     {
         $user = auth()->user();
+        if ($user->hasRole('Super Admin')) return;
         if (!$user->hasRole('Atasan PPID Pelaksana') && !$user->hasRole('PPID Pelaksana')) {
             abort(403, 'Anda tidak memiliki akses untuk mengelola Master Data Bidang.');
         }

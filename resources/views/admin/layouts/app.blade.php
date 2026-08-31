@@ -204,6 +204,26 @@
                 <span class="material-symbols-outlined text-[16px]">category</span>
                 Kategori Info Publik
             </a>
+
+            @if(auth()->user()->hasRole('Super Admin'))
+            <div class="mt-4 mb-1.5 px-5 text-[9px] font-bold text-gray-500 uppercase tracking-widest">Super Admin</div>
+            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.users.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.users.index') }}">
+                <span class="material-symbols-outlined text-[16px]">manage_accounts</span>
+                Pengguna & Akun
+            </a>
+            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.roles.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.roles.index') }}">
+                <span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>
+                Hak Akses (Role)
+            </a>
+            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.settings.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.settings.index') }}">
+                <span class="material-symbols-outlined text-[16px]">settings_applications</span>
+                Konfigurasi Sistem
+            </a>
+            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.logs.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.logs.index') }}">
+                <span class="material-symbols-outlined text-[16px]">policy</span>
+                Log Keamanan
+            </a>
+            @endif
         </div>
 
         <!-- User Profile Footer -->
