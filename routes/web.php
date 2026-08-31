@@ -53,39 +53,49 @@ Route::prefix('admin')->group(function () {
     Route::post('/logout', [\App\Http\Controllers\Admin\AuthController::class, 'logout'])->name('admin.logout');
 
     Route::middleware('auth')->group(function () {
-        Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('admin.dashboard');
-        
-        // Permohonan routes
-        Route::get('/permohonan', [\App\Http\Controllers\Admin\PermohonanController::class, 'index'])->name('admin.permohonan.index');
-        Route::get('/permohonan/{id}', [\App\Http\Controllers\Admin\PermohonanController::class, 'show'])->name('admin.permohonan.show');
-        Route::post('/permohonan/{id}/status', [\App\Http\Controllers\Admin\PermohonanController::class, 'updateStatus'])->name('admin.permohonan.update-status');
+        // 2FA Routes
+        Route::get('/2fa', [\App\Http\Controllers\Admin\TwoFactorChallengeController::class, 'show'])->name('admin.2fa.challenge');
+        Route::post('/2fa', [\App\Http\Controllers\Admin\TwoFactorChallengeController::class, 'verify'])->name('admin.2fa.verify');
+        Route::get('/profile/2fa', [\App\Http\Controllers\Admin\TwoFactorController::class, 'index'])->name('admin.2fa.setup');
+        Route::post('/profile/2fa/enable', [\App\Http\Controllers\Admin\TwoFactorController::class, 'enable'])->name('admin.2fa.enable');
+        Route::post('/profile/2fa/disable', [\App\Http\Controllers\Admin\TwoFactorController::class, 'disable'])->name('admin.2fa.disable');
 
-        // Master Data routes
-        Route::resource('unit-pengolah', \App\Http\Controllers\Admin\UnitPengolahController::class, [
-            'as' => 'admin'
-        ]);
-        Route::resource('klasifikasi-arsip', \App\Http\Controllers\Admin\KlasifikasiArsipController::class, [
-            'as' => 'admin'
-        ]);
-        Route::resource('kategori-pemohon', \App\Http\Controllers\Admin\KategoriPemohonController::class, [
-            'as' => 'admin'
-        ]);
-        Route::resource('cara-memperoleh-informasi', \App\Http\Controllers\Admin\CaraMemperolehInformasiController::class, [
-            'as' => 'admin'
-        ]);
-        Route::resource('kategori-informasi-publik', \App\Http\Controllers\Admin\KategoriInformasiPublikController::class, [
-            'as' => 'admin'
-        ]);
+        // Protected by 2FA
+        Route::middleware('2fa')->group(function () {
+            Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('admin.dashboard');
+            
+            // Permohonan routes
+            Route::get('/permohonan', [\App\Http\Controllers\Admin\PermohonanController::class, 'index'])->name('admin.permohonan.index');
+            Route::get('/permohonan/{id}', [\App\Http\Controllers\Admin\PermohonanController::class, 'show'])->name('admin.permohonan.show');
+            Route::post('/permohonan/{id}/status', [\App\Http\Controllers\Admin\PermohonanController::class, 'updateStatus'])->name('admin.permohonan.update-status');
 
-        // E-Office Persuratan routes
-        Route::resource('surat-masuk', \App\Http\Controllers\Admin\SuratMasukController::class, [
-            'as' => 'admin'
-        ]);
-        Route::post('/surat-masuk/{surat_masuk}/disposisi', [\App\Http\Controllers\Admin\SuratMasukController::class, 'disposisi'])->name('admin.surat-masuk.disposisi');
+            // Master Data routes
+            Route::resource('unit-pengolah', \App\Http\Controllers\Admin\UnitPengolahController::class, [
+                'as' => 'admin'
+            ]);
+            Route::resource('klasifikasi-arsip', \App\Http\Controllers\Admin\KlasifikasiArsipController::class, [
+                'as' => 'admin'
+            ]);
+            Route::resource('kategori-pemohon', \App\Http\Controllers\Admin\KategoriPemohonController::class, [
+                'as' => 'admin'
+            ]);
+            Route::resource('cara-memperoleh-informasi', \App\Http\Controllers\Admin\CaraMemperolehInformasiController::class, [
+                'as' => 'admin'
+            ]);
+            Route::resource('kategori-informasi-publik', \App\Http\Controllers\Admin\KategoriInformasiPublikController::class, [
+                'as' => 'admin'
+            ]);
 
-        Route::resource('surat-keluar', \App\Http\Controllers\Admin\SuratKeluarController::class, [
-            'as' => 'admin'
-        ]);
-        Route::post('/surat-keluar/{surat_keluar}/approve-tte', [\App\Http\Controllers\Admin\SuratKeluarController::class, 'approveTte'])->name('admin.surat-keluar.approve-tte');
+            // E-Office Persuratan routes
+            Route::resource('surat-masuk', \App\Http\Controllers\Admin\SuratMasukController::class, [
+                'as' => 'admin'
+            ]);
+            Route::post('/surat-masuk/{surat_masuk}/disposisi', [\App\Http\Controllers\Admin\SuratMasukController::class, 'disposisi'])->name('admin.surat-masuk.disposisi');
+
+            Route::resource('surat-keluar', \App\Http\Controllers\Admin\SuratKeluarController::class, [
+                'as' => 'admin'
+            ]);
+            Route::post('/surat-keluar/{surat_keluar}/approve-tte', [\App\Http\Controllers\Admin\SuratKeluarController::class, 'approveTte'])->name('admin.surat-keluar.approve-tte');
+        });
     });
 });

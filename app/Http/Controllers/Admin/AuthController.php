@@ -24,10 +24,14 @@ class AuthController extends Controller
      */
     public function authenticate(Request $request)
     {
-        $credentials = $request->validate([
+        $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
+            'cf-turnstile-response' => ['required', new \App\Rules\TurnstileRule()],
         ]);
+
+        $credentials = $request->only('email', 'password');
+
 
         $throttleKey = Str::transliterate(Str::lower($request->input('email')).'|'.$request->ip());
 

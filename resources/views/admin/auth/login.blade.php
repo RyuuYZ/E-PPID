@@ -26,6 +26,7 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
     </style>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body class="flex h-screen overflow-hidden items-center justify-center p-4">
     
@@ -62,6 +63,11 @@
                 </div>
             @endif
             @error('email')
+                <div class="mb-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
+                    {{ $message }}
+                </div>
+            @enderror
+            @error('cf-turnstile-response')
                 <div class="mb-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
                     {{ $message }}
                 </div>
@@ -109,6 +115,9 @@
                         Remember me for 30 days
                     </label>
                 </div>
+
+                <!-- Cloudflare Turnstile -->
+                <div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}"></div>
 
                 <div class="pt-2">
                     <button type="submit" class="w-full bg-primary text-white font-semibold rounded-lg py-3 px-4 hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors text-base shadow-sm">
