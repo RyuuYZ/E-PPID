@@ -130,7 +130,10 @@
         </div>
 
         <!-- Scrollable Menu Area -->
-        <div class="flex-1 overflow-y-auto sidebar-scroll py-3">
+        <div class="flex-1 overflow-y-auto sidebar-scroll py-3"
+             x-data="{ scroll: $persist(0).as('sidebar-scroll') }"
+             x-init="$nextTick(() => { $el.scrollTop = scroll })"
+             @scroll.debounce.100ms="scroll = $el.scrollTop">
             
             <div class="px-5 mb-1.5 text-[9px] font-bold text-gray-500 uppercase tracking-widest">Utama</div>
             <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.dashboard') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.dashboard') }}">
@@ -274,14 +277,56 @@
                     <span class="material-symbols-outlined text-[16px]">notifications</span>
                     <span class="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
                 </button>
-                <div class="flex items-center gap-2 border border-gray-200 rounded-full px-3 py-1 bg-white cursor-pointer hover:bg-gray-50 transition-colors">
-                    <div class="w-5 h-5 rounded-full bg-[#1a2b42] flex items-center justify-center text-white font-bold text-[10px]">
-                        {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
+                
+                <div x-data="{ openProfile: false }" class="relative">
+                    <div @click="openProfile = !openProfile" @click.away="openProfile = false" class="flex items-center gap-2 border border-gray-200 rounded-full px-3 py-1 bg-white cursor-pointer hover:bg-gray-50 transition-colors">
+                        <div class="w-5 h-5 rounded-full bg-[#1a2b42] flex items-center justify-center text-white font-bold text-[10px]">
+                            {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
+                        </div>
+                        <div class="hidden md:block">
+                            <p class="text-xs font-semibold text-gray-700 m-0 leading-none">{{ auth()->user()->name ?? 'Administrator' }}</p>
+                        </div>
+                        <span class="material-symbols-outlined text-[14px] text-gray-400 ml-1 transition-transform duration-200" :class="openProfile ? 'rotate-180' : ''">arrow_drop_down</span>
                     </div>
-                    <div class="hidden md:block">
-                        <p class="text-xs font-semibold text-gray-700 m-0 leading-none">{{ auth()->user()->name ?? 'Administrator' }}</p>
+
+                    <!-- Dropdown Menu -->
+                    <div x-show="openProfile" 
+                         x-transition:enter="transition ease-out duration-100" 
+                         x-transition:enter-start="transform opacity-0 scale-95" 
+                         x-transition:enter-end="transform opacity-100 scale-100" 
+                         x-transition:leave="transition ease-in duration-75" 
+                         x-transition:leave-start="transform opacity-100 scale-100" 
+                         x-transition:leave-end="transform opacity-0 scale-95" 
+                         class="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-50 py-1" style="display: none;">
+                        
+                        <div class="px-4 py-3 border-b border-gray-100">
+                            <p class="text-sm font-bold text-gray-800 truncate">{{ auth()->user()->name ?? 'Administrator' }}</p>
+                            <p class="text-[11px] text-gray-500 truncate mt-0.5">{{ auth()->user()->email ?? '' }}</p>
+                            <span class="inline-block mt-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-[9px] font-bold uppercase rounded">{{ auth()->user()->role->name ?? 'Admin' }}</span>
+                        </div>
+
+                        <!-- 
+                        <a href="#" class="flex items-center gap-2 px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 hover:text-[#1a2b42] transition-colors">
+                            <span class="material-symbols-outlined text-[16px]">person</span> Profil Saya
+                        </a> 
+                        -->
+
+                        @if(auth()->user()->hasRole('Super Admin'))
+                        <a href="{{ route('admin.settings.index') }}" class="flex items-center gap-2 px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 hover:text-[#1a2b42] transition-colors">
+                            <span class="material-symbols-outlined text-[16px]">settings</span> Pengaturan Sistem
+                        </a>
+                        <a href="{{ route('admin.logs.index') }}" class="flex items-center gap-2 px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 hover:text-[#1a2b42] transition-colors">
+                            <span class="material-symbols-outlined text-[16px]">policy</span> Log Aktivitas
+                        </a>
+                        @endif
+
+                        <form action="{{ route('admin.logout') }}" method="POST" class="m-0 border-t border-gray-100 mt-1 pt-1">
+                            @csrf
+                            <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors text-left font-semibold cursor-pointer">
+                                <span class="material-symbols-outlined text-[16px]">logout</span> Keluar (Logout)
+                            </button>
+                        </form>
                     </div>
-                    <span class="material-symbols-outlined text-[14px] text-gray-400 ml-1">arrow_drop_down</span>
                 </div>
             </div>
         </header>

@@ -18,11 +18,18 @@ class TwoFactorMiddleware
     {
         $user = Auth::user();
 
-        if ($user && $user->google2fa_enabled) {
-            if (!$request->session()->has('2fa_verified') || $request->session()->get('2fa_verified') !== true) {
-                // Jangan blokir rute untuk verifikasi 2FA itu sendiri
-                if (!$request->is('admin/2fa*')) {
-                    return redirect()->route('admin.2fa.challenge');
+        if ($user) {
+            // Jika 2FA sudah aktif, pastikan OTP diverifikasi
+            if ($user->google2fa_enabled) {
+                if (!$request->session()->has('2fa_verified') || $request->session()->get('2fa_verified') !== true) {
+                    if (!$request->is('admin/2fa*')) {
+                        return redirect()->route('admin.2fa.challenge');
+                    }
+                }
+            } else {
+                // Jika 2FA BELUM aktif, paksa mereka ke halaman setup
+                if (!$request->is('admin/profile/2fa*')) {
+                    return redirect()->route('admin.2fa.setup');
                 }
             }
         }
