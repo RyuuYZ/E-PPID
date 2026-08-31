@@ -54,7 +54,17 @@
 <!-- NIK -->
 <div class="flex flex-col gap-2">
 <label class="font-label-md text-label-md text-on-surface" for="nik">NIK / No. Identitas <span class="text-error">*</span></label>
-<input class="h-12 px-4 border border-outline-variant rounded-DEFAULT bg-surface-container-lowest focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-colors font-body-md text-body-md text-on-surface placeholder:text-outline" id="nik" name="nik_atau_no_badan_hukum" placeholder="16 digit NIK" required="" type="text">
+<input class="h-12 px-4 border border-outline-variant rounded-DEFAULT bg-surface-container-lowest focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-colors font-body-md text-body-md text-on-surface placeholder:text-outline" id="nik" name="nik_atau_no_badan_hukum" placeholder="16 digit NIK atau Nomor Badan Hukum" required="" type="text">
+</div>
+<!-- Kategori Pemohon -->
+<div class="flex flex-col gap-2 md:col-span-2">
+<label class="font-label-md text-label-md text-on-surface" for="kategori_pemohon">Kategori Pemohon <span class="text-error">*</span></label>
+<select class="h-12 px-4 border border-outline-variant rounded-DEFAULT bg-surface-container-lowest focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-colors font-body-md text-body-md text-on-surface" id="kategori_pemohon" name="kategori_pemohon_id" required>
+    <option value="" disabled selected>Pilih Kategori Pemohon...</option>
+    @foreach($kategoriPemohons as $kp)
+        <option value="{{ $kp->id }}">{{ $kp->nama_kategori }}</option>
+    @endforeach
+</select>
 </div>
 <!-- No. Telepon -->
 <div class="flex flex-col gap-2">
@@ -62,7 +72,7 @@
 <input class="h-12 px-4 border border-outline-variant rounded-DEFAULT bg-surface-container-lowest focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-colors font-body-md text-body-md text-on-surface placeholder:text-outline" id="telepon" name="no_telp" placeholder="08xxxxxxxxxx" required="" type="tel">
 </div>
 <!-- Email -->
-<div class="flex flex-col gap-2 md:col-span-2">
+<div class="flex flex-col gap-2">
 <label class="font-label-md text-label-md text-on-surface" for="email">Alamat Email <span class="text-error">*</span></label>
 <input class="h-12 px-4 border border-outline-variant rounded-DEFAULT bg-surface-container-lowest focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-colors font-body-md text-body-md text-on-surface placeholder:text-outline" id="email" name="email" placeholder="email@contoh.com" required="" type="email">
 </div>
@@ -107,27 +117,15 @@
 </div>
 <p class="font-body-md text-body-md text-on-surface-variant mb-4">Pilih bagaimana Anda ingin menerima informasi tersebut:</p>
 <div class="flex flex-col gap-3">
+@foreach($caraMemperoleh as $cara)
 <label class="flex items-center gap-3 p-4 border border-outline-variant rounded-DEFAULT cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-primary-container has-[:checked]:bg-primary-fixed/20">
-<input class="w-5 h-5 text-primary-container border-outline-variant focus:ring-primary-container" name="cara_memperoleh_informasi" required="" type="radio" value="Melihat langsung">
+<input class="w-5 h-5 text-primary-container border-outline-variant focus:ring-primary-container" name="cara_memperoleh_informasi_id" type="radio" value="{{ $cara->id }}" required>
 <div class="flex flex-col">
-<span class="font-label-md text-label-md text-on-surface">Melihat langsung / Membaca / Mendengarkan / Mencatat</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">Datang langsung ke kantor Bappeda</span>
+<span class="font-label-md text-label-md text-on-surface">{{ $cara->nama_cara }}</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">{{ $cara->deskripsi }}</span>
 </div>
 </label>
-<label class="flex items-center gap-3 p-4 border border-outline-variant rounded-DEFAULT cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-primary-container has-[:checked]:bg-primary-fixed/20">
-<input class="w-5 h-5 text-primary-container border-outline-variant focus:ring-primary-container" name="cara_memperoleh_informasi" type="radio" value="Email">
-<div class="flex flex-col">
-<span class="font-label-md text-label-md text-on-surface">Email (Softcopy)</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">Dokumen akan dikirimkan ke alamat email terdaftar</span>
-</div>
-</label>
-<label class="flex items-center gap-3 p-4 border border-outline-variant rounded-DEFAULT cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-primary-container has-[:checked]:bg-primary-fixed/20">
-<input class="w-5 h-5 text-primary-container border-outline-variant focus:ring-primary-container" name="cara_memperoleh_informasi" type="radio" value="Hardcopy">
-<div class="flex flex-col">
-<span class="font-label-md text-label-md text-on-surface">Salinan Cetak (Hardcopy)</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">Dapat diambil atau dikirim (biaya pengiriman ditanggung pemohon)</span>
-</div>
-</label>
+@endforeach
 </div>
 </section>
 

@@ -1,0 +1,50 @@
+# Rencana Implementasi Modul PPID/Layanan Informasi Publik Bappeda Ciamis
+
+Dokumen ini merangkum spesifikasi *role*, tanggung jawab, dan alur kerja (workflow) untuk sistem PPID (Pejabat Pengelola Informasi dan Dokumentasi) Bappeda Ciamis berdasarkan arahan SOP.
+
+## Definisi Role dan Hak Akses
+
+| Role | Posisi | Bisa Apa di Sistem |
+|---|---|---|
+| **1. Atasan PPID Pelaksana** | Sekretaris Bappeda (pimpinan tingkat tinggi) | Menerima eskalasi & keberatan informasi; menandatangani surat jawaban final untuk permohonan yang sensitif/kompleks; melihat dashboard evaluasi kinerja layanan (jumlah permohonan, rata-rata waktu selesai, tren keberatan); menetapkan kebijakan/arahan layanan |
+| **2. PPID Pelaksana / Pembantu Bappeda** | Pejabat koordinator data & dokumentasi | Mengoordinasikan permintaan data ke Petugas Penghubung di tiap bidang; menguji/memvalidasi kesesuaian data yang masuk sebelum dijawab ke pemohon; menyusun konsep surat jawaban; mengelola penyimpanan/pengarsipan dokumen perencanaan |
+| **3. Petugas Pelayanan Informasi / Desk Layanan** | Staf humas/sekretariat (garda depan) | Menerima & mencatat permohonan masuk (dari portal/surat/email); memverifikasi kelengkapan formulir & dokumen pemohon; mengirim notifikasi/Surat Keterangan Tidak Lengkap; mendistribusikan permohonan ke PPID Pelaksana; menyampaikan jawaban final ke pemohon |
+| **4. Petugas Penghubung (Unit Pengolah Data)** | Perwakilan tiap bidang (Infrastruktur, Ekonomi, Sosbud, dll) | Menerima notifikasi permintaan data dari PPID Pelaksana; mengunggah/menyediakan data teknis sesuai bidangnya; menandai jika data yang diminta termasuk kategori dikecualikan |
+
+## Alur Kerja (Workflow) Utama & SLA (Waktu Layanan)
+
+Alur standar permohonan informasi berjalan secara sekuensial bergantian antar 4 role dengan batasan waktu (SLA) sesuai SOP:
+
+```mermaid
+flowchart TD
+    A([Pemohon]) -->|Maks 1 Hari| B[Desk Layanan: Terima & Verifikasi]
+    B -->|Jika Lengkap| C[PPID Pelaksana: Koordinasi Data]
+    C -->|3-5 Hari| D[Petugas Penghubung: Siapkan Data Teknis]
+    D -->|2-3 Hari| E[PPID Pelaksana: Uji/Validasi & Susun Jawaban]
+    E -->|Maks 10 Hari Total| F[Atasan PPID Pelaksana: Tanda Tangan Final]
+    F -->|1 Hari| G[Desk Layanan: Kirim Jawaban ke Pemohon]
+    G --> H([Selesai])
+```
+
+> [!TIP]
+> Berdasarkan SOP Bappeda, total waktu penyelesaian reguler (tanpa keberatan) adalah **maksimal 10 hari kerja**, dan dapat diperpanjang **7 hari kerja** (dengan pemberitahuan tertulis) apabila data yang diminta membutuhkan pencarian/pengujian ekstra.
+
+## Kondisi Percabangan (SOP Tambahan)
+
+> [!IMPORTANT]
+> Terdapat dua skenario percabangan krusial yang diakomodasi oleh sistem di luar alur utama:
+
+1. **Berkas Tidak Lengkap:**
+   Jika pada tahap **Desk Layanan** berkas dinyatakan tidak lengkap, proses akan dialihkan:
+   - Sistem akan menerbitkan dan mengirimkan **Surat Keterangan Tidak Lengkap**.
+   - Pemohon diberikan waktu jeda **3 hari kerja** untuk melengkapi kekurangan dokumen.
+   - Apabila berkas dilengkapi sesuai waktu, proses baru akan diteruskan ke **PPID Pelaksana**.
+
+2. **Pengajuan Keberatan:**
+   Jika pemohon tidak puas dengan jawaban akhir yang diterima:
+   - Pemohon memiliki opsi di dalam sistem untuk mengajukan **Keberatan**.
+   - Proses permohonan akan dibuka kembali sebagai tiket keberatan dan dieskalasi langsung ke **Atasan PPID Pelaksana**.
+
+## User Review Required
+
+Mohon periksa apakah struktur *role* dan *workflow* permohonan informasi ini sudah sesuai dengan kebutuhan SOP Bappeda Ciamis. Jika disetujui, kita bisa melanjutkan ke tahap desain database, model (User, Role, Permohonan), atau pembuatan struktur antarmukanya.

@@ -26,7 +26,7 @@ return new class extends Migration
             $table->text('tujuan_penggunaan');
             $table->string('cara_memperoleh_informasi')->nullable(); 
             $table->string('cara_mendapatkan_salinan')->nullable();
-            $table->enum('status', ['masuk', 'tidak_lengkap', 'diproses', 'dikecualikan', 'selesai', 'keberatan'])->default('masuk');
+            $table->string('status')->default('masuk');
             
             // Relasi Role / PIC (Staff)
             $table->foreignId('desk_layanan_id')->nullable()->constrained('users');

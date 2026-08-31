@@ -1,6 +1,7 @@
 @extends('layouts.public')
 
 @section('content')
+<!-- Main Content -->
 <main class="flex-grow flex flex-col items-center w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
 <!-- Hero Section -->
 <section class="w-full py-16 md:py-24 flex flex-col items-center text-center gap-stack-lg border-b border-surface-variant">
@@ -21,38 +22,16 @@
 <section class="w-full py-16 flex flex-col gap-stack-lg">
 <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary text-center">Kategori Informasi Publik</h2>
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter mt-8">
-<!-- Card 1 -->
+@foreach($kategoriInformasi as $kategori)
+<!-- Card -->
 <div class="bg-surface-container-lowest border border-surface-variant p-6 rounded-2xl flex flex-col items-center text-center gap-4 hover:shadow-[0_4px_20px_rgba(31,56,100,0.08)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer">
-<div class="w-16 h-16 rounded-full bg-primary-fixed flex items-center justify-center text-primary-container group-hover:scale-110 transition-transform">
-<span class="material-symbols-outlined text-[32px]">calendar_month</span>
+<div class="w-16 h-16 rounded-full {{ $kategori->bg_color }} flex items-center justify-center {{ $kategori->text_color }} group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[32px]">{{ $kategori->icon }}</span>
 </div>
-<h3 class="font-headline-md text-headline-md text-primary">Informasi Berkala</h3>
-<p class="font-body-md text-body-md text-on-surface-variant">Informasi yang wajib disediakan dan diumumkan secara berkala, minimal 6 bulan sekali.</p>
+<h3 class="font-headline-md text-headline-md text-primary">{{ $kategori->nama_kategori }}</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">{{ $kategori->deskripsi }}</p>
 </div>
-<!-- Card 2 -->
-<div class="bg-surface-container-lowest border border-surface-variant p-6 rounded-2xl flex flex-col items-center text-center gap-4 hover:shadow-[0_4px_20px_rgba(31,56,100,0.08)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer">
-<div class="w-16 h-16 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed group-hover:scale-110 transition-transform">
-<span class="material-symbols-outlined text-[32px]">campaign</span>
-</div>
-<h3 class="font-headline-md text-headline-md text-primary">Serta Merta</h3>
-<p class="font-body-md text-body-md text-on-surface-variant">Informasi publik yang dapat mengancam hajat hidup orang banyak dan ketertiban umum.</p>
-</div>
-<!-- Card 3 -->
-<div class="bg-surface-container-lowest border border-surface-variant p-6 rounded-2xl flex flex-col items-center text-center gap-4 hover:shadow-[0_4px_20px_rgba(31,56,100,0.08)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer">
-<div class="w-16 h-16 rounded-full bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed group-hover:scale-110 transition-transform">
-<span class="material-symbols-outlined text-[32px]">schedule</span>
-</div>
-<h3 class="font-headline-md text-headline-md text-primary">Setiap Saat</h3>
-<p class="font-body-md text-body-md text-on-surface-variant">Informasi yang harus disediakan oleh Badan Publik dan siap tersedia untuk bisa langsung diberikan.</p>
-</div>
-<!-- Card 4 -->
-<div class="bg-surface-container-lowest border border-surface-variant p-6 rounded-2xl flex flex-col items-center text-center gap-4 hover:shadow-[0_4px_20px_rgba(31,56,100,0.08)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer">
-<div class="w-16 h-16 rounded-full bg-error-container flex items-center justify-center text-on-error-container group-hover:scale-110 transition-transform">
-<span class="material-symbols-outlined text-[32px]">gavel</span>
-</div>
-<h3 class="font-headline-md text-headline-md text-primary">Keberatan</h3>
-<p class="font-body-md text-body-md text-on-surface-variant">Prosedur pengajuan keberatan jika layanan informasi tidak sesuai dengan ketentuan perundang-undangan.</p>
-</div>
+@endforeach
 </div>
 </section>
 </main>

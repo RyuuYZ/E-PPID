@@ -29,4 +29,19 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function unit_pengolah()
+    {
+        return $this->belongsTo(UnitPengolah::class);
+    }
+
+    public function hasRole($roleName)
+    {
+        return $this->role && str_contains($this->role->name, $roleName);
+    }
 }
