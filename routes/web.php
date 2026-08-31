@@ -40,8 +40,15 @@ Route::post('/permohonan/simpan', function (\Illuminate\Http\Request $request) {
 
     \App\Models\PermohonanInformasi::create($validated);
 
-    return back()->with('success', 'Permohonan berhasil dikirim!');
+    return redirect()->route('permohonan.sukses')->with('nomor_registrasi', $validated['nomor_registrasi']);
 })->name('permohonan.store');
+
+Route::get('/permohonan/berhasil', function () {
+    if (!session('nomor_registrasi')) {
+        return redirect()->route('permohonan.create');
+    }
+    return view('permohonan_sukses', ['nomor_registrasi' => session('nomor_registrasi')]);
+})->name('permohonan.sukses');
 
 Route::get('/lacak', function () {
     return view('lacak');

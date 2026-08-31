@@ -30,4 +30,9 @@ class PermohonanInformasi extends Model
     {
         return $this->belongsTo(CaraMemperolehInformasi::class);
     }
+
+    public function logs()
+    {
+        return $this->hasMany(PermohonanLog::class)->orderBy('created_at', 'desc');
+    }
 }

@@ -48,8 +48,8 @@ class PermohonanController extends Controller
         $user = auth()->user();
         $targetTahapan = $request->tahapan_proses;
 
-        if ($targetTahapan == 'Diverifikasi' && !$user->hasRole('Desk Layanan')) {
-            abort(403, 'Hanya Desk Layanan yang dapat memverifikasi kelengkapan.');
+        if (in_array($targetTahapan, ['Diverifikasi', 'Ditolak']) && !$user->hasRole('Desk Layanan')) {
+            abort(403, 'Hanya Desk Layanan yang dapat memverifikasi atau menolak kelengkapan.');
         }
         if (in_array($targetTahapan, ['Ditugaskan', 'Menunggu TTE']) && !$user->hasRole('PPID Pelaksana')) {
             abort(403, 'Hanya PPID Pelaksana yang dapat melakukan aksi ini.');
@@ -74,14 +74,71 @@ class PermohonanController extends Controller
         // Logika khusus berdasarkan pergantian status
         if ($request->tahapan_proses == 'Selesai') {
             $permohonan->tanggal_selesai = now();
-            $permohonan->status = 'selesai'; // Jaga backward compatibility
+            $permohonan->status = 'selesai'; 
+            $aksiLog = 'Menandatangani & Menyelesaikan Permohonan';
+            $catatanLog = 'Disetujui oleh Atasan PPID';
+        } elseif ($request->tahapan_proses == 'Ditolak') {
+            $permohonan->status = 'ditolak';
+            $permohonan->tanggal_selesai = now();
+            
+            $alasan = $request->alasan_penolakan;
+            if ($alasan === 'Lainnya') {
+                $alasan = 'Lainnya: ' . $request->alasan_manual;
+            } elseif ($request->alasan_manual) {
+                $alasan .= "\nCatatan Tambahan: " . $request->alasan_manual;
+            }
+            $permohonan->keterangan_tidak_lengkap = $alasan;
+            $aksiLog = 'Menolak Permohonan';
+            $catatanLog = $alasan;
+            
+        } elseif ($request->tahapan_proses == 'Diverifikasi') {
+            $permohonan->status = 'diproses';
+            if (empty($permohonan->tanggal_jatuh_tempo)) {
+                $permohonan->tanggal_jatuh_tempo = \Carbon\Carbon::now()->addWeekdays(10);
+            }
+            if ($request->has('catatan_verifikasi')) {
+                $permohonan->keterangan_tidak_lengkap = $request->catatan_verifikasi;
+            }
+            $aksiLog = 'Memverifikasi Kelengkapan Berkas';
+            $catatanLog = $request->catatan_verifikasi ?? 'Berkas dinyatakan lengkap.';
         } elseif ($request->tahapan_proses == 'Ditutup') {
             $permohonan->status = 'ditutup';
+            $aksiLog = 'Menutup Permohonan';
+            $catatanLog = 'Permohonan ditutup oleh sistem/admin.';
+        } elseif ($request->tahapan_proses == 'Ditugaskan') {
+            $permohonan->status = 'diproses';
+            if ($oldTahapan == 'Diuji') {
+                $aksiLog = 'Mengembalikan ke Petugas Penghubung (Revisi)';
+                $catatanLog = $request->catatan_revisi ?? 'Mohon perbaiki data yang dikirim.';
+            } else {
+                $aksiLog = 'Mendisposisikan ke Unit Pengolah';
+                $unit = \App\Models\UnitPengolah::find($request->unit_pengolah_id);
+                $catatanLog = 'Ditugaskan ke: ' . ($unit ? $unit->nama_bidang : 'Unit Terkait');
+            }
+        } elseif ($request->tahapan_proses == 'Diuji') {
+            $permohonan->status = 'diproses';
+            $aksiLog = 'Menyerahkan Data untuk Diuji';
+            $catatanLog = 'Data diserahkan oleh Petugas Penghubung.';
+        } elseif ($request->tahapan_proses == 'Menunggu TTE') {
+            $permohonan->status = 'diproses';
+            $aksiLog = 'Mengajukan Draf Jawaban ke Atasan';
+            $catatanLog = $request->catatan ?? 'Telah divalidasi oleh PPID Pelaksana.';
         } else {
             $permohonan->status = 'diproses';
+            $aksiLog = 'Memperbarui Status: ' . $request->tahapan_proses;
+            $catatanLog = '';
         }
 
         $permohonan->save();
+
+        // Mencatat Log Aktivitas
+        \App\Models\PermohonanLog::create([
+            'permohonan_informasi_id' => $permohonan->id,
+            'user_id' => $user->id,
+            'tahapan_proses' => $request->tahapan_proses,
+            'aksi' => $aksiLog,
+            'catatan' => $catatanLog
+        ]);
 
         return back()->with('success', "Tahapan permohonan berhasil diperbarui menjadi: " . $request->tahapan_proses);
     }

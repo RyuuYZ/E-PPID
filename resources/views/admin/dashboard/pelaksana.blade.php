@@ -84,6 +84,25 @@
         </div>
     </div>
 
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mt-5">
+        <!-- Status Chart -->
+        <div class="bg-white rounded border border-gray-200 shadow-sm p-5">
+            <h3 class="text-xs font-bold text-gray-800 m-0 mb-4">Distribusi Status</h3>
+            <div class="relative h-48 w-full flex justify-center">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Trend Chart -->
+        <div class="bg-white rounded border border-gray-200 shadow-sm p-5 lg:col-span-2">
+            <h3 class="text-xs font-bold text-gray-800 m-0 mb-4">Tren Permohonan (6 Bulan Terakhir)</h3>
+            <div class="relative h-48 w-full">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+    </div>
+
     <!-- Bottom Section: Data Table -->
     <div class="bg-white rounded border border-gray-200 shadow-sm overflow-hidden mt-5">
         <div class="px-5 py-3 flex justify-between items-center border-b border-gray-200">
@@ -159,4 +178,78 @@
         </div>
     </div>
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Status Chart
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {!! json_encode(array_keys($chartStatus)) !!},
+                datasets: [{
+                    data: {!! json_encode(array_values($chartStatus)) !!},
+                    backgroundColor: [
+                        '#3b82f6', // Baru - Blue
+                        '#a855f7', // Proses - Purple
+                        '#f59e0b', // Validasi - Amber
+                        '#10b981', // Selesai - Emerald
+                        '#ef4444'  // Ditolak - Red
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 10,
+                            font: { size: 10, family: "'Inter', sans-serif" }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Trend Chart
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+        new Chart(trendCtx, {
+            type: 'bar',
+            data: {
+                labels: {!! json_encode(array_keys($trendBulan)) !!},
+                datasets: [{
+                    label: 'Jumlah Permohonan',
+                    data: {!! json_encode(array_values($trendBulan)) !!},
+                    backgroundColor: '#1a2b42',
+                    borderRadius: 4,
+                    barPercentage: 0.5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, font: { size: 10 } },
+                        grid: { color: '#f3f4f6' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 10 } }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    });
+</script>
 @endsection

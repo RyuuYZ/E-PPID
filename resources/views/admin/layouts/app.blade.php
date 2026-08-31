@@ -145,7 +145,7 @@
             
             <!-- Permohonan Group -->
             <div x-data="{ open: $persist(true).as('sidebar-permohonan-menu') }" class="mb-1">
-                <button @click="open = !open" class="w-full flex items-center justify-between px-5 py-2 text-[13px] text-gray-300 hover:text-white hover:bg-white/5 transition-all duration-200">
+                <button @click="open = !open" class="w-full flex items-center justify-between px-5 py-2 text-[13px] {{ request()->routeIs('admin.permohonan.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'text-gray-300 hover:text-white hover:bg-white/5 border-l-2 border-transparent' }} transition-all duration-200">
                     <div class="flex items-center gap-3">
                         <span class="material-symbols-outlined text-[16px]">folder_open</span>
                         <span>Permohonan Informasi</span>
@@ -253,7 +253,7 @@
     <!-- Main Content Area -->
     <div class="flex-1 flex flex-col min-w-0 md:pl-[240px]">
         <!-- TopAppBar -->
-        <header class="bg-white border-b border-gray-200 shadow-sm docked full-width top-0 sticky z-10 flex justify-between items-center w-full px-6 py-2.5">
+        <header class="bg-white border-b border-gray-200 shadow-sm docked full-width top-0 sticky z-50 flex justify-between items-center w-full px-6 py-2.5">
             <div class="flex items-center">
                 <span class="text-primary font-bold text-sm md:hidden mr-4">E-PPID</span>
                 

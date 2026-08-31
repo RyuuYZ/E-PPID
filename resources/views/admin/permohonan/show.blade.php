@@ -6,7 +6,7 @@
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5">
         <div>
             <div class="flex items-center gap-2 mb-1">
-                <a href="{{ route('admin.dashboard') }}" class="text-gray-500 hover:text-gray-700 transition-colors flex items-center">
+                <a href="{{ route('admin.permohonan.index') }}" class="text-gray-500 hover:text-gray-700 transition-colors flex items-center">
                     <span class="material-symbols-outlined text-[18px]">arrow_back</span>
                 </a>
                 <h2 class="text-lg font-bold text-gray-800 m-0">Detail Permohonan Informasi</h2>
@@ -27,10 +27,39 @@
                 ];
                 $colorClass = $statusColors[$permohonan->tahapan_proses] ?? 'bg-gray-100 text-gray-600 border-gray-200';
                 $statusLabel = $permohonan->tahapan_proses;
+                
+                $slaColor = 'bg-gray-100 text-gray-600 border-gray-200';
+                $slaText = 'Belum Dihitung';
+                if ($permohonan->tanggal_jatuh_tempo) {
+                    $jatuhTempo = \Carbon\Carbon::parse($permohonan->tanggal_jatuh_tempo);
+                    $now = \Carbon\Carbon::now();
+                    if ($permohonan->status == 'selesai' || $permohonan->status == 'ditolak' || $permohonan->status == 'ditutup') {
+                        $slaColor = 'bg-green-50 text-green-600 border-green-100';
+                        $slaText = 'Selesai';
+                    } elseif ($now->greaterThan($jatuhTempo)) {
+                        $slaColor = 'bg-red-50 text-red-600 border-red-200';
+                        $slaText = 'Melewati Batas (SLA Breach)';
+                    } else {
+                        $sisa = $now->diffInDays($jatuhTempo);
+                        if ($sisa <= 2) {
+                            $slaColor = 'bg-orange-50 text-orange-600 border-orange-200';
+                        } else {
+                            $slaColor = 'bg-blue-50 text-blue-600 border-blue-200';
+                        }
+                        $slaText = "Sisa $sisa Hari";
+                    }
+                }
             @endphp
-            <span class="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border {{ $colorClass }}">
-                {{ $statusLabel }}
-            </span>
+            <div class="flex flex-col items-end gap-1">
+                <span class="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border {{ $colorClass }}">
+                    {{ $statusLabel }}
+                </span>
+                @if($permohonan->tanggal_jatuh_tempo)
+                <span class="inline-flex items-center px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider border {{ $slaColor }}" title="Jatuh Tempo: {{ \Carbon\Carbon::parse($permohonan->tanggal_jatuh_tempo)->format('d M Y') }}">
+                    SLA: {{ $slaText }}
+                </span>
+                @endif
+            </div>
         </div>
     </div>
 
@@ -114,6 +143,19 @@
                             <span class="text-[13px] font-semibold text-gray-800">{{ $permohonan->cara_mendapatkan_salinan ?? 'Softcopy (Email)' }}</span>
                         </div>
                     </div>
+                    <div class="pt-4 border-t border-gray-100">
+                        <h4 class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Berkas Lampiran Identitas</h4>
+                        @if($permohonan->file_identitas)
+                        <a href="{{ Storage::url($permohonan->file_identitas) }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                            <span class="material-symbols-outlined text-[18px]">description</span>
+                            Lihat Dokumen
+                        </a>
+                        @else
+                        <div class="text-[12px] text-gray-400 italic bg-gray-50 p-3 rounded border border-gray-100">
+                            Tidak ada berkas lampiran yang disertakan oleh pemohon.
+                        </div>
+                        @endif
+                    </div>
                 </div>
             </div>
 
@@ -134,15 +176,50 @@
                         
                         @if($permohonan->tahapan_proses == 'Diterima')
                             <!-- Action: Verifikasi oleh Desk Layanan -->
+                            <!-- Action: Verifikasi oleh Desk Layanan -->
                             @if(auth()->user()->hasRole('Desk Layanan'))
-                                <div class="mb-4">
-                                    <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2">Catatan Kelengkapan:</label>
-                                    <textarea name="catatan" rows="3" class="w-full text-xs px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors bg-gray-50" placeholder="Catatan jika berkas tidak lengkap..."></textarea>
+                                <div x-data="{ action: 'verifikasi' }">
+                                    <div class="flex gap-4 border-b border-gray-200 mb-4 pb-2">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" x-model="action" value="verifikasi" class="text-blue-600 focus:ring-blue-500">
+                                            <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Lanjut Proses</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" x-model="action" value="tolak" class="text-red-600 focus:ring-red-500">
+                                            <span class="text-xs font-bold text-red-600 uppercase tracking-wider">Tolak Permohonan</span>
+                                        </label>
+                                    </div>
+
+                                    <!-- Verifikasi Form -->
+                                    <div x-show="action === 'verifikasi'">
+                                        <div class="mb-4">
+                                            <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2">Catatan Kelengkapan:</label>
+                                            <textarea name="catatan_verifikasi" rows="3" class="w-full text-xs px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors bg-gray-50" placeholder="Catatan jika berkas tidak lengkap..."></textarea>
+                                        </div>
+                                        <button type="submit" name="tahapan_proses" value="Diverifikasi" class="w-full bg-blue-600 text-white font-semibold rounded py-2 px-4 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-[11px] transition-colors uppercase tracking-wider cursor-pointer">
+                                            Verifikasi Kelengkapan (Lanjut)
+                                        </button>
+                                    </div>
+
+                                    <!-- Tolak Form -->
+                                    <div x-show="action === 'tolak'" style="display: none;">
+                                        <div class="mb-4">
+                                            <label class="block text-[11px] font-bold text-red-700 uppercase tracking-wider mb-2">Alasan Penolakan Otomatis:</label>
+                                            <select name="alasan_penolakan" class="w-full text-xs px-3 py-2 border border-red-300 rounded focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors bg-red-50 mb-2">
+                                                <option value="">-- Pilih Alasan Penolakan --</option>
+                                                <option value="Tujuan tidak jelas: Permintaan informasi diajukan untuk kepentingan atau alasan yang tidak jelas.">Tujuan Tidak Jelas</option>
+                                                <option value="Informasi dikecualikan: Informasi yang diminta masuk dalam kategori rahasia atau dikecualikan berdasarkan UU No. 14 Tahun 2008.">Informasi Dikecualikan</option>
+                                                <option value="Informasi belum dikuasai: Badan publik yang dituju belum menguasai, mendokumentasikan, atau menyimpan informasi yang diminta.">Informasi Belum Dikuasai</option>
+                                                <option value="Tidak sesuai prosedur: Permintaan tidak mengikuti ketentuan atau prosedur operasional yang diatur dalam perundang-undangan.">Tidak Sesuai Prosedur</option>
+                                                <option value="Lainnya">Alasan Lainnya (Tulis Manual)</option>
+                                            </select>
+                                            <textarea name="alasan_manual" rows="2" class="w-full text-xs px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors bg-gray-50 mt-2" placeholder="Catatan tambahan / alasan lainnya..."></textarea>
+                                        </div>
+                                        <button type="submit" name="tahapan_proses" value="Ditolak" class="w-full bg-red-600 text-white font-semibold rounded py-2 px-4 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 text-[11px] transition-colors uppercase tracking-wider cursor-pointer">
+                                            Tolak Permohonan
+                                        </button>
+                                    </div>
                                 </div>
-                                <input type="hidden" name="tahapan_proses" value="Diverifikasi">
-                                <button type="submit" class="w-full bg-blue-600 text-white font-semibold rounded py-2 px-4 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-[11px] transition-colors uppercase tracking-wider">
-                                    Verifikasi Kelengkapan
-                                </button>
                             @else
                                 <div class="bg-gray-50 border border-gray-200 p-4 rounded text-xs text-gray-600 mb-4 text-center">
                                     Menunggu verifikasi kelengkapan berkas oleh <strong>Petugas Desk Layanan</strong>.
@@ -188,12 +265,33 @@
                             @if(auth()->user()->hasRole('PPID Pelaksana'))
                                 <div class="mb-4">
                                     <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2">Catatan Validasi Konsep Jawaban:</label>
-                                    <textarea name="catatan" rows="3" class="w-full text-xs px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors bg-gray-50" placeholder="Tulis catatan..."></textarea>
+                                    <textarea name="catatan" rows="3" class="w-full text-xs px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors bg-gray-50" placeholder="Tulis catatan (Opsional)..."></textarea>
                                 </div>
-                                <input type="hidden" name="tahapan_proses" value="Menunggu TTE">
-                                <button type="submit" class="w-full bg-purple-600 text-white font-semibold rounded py-2 px-4 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 text-[11px] transition-colors uppercase tracking-wider">
-                                    Validasi & Teruskan ke Atasan
-                                </button>
+                                <div class="flex gap-2">
+                                    <button type="submit" name="tahapan_proses" value="Menunggu TTE" class="flex-1 bg-purple-600 text-white font-semibold rounded py-2 px-2 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 text-[10px] sm:text-[11px] transition-colors uppercase tracking-wider text-center">
+                                        Validasi & Teruskan ke Atasan
+                                    </button>
+                                    <button type="button" onclick="document.getElementById('revisiModal').classList.remove('hidden')" class="bg-red-50 text-red-600 border border-red-200 font-semibold rounded py-2 px-2 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 text-[10px] sm:text-[11px] transition-colors uppercase tracking-wider text-center">
+                                        Kembalikan ke Penghubung
+                                    </button>
+                                </div>
+                                
+                                <!-- Modal Revisi -->
+                                <div id="revisiModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                                    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                                        <div class="mt-3 text-center">
+                                            <h3 class="text-lg leading-6 font-medium text-gray-900">Kembalikan ke Petugas Penghubung</h3>
+                                            <div class="mt-2 px-2 py-3 text-left">
+                                                <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2">Catatan Revisi:</label>
+                                                <textarea name="catatan_revisi" rows="3" class="w-full text-xs px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors bg-gray-50" placeholder="Tulis alasan kenapa data dikembalikan..."></textarea>
+                                            </div>
+                                            <div class="items-center px-4 py-3 flex gap-2">
+                                                <button type="button" onclick="document.getElementById('revisiModal').classList.add('hidden')" class="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded hover:bg-gray-200 w-full">Batal</button>
+                                                <button type="submit" name="tahapan_proses" value="Ditugaskan" class="px-4 py-2 bg-red-600 text-white text-xs font-semibold rounded hover:bg-red-700 w-full uppercase tracking-wider">Kembalikan</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             @else
                                 <div class="bg-gray-50 border border-gray-200 p-4 rounded text-xs text-gray-600 mb-4 text-center">
                                     Menunggu <strong>PPID Pelaksana</strong> menguji data dan menyusun konsep jawaban.
@@ -229,7 +327,7 @@
             </div>
 
             <!-- Timeline Tracker -->
-            <div class="bg-white border border-gray-200 rounded shadow-sm p-5">
+            <div class="bg-white border border-gray-200 rounded shadow-sm p-5 mb-5">
                 <h3 class="text-[13px] font-bold text-gray-800 uppercase tracking-wider mb-5">Jejak Proses</h3>
                 
                 <ol class="relative border-l border-gray-200 ml-3 space-y-6">
@@ -243,19 +341,23 @@
                     <!-- Step 2 -->
                     <li class="mb-6 ml-6">
                         @php
-                            $step2_done = in_array($permohonan->tahapan_proses, ['Ditugaskan', 'Diuji', 'Menunggu TTE', 'Selesai']);
-                            $step2_active = ($permohonan->tahapan_proses == 'Diverifikasi');
+                            $step2_done = in_array($permohonan->tahapan_proses, ['Diverifikasi', 'Ditugaskan', 'Diuji', 'Menunggu TTE', 'Selesai', 'Ditutup']);
+                            $step2_active = ($permohonan->tahapan_proses == 'Diterima');
+                            $step2_rejected = ($permohonan->tahapan_proses == 'Ditolak');
                         @endphp
-                        <span class="absolute flex items-center justify-center w-3 h-3 {{ $step2_done ? 'bg-green-500' : ($step2_active ? 'bg-blue-500' : 'bg-gray-200') }} rounded-full -left-[6.5px] ring-4 ring-white"></span>
-                        <h4 class="text-[11px] font-bold uppercase tracking-wider {{ $step2_done || $step2_active ? 'text-gray-900' : 'text-gray-400' }}">Verifikasi Desk Layanan</h4>
+                        <span class="absolute flex items-center justify-center w-3 h-3 {{ $step2_done ? 'bg-green-500' : ($step2_rejected ? 'bg-red-500' : ($step2_active ? 'bg-blue-500' : 'bg-gray-200')) }} rounded-full -left-[6.5px] ring-4 ring-white"></span>
+                        <h4 class="text-[11px] font-bold uppercase tracking-wider {{ $step2_done || $step2_active || $step2_rejected ? 'text-gray-900' : 'text-gray-400' }}">Verifikasi Desk Layanan</h4>
                         <p class="text-[10px] font-medium text-gray-400 mt-1">Oleh Desk Layanan</p>
+                        @if($step2_rejected)
+                            <p class="text-xs text-red-600 mt-2 font-medium">Permohonan Ditolak</p>
+                        @endif
                     </li>
 
                     <!-- Step 3 -->
                     <li class="mb-6 ml-6">
                         @php
                             $step3_done = in_array($permohonan->tahapan_proses, ['Diuji', 'Menunggu TTE', 'Selesai']);
-                            $step3_active = ($permohonan->tahapan_proses == 'Ditugaskan');
+                            $step3_active = in_array($permohonan->tahapan_proses, ['Diverifikasi', 'Ditugaskan']);
                         @endphp
                         <span class="absolute flex items-center justify-center w-3 h-3 {{ $step3_done ? 'bg-green-500' : ($step3_active ? 'bg-blue-500' : 'bg-gray-200') }} rounded-full -left-[6.5px] ring-4 ring-white"></span>
                         <h4 class="text-[11px] font-bold uppercase tracking-wider {{ $step3_done || $step3_active ? 'text-gray-900' : 'text-gray-400' }}">Penyediaan Data</h4>
@@ -284,6 +386,39 @@
                         <p class="text-[10px] font-medium text-gray-400 mt-1">Oleh Atasan PPID</p>
                     </li>
                 </ol>
+            </div>
+            
+            <!-- Activity Logs -->
+            <div class="bg-white border border-gray-200 rounded shadow-sm p-5">
+                <h3 class="text-[13px] font-bold text-gray-800 uppercase tracking-wider mb-5">Log Aktivitas</h3>
+                
+                <div class="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                    @forelse($permohonan->logs as $log)
+                        <div class="flex gap-3 text-sm">
+                            <div class="flex-shrink-0">
+                                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                    <span class="material-symbols-outlined text-[16px]">history</span>
+                                </div>
+                            </div>
+                            <div class="flex-1 bg-gray-50 border border-gray-100 p-3 rounded">
+                                <div class="flex justify-between mb-1">
+                                    <span class="font-bold text-gray-800 text-[11px] uppercase tracking-wider">{{ $log->aksi }}</span>
+                                    <span class="text-[10px] text-gray-500">{{ $log->created_at->format('d M Y H:i') }}</span>
+                                </div>
+                                <div class="text-[12px] text-gray-600">
+                                    <span class="font-semibold text-gray-700">{{ $log->user->name ?? 'Sistem' }}</span> 
+                                    @if($log->catatan)
+                                        <p class="mt-1 text-gray-500 italic bg-white p-2 border border-gray-200 rounded">"{{ $log->catatan }}"</p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center p-4 bg-gray-50 text-gray-500 text-xs rounded border border-gray-100">
+                            Belum ada aktivitas tercatat.
+                        </div>
+                    @endforelse
+                </div>
             </div>
 
         </div>
