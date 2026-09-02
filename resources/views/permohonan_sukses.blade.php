@@ -27,7 +27,7 @@
                     <span class="material-symbols-outlined text-[18px]">content_copy</span>
                     <span>Salin Nomor</span>
                 </button>
-                <a href="#" onclick="alert('Fitur cetak tanda terima sedang dalam pengembangan.')" class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#03224d] rounded-lg text-sm font-semibold text-white hover:bg-[#1f3864] transition-colors w-full sm:w-auto shadow-sm">
+                <a href="{{ route('permohonan.tanda_terima', $nomor_registrasi) }}" target="_blank" class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#03224d] rounded-lg text-sm font-semibold text-white hover:bg-[#1f3864] transition-colors w-full sm:w-auto shadow-sm">
                     <span class="material-symbols-outlined text-[18px]">download</span>
                     <span>Unduh Tanda Terima</span>
                 </a>

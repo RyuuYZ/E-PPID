@@ -1,12 +1,7 @@
-@extends('admin.layouts.app')
+@extends('admin.layouts.settings')
 
-@section('content')
-<main class="flex-1 p-6 bg-[#f4f6f9] overflow-y-auto min-h-screen">
-    <div class="mb-5">
-        <h2 class="text-lg font-bold text-gray-800 m-0">Konfigurasi Sistem</h2>
-        <p class="text-xs text-gray-500 mt-0.5">Atur preferensi global aplikasi seperti nama, kontak, dan integrasi pihak ketiga.</p>
-    </div>
-
+@section('settings_content')
+<div>
     @if(session('success'))
         <div class="p-4 mb-6 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md shadow-sm">
             {{ session('success') }}
@@ -84,5 +79,5 @@
             </div>
         </form>
     </div>
-</main>
+</div>
 @endsection

@@ -318,13 +318,73 @@
                         @else
                             <!-- Selesai / Ditutup -->
                             <div class="text-center py-4">
-                                <span class="material-symbols-outlined text-green-500 text-4xl mb-2">check_circle</span>
-                                <p class="text-xs font-semibold text-gray-700 uppercase tracking-wider">Permohonan Selesai</p>
+                                <span class="material-symbols-outlined {{ $permohonan->status == 'ditolak' ? 'text-red-500' : 'text-green-500' }} text-4xl mb-2">
+                                    {{ $permohonan->status == 'ditolak' ? 'cancel' : 'check_circle' }}
+                                </span>
+                                <p class="text-xs font-semibold text-gray-700 uppercase tracking-wider">Permohonan {{ $permohonan->status }}</p>
+                                
+                                @if(in_array($permohonan->status, ['selesai', 'ditolak', 'ditutup']))
+                                    @if(!$permohonan->keberatan)
+                                        <button type="button" onclick="document.getElementById('keberatanModal').classList.remove('hidden')" class="mt-4 px-4 py-2 bg-red-600 text-white text-[11px] font-semibold rounded hover:bg-red-700 transition-colors uppercase tracking-wider inline-flex items-center gap-2">
+                                            <span class="material-symbols-outlined text-[16px]">gavel</span> Ajukan Keberatan
+                                        </button>
+                                    @else
+                                        <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+                                            Sengketa / Keberatan telah diajukan.<br>
+                                            <a href="{{ route('admin.keberatan.show', $permohonan->keberatan->id) }}" class="font-bold hover:underline mt-1 inline-block">Lihat Detail Keberatan</a>
+                                        </div>
+                                    @endif
+                                @endif
                             </div>
                         @endif
                     </form>
                 </div>
             </div>
+
+            <!-- Modal Ajukan Keberatan -->
+            @if(in_array($permohonan->status, ['selesai', 'ditolak', 'ditutup']) && !$permohonan->keberatan)
+            <div id="keberatanModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                    <form action="{{ route('admin.keberatan.store', $permohonan->id) }}" method="POST">
+                        @csrf
+                        <div class="mt-3 text-center">
+                            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                                <span class="material-symbols-outlined text-red-600">gavel</span>
+                            </div>
+                            <h3 class="text-lg leading-6 font-bold text-gray-900">Form Pengajuan Keberatan</h3>
+                            
+                            <div class="mt-4 px-2 text-left space-y-4">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2">Alasan Keberatan:</label>
+                                    <select name="alasan_keberatan" class="w-full text-xs px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors bg-gray-50" required>
+                                        <option value="">-- Pilih Alasan Utama --</option>
+                                        <option value="Permohonan Informasi ditolak">Permohonan Informasi ditolak</option>
+                                        <option value="Informasi yang diberikan tidak lengkap">Informasi yang diberikan tidak lengkap</option>
+                                        <option value="Informasi tidak sesuai dengan yang diminta">Informasi tidak sesuai dengan yang diminta</option>
+                                        <option value="Permintaan informasi tidak ditanggapi (Lewat SLA)">Permintaan informasi tidak ditanggapi (Lewat SLA)</option>
+                                        <option value="Biaya yang dikenakan tidak wajar">Biaya yang dikenakan tidak wajar</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2">Keterangan Tambahan:</label>
+                                    <textarea name="keterangan_tambahan" rows="3" class="w-full text-xs px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors bg-gray-50" placeholder="Tulis rincian keluhan pemohon..."></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-5 sm:mt-6 flex gap-3">
+                                <button type="button" onclick="document.getElementById('keberatanModal').classList.add('hidden')" class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    Batal
+                                </button>
+                                <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-xs font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                    Ajukan Keberatan
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            @endif
 
             <!-- Timeline Tracker -->
             <div class="bg-white border border-gray-200 rounded shadow-sm p-5 mb-5">

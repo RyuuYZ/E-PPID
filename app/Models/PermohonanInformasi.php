@@ -35,4 +35,9 @@ class PermohonanInformasi extends Model
     {
         return $this->hasMany(PermohonanLog::class)->orderBy('created_at', 'desc');
     }
+
+    public function keberatan()
+    {
+        return $this->hasOne(PengajuanKeberatan::class);
+    }
 }

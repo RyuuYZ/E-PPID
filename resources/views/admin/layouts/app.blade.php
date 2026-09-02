@@ -153,22 +153,30 @@
                     <span class="material-symbols-outlined text-[14px] transition-transform duration-200" :class="open ? 'rotate-180' : ''">expand_more</span>
                 </button>
                 <div x-show="open" x-collapse>
+                    @if(auth()->user()->hasRole('Desk Layanan') || auth()->user()->hasRole('Super Admin'))
                     <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ request()->fullUrl() == route('admin.permohonan.index', ['status' => 'masuk']) ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'masuk']) }}">
                         <span class="material-symbols-outlined text-[14px]">arrow_right</span>
                         Permohonan Masuk
                     </a>
+                    @endif
+                    @if(auth()->user()->hasRole('Petugas Penghubung') || auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
                     <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ request()->fullUrl() == route('admin.permohonan.index', ['status' => 'menunggu_koordinasi']) ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'menunggu_koordinasi']) }}">
                         <span class="material-symbols-outlined text-[14px]">arrow_right</span>
                         Koordinasi Data
                     </a>
+                    @endif
+                    @if(auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
                     <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ request()->fullUrl() == route('admin.permohonan.index', ['status' => 'siap_validasi']) ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'siap_validasi']) }}">
                         <span class="material-symbols-outlined text-[14px]">arrow_right</span>
                         Uji & Validasi
                     </a>
+                    @endif
+                    @if(auth()->user()->hasRole('Atasan PPID Pelaksana') || auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
                     <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ request()->fullUrl() == route('admin.permohonan.index', ['status' => 'menunggu_ttd']) ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'menunggu_ttd']) }}">
                         <span class="material-symbols-outlined text-[14px]">arrow_right</span>
                         Konsep Jawaban
                     </a>
+                    @endif
                     <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ request()->fullUrl() == route('admin.permohonan.index') ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index') }}">
                         <span class="material-symbols-outlined text-[14px]">arrow_right</span>
                         Semua Permohonan
@@ -176,6 +184,15 @@
                 </div>
             </div>
             
+            <!-- Keberatan Menu -->
+            @if(auth()->user()->hasRole('Atasan PPID Pelaksana') || auth()->user()->hasRole('Desk Layanan') || auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
+            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.keberatan.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.keberatan.index') }}">
+                <span class="material-symbols-outlined text-[16px]">gavel</span>
+                Sengketa & Keberatan
+            </a>
+            @endif
+            
+            @if(auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
             <div class="mt-4 mb-1.5 px-5 text-[9px] font-bold text-gray-500 uppercase tracking-widest">E-Office</div>
             <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.surat-masuk.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.surat-masuk.index') }}">
                 <span class="material-symbols-outlined text-[16px]">mark_email_unread</span>
@@ -185,7 +202,9 @@
                 <span class="material-symbols-outlined text-[16px]">forward_to_inbox</span>
                 Surat Keluar
             </a>
+            @endif
             
+            @if(auth()->user()->hasRole('Super Admin'))
             <div class="mt-4 mb-1.5 px-5 text-[9px] font-bold text-gray-500 uppercase tracking-widest">Pengaturan & Sistem</div>
             <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.unit-pengolah.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.unit-pengolah.index') }}">
                 <span class="material-symbols-outlined text-[16px]">corporate_fare</span>
@@ -207,6 +226,7 @@
                 <span class="material-symbols-outlined text-[16px]">category</span>
                 Kategori Info Publik
             </a>
+            @endif
 
             @if(auth()->user()->hasRole('Super Admin'))
             <div class="mt-4 mb-1.5 px-5 text-[9px] font-bold text-gray-500 uppercase tracking-widest">Super Admin</div>
@@ -218,15 +238,14 @@
                 <span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>
                 Hak Akses (Role)
             </a>
-            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.settings.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.settings.index') }}">
-                <span class="material-symbols-outlined text-[16px]">settings_applications</span>
-                Konfigurasi Sistem
-            </a>
-            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.logs.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.logs.index') }}">
-                <span class="material-symbols-outlined text-[16px]">policy</span>
-                Log Keamanan
-            </a>
             @endif
+
+            <!-- Pengaturan Link (Single Page) -->
+            <div class="mt-4 mb-1.5 px-5 text-[9px] font-bold text-gray-500 uppercase tracking-widest">Pengaturan</div>
+            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.profile.*') || request()->routeIs('admin.settings.*') || request()->routeIs('admin.logs.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.profile.index') }}">
+                <span class="material-symbols-outlined text-[16px]">settings</span>
+                Pengaturan
+            </a>
         </div>
 
         <!-- User Profile Footer -->

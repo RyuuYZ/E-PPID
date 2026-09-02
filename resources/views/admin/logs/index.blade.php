@@ -1,7 +1,7 @@
-@extends('admin.layouts.app')
+@extends('admin.layouts.settings')
 
-@section('content')
-<main class="flex-1 p-6 bg-[#f4f6f9] overflow-y-auto min-h-screen">
+@section('settings_content')
+<div>
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5">
         <div>
             <h2 class="text-lg font-bold text-gray-800 m-0">Log Keamanan & Aktivitas</h2>
@@ -64,5 +64,5 @@
     <div class="mt-4">
         {{ $logs->links() }}
     </div>
-</main>
+</div>
 @endsection
