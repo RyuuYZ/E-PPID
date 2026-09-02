@@ -35,8 +35,7 @@ Route::post('/permohonan/simpan', function (\Illuminate\Http\Request $request) {
 
     $validated['nomor_registrasi'] = 'REG-' . date('YmdHis') . '-' . rand(1000, 9999);
     $validated['rincian_informasi'] = $validated['subjek'] . "\n\n" . $validated['rincian_informasi'];
-    $validated['status'] = 'Diproses';
-    $validated['tahapan_proses'] = 'Diterima';
+    $validated['status'] = \App\Enums\PermohonanStatus::Diajukan->value;
 
     \App\Models\PermohonanInformasi::create($validated);
 
@@ -88,6 +87,10 @@ Route::prefix('admin')->group(function () {
             Route::get('/permohonan', [\App\Http\Controllers\Admin\PermohonanController::class, 'index'])->name('admin.permohonan.index');
             Route::get('/permohonan/{id}', [\App\Http\Controllers\Admin\PermohonanController::class, 'show'])->name('admin.permohonan.show');
             Route::post('/permohonan/{id}/status', [\App\Http\Controllers\Admin\PermohonanController::class, 'updateStatus'])->name('admin.permohonan.update-status');
+            Route::post('/permohonan/{id}/assign', [\App\Http\Controllers\Admin\PermohonanController::class, 'assignPetugas'])->name('admin.permohonan.assign');
+            Route::post('/permohonan/{id}/extend-deadline', [\App\Http\Controllers\Admin\PermohonanController::class, 'extendDeadline'])->name('admin.permohonan.extend-deadline');
+            Route::post('/penugasan/{id}/submit-data', [\App\Http\Controllers\Admin\PermohonanController::class, 'submitData'])->name('admin.penugasan.submit-data');
+            Route::post('/penugasan/{id}/review', [\App\Http\Controllers\Admin\PermohonanController::class, 'reviewPenugasan'])->name('admin.penugasan.review');
 
             // Keberatan routes
             Route::get('/keberatan', [\App\Http\Controllers\Admin\KeberatanController::class, 'index'])->name('admin.keberatan.index');

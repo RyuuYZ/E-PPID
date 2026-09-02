@@ -82,17 +82,8 @@
                 </div>
                 <div>
                     @php
-                        $statusClass = 'bg-gray-100 text-gray-700';
-                        $statusText = $permohonan->status;
-                        
-                        if (in_array($permohonan->status, ['Masuk', 'Diproses'])) {
-                            $statusClass = 'bg-[#ffc329] text-yellow-900';
-                            $statusText = 'Sedang Diproses';
-                        } elseif ($permohonan->status == 'Selesai') {
-                            $statusClass = 'bg-green-100 text-green-700';
-                        } elseif ($permohonan->status == 'Ditolak') {
-                            $statusClass = 'bg-red-100 text-red-700';
-                        }
+                        $statusClass = $permohonan->status->badgeClass();
+                        $statusText = $permohonan->status->label();
                     @endphp
                     <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[13px] font-semibold {{ $statusClass }}">
                         {{ $statusText }}
@@ -165,7 +156,7 @@
                     </div>
                 @endforelse
                 
-                @if(in_array($permohonan->status, ['Masuk', 'Diproses']))
+                @if(!$permohonan->status->isTerminal())
                 <!-- Next Step Placeholder (Sedang berlangsung) -->
                 <div class="relative pl-8 opacity-60">
                     <span class="absolute flex items-center justify-center w-6 h-6 bg-gray-200 text-gray-500 rounded-full -left-[14px] top-0 ring-[6px] ring-white">

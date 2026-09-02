@@ -154,25 +154,25 @@
                 </button>
                 <div x-show="open" x-collapse>
                     @if(auth()->user()->hasRole('Desk Layanan') || auth()->user()->hasRole('Super Admin'))
-                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ request()->fullUrl() == route('admin.permohonan.index', ['status' => 'masuk']) ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'masuk']) }}">
+                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ request()->fullUrl() == route('admin.permohonan.index', ['status' => 'diajukan']) ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'diajukan']) }}">
                         <span class="material-symbols-outlined text-[14px]">arrow_right</span>
                         Permohonan Masuk
                     </a>
                     @endif
                     @if(auth()->user()->hasRole('Petugas Penghubung') || auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
-                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ request()->fullUrl() == route('admin.permohonan.index', ['status' => 'menunggu_koordinasi']) ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'menunggu_koordinasi']) }}">
+                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ request()->fullUrl() == route('admin.permohonan.index', ['status' => 'menunggu_data']) ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'menunggu_data']) }}">
                         <span class="material-symbols-outlined text-[14px]">arrow_right</span>
                         Koordinasi Data
                     </a>
                     @endif
                     @if(auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
-                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ request()->fullUrl() == route('admin.permohonan.index', ['status' => 'siap_validasi']) ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'siap_validasi']) }}">
+                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ request()->fullUrl() == route('admin.permohonan.index', ['status' => 'data_diuji']) ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'data_diuji']) }}">
                         <span class="material-symbols-outlined text-[14px]">arrow_right</span>
                         Uji & Validasi
                     </a>
                     @endif
                     @if(auth()->user()->hasRole('Atasan PPID Pelaksana') || auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
-                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ request()->fullUrl() == route('admin.permohonan.index', ['status' => 'menunggu_ttd']) ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'menunggu_ttd']) }}">
+                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ request()->fullUrl() == route('admin.permohonan.index', ['status' => 'menunggu_tanda_tangan']) ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'menunggu_tanda_tangan']) }}">
                         <span class="material-symbols-outlined text-[14px]">arrow_right</span>
                         Konsep Jawaban
                     </a>

@@ -19,11 +19,12 @@
         <div class="flex items-center gap-2">
             <select class="bg-white border border-gray-200 text-gray-700 rounded shadow-sm text-xs py-1.5 px-3 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 font-medium" onchange="window.location.href=this.value">
                 <option value="{{ route('admin.permohonan.index') }}">Semua Status</option>
-                <option value="{{ route('admin.permohonan.index', ['status' => 'masuk']) }}" {{ $currentStatus == 'masuk' ? 'selected' : '' }}>Permohonan Masuk</option>
-                <option value="{{ route('admin.permohonan.index', ['status' => 'menunggu_koordinasi']) }}" {{ $currentStatus == 'menunggu_koordinasi' ? 'selected' : '' }}>Menunggu Koordinasi</option>
+                <option value="{{ route('admin.permohonan.index', ['status' => 'diajukan']) }}" {{ $currentStatus == 'diajukan' ? 'selected' : '' }}>Permohonan Masuk</option>
+                <option value="{{ route('admin.permohonan.index', ['status' => 'diverifikasi']) }}" {{ $currentStatus == 'diverifikasi' ? 'selected' : '' }}>Diverifikasi</option>
+                <option value="{{ route('admin.permohonan.index', ['status' => 'ditugaskan']) }}" {{ $currentStatus == 'ditugaskan' ? 'selected' : '' }}>Ditugaskan</option>
                 <option value="{{ route('admin.permohonan.index', ['status' => 'menunggu_data']) }}" {{ $currentStatus == 'menunggu_data' ? 'selected' : '' }}>Menunggu Data</option>
-                <option value="{{ route('admin.permohonan.index', ['status' => 'siap_validasi']) }}" {{ $currentStatus == 'siap_validasi' ? 'selected' : '' }}>Siap Validasi</option>
-                <option value="{{ route('admin.permohonan.index', ['status' => 'menunggu_ttd']) }}" {{ $currentStatus == 'menunggu_ttd' ? 'selected' : '' }}>Menunggu Tanda Tangan</option>
+                <option value="{{ route('admin.permohonan.index', ['status' => 'data_diuji']) }}" {{ $currentStatus == 'data_diuji' ? 'selected' : '' }}>Data Diuji</option>
+                <option value="{{ route('admin.permohonan.index', ['status' => 'menunggu_tanda_tangan']) }}" {{ $currentStatus == 'menunggu_tanda_tangan' ? 'selected' : '' }}>Menunggu Tanda Tangan</option>
                 <option value="{{ route('admin.permohonan.index', ['status' => 'selesai']) }}" {{ $currentStatus == 'selesai' ? 'selected' : '' }}>Selesai</option>
             </select>
         </div>
@@ -55,21 +56,8 @@
                             {{ $p->created_at->format('d M Y') }}
                         </td>
                         <td class="px-6 py-3">
-                            @php
-                                $statusColors = [
-                                    'masuk' => 'bg-blue-50 text-blue-600 border-blue-100',
-                                    'menunggu_koordinasi' => 'bg-indigo-50 text-indigo-600 border-indigo-100',
-                                    'menunggu_data' => 'bg-yellow-50 text-yellow-600 border-yellow-100',
-                                    'siap_validasi' => 'bg-teal-50 text-teal-600 border-teal-100',
-                                    'menunggu_ttd' => 'bg-purple-50 text-purple-600 border-purple-100',
-                                    'selesai' => 'bg-green-50 text-green-600 border-green-100',
-                                ];
-                                $colorClass = $statusColors[$p->status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
-                                $statusLabel = ucwords(str_replace('_', ' ', $p->status));
-                                if($p->status == 'masuk') $statusLabel = 'Masuk';
-                            @endphp
-                            <span class="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-semibold border {{ $colorClass }}">
-                                {{ $statusLabel }}
+                            <span class="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-semibold border {{ $p->status->badgeClass() }} border-opacity-30">
+                                {{ $p->status->label() }}
                             </span>
                         </td>
                         <td class="px-6 py-3 text-right">
