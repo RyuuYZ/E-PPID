@@ -16,13 +16,16 @@ class PengajuanKeberatan extends Model
         'tanggal_selesai',
         'diputuskan_oleh',
         'diputuskan_at',
+        'batas_waktu_respon',
     ];
 
     protected function casts(): array
     {
         return [
+            'status' => \App\Enums\KeberatanStatus::class,
             'tanggal_selesai' => 'datetime',
             'diputuskan_at' => 'datetime',
+            'batas_waktu_respon' => 'datetime',
         ];
     }
 

@@ -16,16 +16,38 @@
         
         <div class="flex items-center">
             @php
-                $statusClass = [
-                    'Masuk' => 'bg-blue-50 text-blue-600 border-blue-200',
-                    'Diproses' => 'bg-yellow-50 text-yellow-600 border-yellow-200',
-                    'Selesai' => 'bg-green-50 text-green-600 border-green-200',
-                    'Ditolak' => 'bg-red-50 text-red-600 border-red-200',
-                ][$keberatan->status] ?? 'bg-gray-50 text-gray-600 border-gray-200';
+                $slaColor = 'bg-gray-100 text-gray-600 border-gray-200';
+                $slaText = 'Belum Dihitung';
+                if ($keberatan->batas_waktu_respon) {
+                    $jatuhTempo = \Carbon\Carbon::parse($keberatan->batas_waktu_respon);
+                    $now = \Carbon\Carbon::now();
+                    if ($keberatan->status->isTerminal()) {
+                        $slaColor = 'bg-green-50 text-green-600 border-green-100';
+                        $slaText = 'Selesai';
+                    } elseif ($now->greaterThan($jatuhTempo)) {
+                        $slaColor = 'bg-red-50 text-red-600 border-red-200';
+                        $slaText = 'Melewati Batas (SLA Breach)';
+                    } else {
+                        $sisa = $now->diffInWeekdays($jatuhTempo); // Simplification for view
+                        if ($sisa <= 5) {
+                            $slaColor = 'bg-orange-50 text-orange-600 border-orange-200';
+                        } else {
+                            $slaColor = 'bg-blue-50 text-blue-600 border-blue-200';
+                        }
+                        $slaText = "Sisa $sisa Hari Kerja";
+                    }
+                }
             @endphp
-            <span class="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border {{ $statusClass }}">
-                {{ $keberatan->status }}
-            </span>
+            <div class="flex flex-col items-end gap-1">
+                <span class="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border {{ $keberatan->status->badgeClass() }}">
+                    {{ $keberatan->status->label() }}
+                </span>
+                @if($keberatan->batas_waktu_respon)
+                <span class="inline-flex items-center px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider border {{ $slaColor }}" title="Batas Waktu Respon: {{ \Carbon\Carbon::parse($keberatan->batas_waktu_respon)->format('d M Y') }}">
+                    SLA: {{ $slaText }}
+                </span>
+                @endif
+            </div>
         </div>
     </div>
 
@@ -105,15 +127,18 @@
                     <form action="{{ route('admin.keberatan.update-status', $keberatan->id) }}" method="POST">
                         @csrf
                         
-                        @if($keberatan->status == 'Masuk' || $keberatan->status == 'Diproses')
+                        @if(!$keberatan->status->isTerminal())
                             @if(auth()->user()->hasRole('Atasan PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
                                 <div class="mb-4">
                                     <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2">Tanggapan / Putusan Atasan:</label>
-                                    <textarea name="tanggapan_atasan" rows="4" class="w-full text-xs px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors bg-gray-50" placeholder="Tuliskan keputusan atau tanggapan resmi Atasan PPID..."></textarea>
+                                    <textarea name="tanggapan_atasan" rows="4" class="w-full text-xs px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors bg-gray-50" placeholder="Tuliskan keputusan atau tanggapan resmi Atasan PPID...">{{ $keberatan->tanggapan_atasan }}</textarea>
                                 </div>
                                 <div class="flex gap-2">
                                     <button type="submit" name="status" value="Diproses" class="flex-1 bg-yellow-50 text-yellow-600 border border-yellow-200 font-semibold rounded py-2 px-2 hover:bg-yellow-100 focus:outline-none text-[10px] sm:text-[11px] transition-colors uppercase tracking-wider text-center">
                                         Simpan Draf (Diproses)
+                                    </button>
+                                    <button type="submit" name="status" value="Ditolak" class="flex-1 bg-red-50 text-red-600 border border-red-200 font-semibold rounded py-2 px-2 hover:bg-red-100 focus:outline-none text-[10px] sm:text-[11px] transition-colors uppercase tracking-wider text-center">
+                                        Tolak Keberatan
                                     </button>
                                     <button type="submit" name="status" value="Selesai" class="flex-1 bg-green-600 text-white font-semibold rounded py-2 px-2 hover:bg-green-700 focus:outline-none text-[10px] sm:text-[11px] transition-colors uppercase tracking-wider text-center">
                                         Putuskan (Selesai)
@@ -126,10 +151,10 @@
                             @endif
                         @else
                             <div class="text-center py-4">
-                                <span class="material-symbols-outlined {{ $keberatan->status == 'Selesai' ? 'text-green-500' : 'text-red-500' }} text-4xl mb-2">
-                                    {{ $keberatan->status == 'Selesai' ? 'gavel' : 'block' }}
+                                <span class="material-symbols-outlined {{ $keberatan->status == \App\Enums\KeberatanStatus::Selesai ? 'text-green-500' : 'text-red-500' }} text-4xl mb-2">
+                                    {{ $keberatan->status == \App\Enums\KeberatanStatus::Selesai ? 'gavel' : 'block' }}
                                 </span>
-                                <p class="text-xs font-semibold text-gray-700 uppercase tracking-wider">Sengketa {{ $keberatan->status }}</p>
+                                <p class="text-xs font-semibold text-gray-700 uppercase tracking-wider">Sengketa {{ $keberatan->status->label() }}</p>
                                 <p class="text-[10px] text-gray-500 mt-1">Pada: {{ $keberatan->tanggal_selesai ? \Carbon\Carbon::parse($keberatan->tanggal_selesai)->format('d M Y H:i') : '-' }}</p>
                             </div>
                         @endif

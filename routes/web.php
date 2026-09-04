@@ -29,7 +29,7 @@ Route::post('/permohonan/simpan', function (\Illuminate\Http\Request $request) {
     ]);
 
     if ($request->hasFile('file_identitas')) {
-        $path = $request->file('file_identitas')->store('identitas', 'public');
+        $path = $request->file('file_identitas')->store('identitas', 'local');
         $validated['file_identitas'] = $path;
     }
 
@@ -40,7 +40,7 @@ Route::post('/permohonan/simpan', function (\Illuminate\Http\Request $request) {
     \App\Models\PermohonanInformasi::create($validated);
 
     return redirect()->route('permohonan.sukses')->with('nomor_registrasi', $validated['nomor_registrasi']);
-})->name('permohonan.store');
+})->name('permohonan.store')->middleware('throttle:5,1');
 
 Route::get('/permohonan/berhasil', function () {
     if (!session('nomor_registrasi')) {
@@ -51,7 +51,8 @@ Route::get('/permohonan/berhasil', function () {
 
 Route::get('/permohonan/tanda-terima/{nomor_registrasi}', function ($nomor_registrasi) {
     $permohonan = \App\Models\PermohonanInformasi::where('nomor_registrasi', $nomor_registrasi)->firstOrFail();
-    return view('permohonan_tanda_terima', compact('permohonan'));
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('permohonan_tanda_terima', compact('permohonan'));
+    return $pdf->download('Tanda_Terima_Permohonan_' . $permohonan->nomor_registrasi . '.pdf');
 })->name('permohonan.tanda_terima');
 
 Route::get('/lacak', function (\Illuminate\Http\Request $request) {
@@ -85,7 +86,10 @@ Route::prefix('admin')->group(function () {
             
             // Permohonan routes
             Route::get('/permohonan', [\App\Http\Controllers\Admin\PermohonanController::class, 'index'])->name('admin.permohonan.index');
+            Route::get('/permohonan/create', [\App\Http\Controllers\Admin\PermohonanController::class, 'create'])->name('admin.permohonan.create');
+            Route::post('/permohonan', [\App\Http\Controllers\Admin\PermohonanController::class, 'store'])->name('admin.permohonan.store');
             Route::get('/permohonan/{id}', [\App\Http\Controllers\Admin\PermohonanController::class, 'show'])->name('admin.permohonan.show');
+            Route::get('/permohonan/{id}/file-identitas', [\App\Http\Controllers\Admin\PermohonanController::class, 'viewFileIdentitas'])->name('admin.permohonan.file-identitas');
             Route::post('/permohonan/{id}/status', [\App\Http\Controllers\Admin\PermohonanController::class, 'updateStatus'])->name('admin.permohonan.update-status');
             Route::post('/permohonan/{id}/assign', [\App\Http\Controllers\Admin\PermohonanController::class, 'assignPetugas'])->name('admin.permohonan.assign');
             Route::post('/permohonan/{id}/extend-deadline', [\App\Http\Controllers\Admin\PermohonanController::class, 'extendDeadline'])->name('admin.permohonan.extend-deadline');
@@ -100,6 +104,7 @@ Route::prefix('admin')->group(function () {
 
             Route::get('/profile', [\App\Http\Controllers\Admin\ProfileController::class, 'index'])->name('admin.profile.index');
             Route::post('/profile', [\App\Http\Controllers\Admin\ProfileController::class, 'update'])->name('admin.profile.update');
+            Route::post('/profile/signature', [\App\Http\Controllers\Admin\ProfileController::class, 'updateSignature'])->name('admin.profile.signature');
 
             // Super Admin Modules
             Route::resource('users', \App\Http\Controllers\Admin\UserController::class, ['as' => 'admin']);

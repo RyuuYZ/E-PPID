@@ -39,6 +39,51 @@ class PermohonanController extends Controller
     /**
      * Display the specified resource.
      */
+    public function create()
+    {
+        $kategoriPemohons = \App\Models\KategoriPemohon::all();
+        $caraMemperoleh = \App\Models\CaraMemperolehInformasi::all();
+        return view('admin.permohonan.create', compact('kategoriPemohons', 'caraMemperoleh'));
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'nama_pemohon' => 'required|string|max:255',
+            'kategori_pemohon_id' => 'required|exists:kategori_pemohons,id',
+            'nik_atau_no_badan_hukum' => 'required|string|max:50',
+            'no_telp' => 'required|string|max:20',
+            'email' => 'required|email|max:255',
+            'alamat' => 'required|string',
+            'subjek' => 'required|string',
+            'rincian_informasi' => 'required|string',
+            'tujuan_penggunaan' => 'required|string',
+            'cara_memperoleh_informasi_id' => 'required|exists:cara_memperoleh_informasis,id',
+            'file_identitas' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        ]);
+
+        if ($request->hasFile('file_identitas')) {
+            // Using the same private storage path logic for admin as well if applicable, but standard public form uses 'local'. 
+            // Wait, standard form uses 'identitas' in 'local'.
+            $path = $request->file('file_identitas')->store('identitas', 'local');
+            $validated['file_identitas'] = $path;
+        }
+
+        $validated['nomor_registrasi'] = 'REG-' . date('YmdHis') . '-' . rand(1000, 9999);
+        $validated['rincian_informasi'] = $validated['subjek'] . "\n\n" . $validated['rincian_informasi'];
+        $validated['status'] = \App\Enums\PermohonanStatus::Diajukan->value;
+
+        $permohonan = \App\Models\PermohonanInformasi::create($validated);
+        
+        \App\Models\ActivityLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Create Permohonan Walk-in',
+            'description' => "Membuat permohonan baru untuk: {$permohonan->nama_pemohon} ({$permohonan->nomor_registrasi})",
+            'ip_address' => request()->ip()
+        ]);
+
+        return redirect()->route('admin.permohonan.index', ['status' => 'diajukan'])->with('success', 'Permohonan berhasil ditambahkan.');
+    }
     public function show($id)
     {
         $permohonan = PermohonanInformasi::with(['penugasan.petugasPenghubung', 'penugasan.unitPengolah', 'logs'])->findOrFail($id);
@@ -48,6 +93,31 @@ class PermohonanController extends Controller
         })->get();
 
         return view('admin.permohonan.show', compact('permohonan', 'unitPengolahs', 'petugasPenghubungs'));
+    }
+
+    /**
+     * View the identity file securely.
+     */
+    public function viewFileIdentitas($id)
+    {
+        $permohonan = PermohonanInformasi::findOrFail($id);
+        
+        if (!$permohonan->file_identitas) {
+            abort(404, 'File identitas tidak ditemukan.');
+        }
+
+        $path = storage_path('app/private/' . $permohonan->file_identitas);
+        
+        // Coba cek path lama jika file_identitas masih di public
+        if (!file_exists($path)) {
+            $path = storage_path('app/public/' . $permohonan->file_identitas);
+        }
+
+        if (!file_exists($path)) {
+            abort(404, 'File identitas tidak ditemukan di server.');
+        }
+
+        return response()->file($path);
     }
 
     /**
@@ -75,6 +145,37 @@ class PermohonanController extends Controller
 
         if ($targetStatus === PermohonanStatus::MenungguTandaTangan) {
             $metadata['surat_jawaban_path'] = $request->surat_jawaban_path ?? null;
+        }
+
+        if ($targetStatus === PermohonanStatus::Ditandatangani) {
+            $ttdPath = null;
+
+            if ($request->use_saved_signature === '1') {
+                if (!$user->signature_path) {
+                    return back()->with('error', 'Anda tidak memiliki tanda tangan tersimpan.');
+                }
+                $ttdPath = $user->signature_path;
+            } else if ($request->signature_data) {
+                // Decode base64 image
+                $image_parts = explode(";base64,", $request->signature_data);
+                $image_type_aux = explode("image/", $image_parts[0]);
+                $image_type = $image_type_aux[1];
+                $image_base64 = base64_decode($image_parts[1]);
+                $filename = 'signature_' . time() . '_' . uniqid() . '.' . $image_type;
+                $ttdPath = 'signatures/' . $filename;
+                
+                \Illuminate\Support\Facades\Storage::disk('public')->put($ttdPath, $image_base64);
+
+                if ($request->has('save_signature') && $request->save_signature == '1') {
+                    $user->update(['signature_path' => $ttdPath]);
+                }
+            } else {
+                return back()->with('error', 'Tanda tangan wajib diisi.');
+            }
+
+            // Save to Permohonan record directly
+            $permohonan->update(['ttd_path' => $ttdPath]);
+            $metadata['catatan'] = 'Tanda tangan elektronik berhasil dibubuhkan.';
         }
 
         try {

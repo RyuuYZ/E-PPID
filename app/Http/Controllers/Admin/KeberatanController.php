@@ -7,6 +7,13 @@ use Illuminate\Http\Request;
 
 class KeberatanController extends Controller
 {
+    protected $statusService;
+
+    public function __construct(\App\Services\PermohonanStatusService $statusService)
+    {
+        $this->statusService = $statusService;
+    }
+
     public function index(Request $request)
     {
         $query = \App\Models\PengajuanKeberatan::with('permohonan_informasi');
@@ -36,27 +43,31 @@ class KeberatanController extends Controller
 
         $permohonan = \App\Models\PermohonanInformasi::findOrFail($permohonan_id);
 
-        // Hanya bisa diajukan jika sudah selesai, ditolak, atau ditutup
-        if (!in_array($permohonan->status, ['selesai', 'ditolak', 'ditutup']) && !\Carbon\Carbon::now()->greaterThan(\Carbon\Carbon::parse($permohonan->tanggal_jatuh_tempo))) {
+        // Hanya bisa diajukan jika sudah mencapai state terminal ATAU batas waktu sudah lewat
+        $isLate = false;
+        if ($permohonan->batas_waktu_jawaban && \Carbon\Carbon::now()->greaterThan(\Carbon\Carbon::parse($permohonan->batas_waktu_jawaban))) {
+            $isLate = true;
+        }
+
+        if (!$permohonan->status->isTerminal() && !$isLate) {
             return back()->with('error', 'Permohonan ini belum memenuhi syarat untuk diajukan keberatan.');
         }
+
+        $batasWaktuRespon = app(\App\Services\WorkingDayCalculator::class)->addWorkingDays(\Carbon\Carbon::now(), 30);
 
         $keberatan = \App\Models\PengajuanKeberatan::create([
             'permohonan_informasi_id' => $permohonan_id,
             'alasan_keberatan' => $request->alasan_keberatan,
             'keterangan_tambahan' => $request->keterangan_tambahan,
-            'status' => 'Masuk'
+            'status' => \App\Enums\KeberatanStatus::Masuk,
+            'batas_waktu_respon' => $batasWaktuRespon
         ]);
 
-        \App\Models\PermohonanLog::create([
-            'permohonan_informasi_id' => $permohonan_id,
-            'user_id' => auth()->id(),
-            'tahapan_proses' => 'Keberatan',
-            'aksi' => 'Mengajukan Keberatan',
+        $this->statusService->transition($permohonan, \App\Enums\PermohonanStatus::KeberatanDiajukan, auth()->user(), [
             'catatan' => 'Alasan: ' . $request->alasan_keberatan
         ]);
 
-        return redirect()->route('admin.keberatan.index')->with('success', 'Pengajuan keberatan berhasil dibuat.');
+        return redirect()->route('admin.keberatan.index')->with('success', 'Pengajuan keberatan berhasil dibuat. Batas waktu respon: ' . $batasWaktuRespon->format('d M Y'));
     }
 
     public function updateStatus(Request $request, $id)
@@ -73,23 +84,40 @@ class KeberatanController extends Controller
         }
 
         $keberatan = \App\Models\PengajuanKeberatan::findOrFail($id);
-        $keberatan->status = $request->status;
+        
+        $newStatus = \App\Enums\KeberatanStatus::tryFrom($request->status);
+        if (!$newStatus) abort(400, 'Status tidak valid.');
+
+        $keberatan->status = $newStatus;
         
         if ($request->has('tanggapan_atasan')) {
             $keberatan->tanggapan_atasan = $request->tanggapan_atasan;
         }
 
-        if (in_array($request->status, ['Selesai', 'Ditolak'])) {
+        if ($newStatus->isTerminal()) {
             $keberatan->tanggal_selesai = now();
+            $keberatan->diputuskan_oleh = $user->id;
+            $keberatan->diputuskan_at = now();
+            
+            // Sync Permohonan main status
+            try {
+                $this->statusService->transition(
+                    $keberatan->permohonan_informasi,
+                    \App\Enums\PermohonanStatus::KeberatanDiputuskan,
+                    $user,
+                    ['catatan' => 'Sengketa/Keberatan ditutup dengan status: ' . $newStatus->label()]
+                );
+            } catch (\Exception $e) {
+                // Ignore if it's already in the terminal state
+            }
         }
 
         $keberatan->save();
 
         \App\Models\PermohonanLog::create([
             'permohonan_informasi_id' => $keberatan->permohonan_informasi_id,
-            'user_id' => auth()->id(),
-            'tahapan_proses' => 'Keberatan',
-            'aksi' => 'Update Status Keberatan: ' . $request->status,
+            'user_id' => $user->id,
+            'aksi' => 'Update Status Keberatan: ' . $newStatus->label(),
             'catatan' => $request->tanggapan_atasan ?? '-'
         ]);
 

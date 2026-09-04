@@ -15,8 +15,11 @@
             <p class="text-xs text-gray-500 mt-0.5">Kelola dan pantau seluruh permohonan informasi publik.</p>
         </div>
         
-        <!-- Filter/Search -->
-        <div class="flex items-center gap-2">
+        <!-- Actions / Filter -->
+        <div class="flex items-center gap-3">
+            <a href="{{ route('admin.permohonan.create') }}" class="bg-[#1a2b42] text-white px-3 py-1.5 rounded shadow-sm text-xs font-semibold hover:bg-[#121c2e] transition-colors flex items-center gap-1">
+                <span class="material-symbols-outlined text-[14px]">add</span> Tambah Permohonan
+            </a>
             <select class="bg-white border border-gray-200 text-gray-700 rounded shadow-sm text-xs py-1.5 px-3 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 font-medium" onchange="window.location.href=this.value">
                 <option value="{{ route('admin.permohonan.index') }}">Semua Status</option>
                 <option value="{{ route('admin.permohonan.index', ['status' => 'diajukan']) }}" {{ $currentStatus == 'diajukan' ? 'selected' : '' }}>Permohonan Masuk</option>

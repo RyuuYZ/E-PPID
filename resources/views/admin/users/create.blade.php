@@ -54,16 +54,92 @@
                 </div>
 
                 <!-- Hak Akses (Role) -->
-                <div class="flex flex-col gap-1.5 md:col-span-2">
-                    <label for="role_id" class="text-xs font-semibold text-gray-700">Hak Akses (Role) <span class="text-red-500">*</span></label>
-                    <select id="role_id" name="role_id" class="w-full text-sm border-gray-300 rounded focus:border-[#1a2b42] focus:ring focus:ring-[#1a2b42] focus:ring-opacity-20 transition-shadow h-10 px-3 bg-white" required>
-                        <option value="" disabled selected>Pilih Role Pengguna</option>
+                <div class="md:col-span-2 mt-4 border-t border-gray-100 pt-6">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-1 h-5 bg-[#1a2b42] rounded-sm"></div>
+                        <h3 class="text-base font-bold text-gray-800 m-0">Role & Akses</h3>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-4">Pilih hak akses (role) utama untuk pengguna ini. Role menentukan fitur apa saja yang dapat diakses.</p>
+                    
+                    @if(isset($hasSuperAdmin) && $hasSuperAdmin)
+                        <p class="text-xs text-orange-600 mb-3 font-medium">Role Super Admin sudah dipakai. Sistem hanya mengizinkan 1 akun Super Admin.</p>
+                    @endif
+
+                    <div class="grid grid-cols-1 gap-3">
                         @foreach($roles as $role)
-                            <option value="{{ $role->id }}" {{ old('role_id') == $role->id ? 'selected' : '' }}>
-                                {{ $role->name }}
-                            </option>
+                            @php
+                                $permCount = is_array($role->permissions) ? count($role->permissions) : 0;
+                                $isSuperAdmin = isset($superAdminRole) && $role->id == $superAdminRole->id;
+                                $isDisabled = $isSuperAdmin && $hasSuperAdmin;
+                            @endphp
+                            <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none 
+                                {{ old('role_id') == $role->id ? 'border-[#1a2b42] ring-1 ring-[#1a2b42]' : 'border-gray-200 hover:bg-gray-50' }}
+                                {{ $isDisabled ? 'opacity-50 cursor-not-allowed bg-gray-50' : '' }}">
+                                <input type="radio" name="role_id" value="{{ $role->id }}" class="sr-only" required {{ old('role_id') == $role->id ? 'checked' : '' }} {{ $isDisabled ? 'disabled' : '' }} onchange="updateRoleUI(this)">
+                                <span class="flex flex-1">
+                                    <span class="flex flex-col">
+                                        <span class="block text-sm font-medium text-gray-900">{{ $role->name }}</span>
+                                        <span class="mt-1 flex items-center text-xs text-gray-500">{{ $role->description ?? 'Tidak ada deskripsi.' }}</span>
+                                    </span>
+                                </span>
+                                <span class="ml-4 flex items-center text-xs text-gray-400">
+                                    {{ $permCount }} permissions
+                                </span>
+                                <span class="pointer-events-none absolute -inset-px rounded-lg border-2 border-transparent" aria-hidden="true"></span>
+                            </label>
                         @endforeach
-                    </select>
+                    </div>
+                    @error('role_id') <p class="text-red-500 text-xs mt-2">{{ $message }}</p> @enderror
+                    
+                    <script>
+                        function updateRoleUI(radio) {
+                            // Reset all labels
+                            document.querySelectorAll('input[name="role_id"]').forEach((input) => {
+                                const label = input.closest('label');
+                                label.classList.remove('border-[#1a2b42]', 'ring-1', 'ring-[#1a2b42]');
+                                label.classList.add('border-gray-200', 'hover:bg-gray-50');
+                            });
+                            
+                            // Highlight selected label
+                            if (radio.checked) {
+                                const selectedLabel = radio.closest('label');
+                                selectedLabel.classList.remove('border-gray-200', 'hover:bg-gray-50');
+                                selectedLabel.classList.add('border-[#1a2b42]', 'ring-1', 'ring-[#1a2b42]');
+                                
+                                // Show/hide unit pengolah dropdown based on role
+                                const roleName = selectedLabel.querySelector('.text-sm').textContent.trim();
+                                const unitPengolahContainer = document.getElementById('unit-pengolah-container');
+                                if (roleName === 'Petugas Penghubung') {
+                                    unitPengolahContainer.style.display = 'block';
+                                    document.getElementById('unit_pengolah_id').required = true;
+                                } else {
+                                    unitPengolahContainer.style.display = 'none';
+                                    document.getElementById('unit_pengolah_id').required = false;
+                                    document.getElementById('unit_pengolah_id').value = '';
+                                }
+                            }
+                        }
+
+                        // Initialize on load
+                        document.addEventListener('DOMContentLoaded', () => {
+                            const checkedRadio = document.querySelector('input[name="role_id"]:checked');
+                            if (checkedRadio) updateRoleUI(checkedRadio);
+                        });
+                    </script>
+                </div>
+
+                <!-- Unit Pengolah (Khusus Petugas Penghubung) -->
+                <div id="unit-pengolah-container" class="md:col-span-2 mt-4 pt-4 border-t border-gray-100" style="display: none;">
+                    <div class="flex flex-col gap-1.5">
+                        <label for="unit_pengolah_id" class="text-xs font-semibold text-gray-700">Unit Pengolah / Bidang <span class="text-red-500">*</span></label>
+                        <p class="text-[10px] text-gray-500 mb-1">Khusus untuk role "Petugas Penghubung", wajib memilih asal unit pengolah/bidang.</p>
+                        <select id="unit_pengolah_id" name="unit_pengolah_id" class="w-full text-sm border-gray-300 rounded focus:border-[#1a2b42] focus:ring focus:ring-[#1a2b42] focus:ring-opacity-20 transition-shadow h-10 px-3">
+                            <option value="">-- Pilih Unit Pengolah --</option>
+                            @foreach($unitPengolahs as $unit)
+                                <option value="{{ $unit->id }}" {{ old('unit_pengolah_id') == $unit->id ? 'selected' : '' }}>{{ $unit->nama_bidang }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Status Blokir -->

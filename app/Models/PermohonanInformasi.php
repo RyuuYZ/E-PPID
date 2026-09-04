@@ -21,7 +21,7 @@ class PermohonanInformasi extends Model
         'file_jawaban', 'tanggal_jatuh_tempo',
         // New workflow columns
         'batas_waktu_lengkapi', 'batas_waktu_jawaban', 'diperpanjang',
-        'surat_jawaban_path', 'ditandatangani_oleh', 'ditandatangani_at',
+        'surat_jawaban_path', 'ttd_path', 'ditandatangani_oleh', 'ditandatangani_at',
         'dikirim_at', 'ditutup_at',
     ];
 

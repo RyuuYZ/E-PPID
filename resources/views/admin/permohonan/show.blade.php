@@ -6,7 +6,7 @@
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5">
         <div>
             <div class="flex items-center gap-2 mb-1">
-                <a href="{{ route('admin.permohonan.index') }}" class="text-gray-500 hover:text-gray-700 transition-colors flex items-center">
+                <a href="{{ route('admin.permohonan.index', ['status' => $permohonan->status->value]) }}" class="text-gray-500 hover:text-gray-700 transition-colors flex items-center">
                     <span class="material-symbols-outlined text-[18px]">arrow_back</span>
                 </a>
                 <h2 class="text-lg font-bold text-gray-800 m-0">Detail Permohonan Informasi</h2>
@@ -85,7 +85,7 @@
                                 <td class="px-5 py-2.5 text-gray-700">{{ $permohonan->kategori_pemohon->nama_kategori ?? '-' }}</td>
                             </tr>
                             
-                            @if(!auth()->user()->hasRole('Petugas Penghubung'))
+                            @if(!auth()->user()->hasRole('Petugas Penghubung') || auth()->user()->hasRole('Super Admin'))
                             <tr class="border-b border-gray-100">
                                 <th class="px-5 py-2.5 font-bold text-gray-500 uppercase tracking-wider bg-gray-50 text-[11px]">NIK / No. Badan Hukum</th>
                                 <td class="px-5 py-2.5 text-gray-700">{{ $permohonan->nik_atau_no_badan_hukum ?? '-' }}</td>
@@ -148,12 +148,11 @@
                             <span class="text-[13px] font-semibold text-gray-800">{{ $permohonan->cara_mendapatkan_salinan ?? 'Softcopy (Email)' }}</span>
                         </div>
                     </div>
-                    
-                    @if(!auth()->user()->hasRole('Petugas Penghubung'))
+                    @if(!auth()->user()->hasRole('Petugas Penghubung') || auth()->user()->hasRole('Super Admin'))
                     <div class="pt-4 border-t border-gray-100">
                         <h4 class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Berkas Lampiran Identitas</h4>
                         @if($permohonan->file_identitas)
-                        <a href="{{ Storage::url($permohonan->file_identitas) }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                        <a href="{{ route('admin.permohonan.file-identitas', $permohonan->id) }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                             <span class="material-symbols-outlined text-[18px]">description</span>
                             Lihat Dokumen
                         </a>
@@ -201,7 +200,7 @@
                                 </td>
                                 <td class="px-5 py-4">
                                     <!-- Aksi untuk Petugas Penghubung submit data -->
-                                    @if(auth()->user()->id === $tugas->petugas_penghubung_id && $tugas->status === \App\Enums\PenugasanStatus::Ditugaskan)
+                                    @if((auth()->user()->id === $tugas->petugas_penghubung_id || auth()->user()->hasRole('Super Admin')) && $tugas->status === \App\Enums\PenugasanStatus::Ditugaskan)
                                     <form action="{{ route('admin.penugasan.submit-data', $tugas->id) }}" method="POST" enctype="multipart/form-data" class="space-y-2">
                                         @csrf
                                         <input type="file" name="data_file" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" required>
@@ -214,7 +213,7 @@
                                         <span class="material-symbols-outlined text-[14px]">download</span> Unduh Data
                                     </a>
                                         <!-- Aksi PPID review data -->
-                                        @if(auth()->user()->hasRole('PPID Pelaksana') && $permohonan->status === \App\Enums\PermohonanStatus::DataDiuji && $tugas->hasil_uji === \App\Enums\HasilUji::Pending)
+                                        @if((auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin')) && $permohonan->status === \App\Enums\PermohonanStatus::DataDiuji && $tugas->hasil_uji === \App\Enums\HasilUji::Pending)
                                         <form action="{{ route('admin.penugasan.review', $tugas->id) }}" method="POST" class="mt-2 pt-2 border-t border-gray-100 flex gap-2">
                                             @csrf
                                             <button type="submit" name="hasil_uji" value="sesuai" class="bg-green-100 text-green-700 text-[10px] px-2 py-1 rounded uppercase font-bold border border-green-200">Sesuai</button>
@@ -245,7 +244,7 @@
             <div class="bg-white border border-gray-200 rounded shadow-sm">
                 <div class="px-5 py-3 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                     <h3 class="text-[13px] font-bold text-gray-800 uppercase tracking-wider m-0">Tindak Lanjut</h3>
-                    @if($permohonan->status === \App\Enums\PermohonanStatus::DataDiuji && auth()->user()->hasRole('PPID Pelaksana') && !$permohonan->diperpanjang)
+                    @if($permohonan->status === \App\Enums\PermohonanStatus::DataDiuji && (auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin')) && !$permohonan->diperpanjang)
                     <form action="{{ route('admin.permohonan.extend-deadline', $permohonan->id) }}" method="POST">
                         @csrf
                         <button type="submit" onclick="return confirm('Perpanjang waktu jawaban 7 hari kerja?')" class="text-[10px] bg-white border border-gray-300 text-gray-600 px-2 py-1 rounded hover:bg-gray-50 font-bold uppercase">
@@ -258,7 +257,7 @@
                 <div class="p-5">
                     <!-- Desk Layanan: Verifikasi Masuk -->
                     @if($permohonan->status === \App\Enums\PermohonanStatus::Diajukan || $permohonan->status === \App\Enums\PermohonanStatus::MenungguKelengkapan)
-                        @if(auth()->user()->hasRole('Desk Layanan'))
+                        @if(auth()->user()->hasRole('Desk Layanan') || auth()->user()->hasRole('Super Admin'))
                             <form action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST">
                                 @csrf
                                 <div class="mb-4">
@@ -284,7 +283,7 @@
 
                     <!-- PPID Pelaksana: Penugasan Multi-Unit -->
                     @elseif($permohonan->status === \App\Enums\PermohonanStatus::Diverifikasi)
-                        @if(auth()->user()->hasRole('PPID Pelaksana'))
+                        @if(auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
                             <form action="{{ route('admin.permohonan.assign', $permohonan->id) }}" method="POST" id="assignForm">
                                 @csrf
                                 <div class="mb-3 flex justify-between items-center">
@@ -332,7 +331,7 @@
 
                     <!-- PPID Pelaksana: Susun Jawaban (Setelah Semua Data Sesuai) -->
                     @elseif($permohonan->status === \App\Enums\PermohonanStatus::DataDiuji)
-                        @if(auth()->user()->hasRole('PPID Pelaksana'))
+                        @if(auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
                             @if($permohonan->allPenugasanSesuai())
                             <form action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST">
                                 @csrf
@@ -359,18 +358,120 @@
 
                     <!-- Atasan PPID: TTE -->
                     @elseif($permohonan->status === \App\Enums\PermohonanStatus::MenungguTandaTangan)
-                        @if(auth()->user()->hasRole('Atasan PPID Pelaksana'))
-                            <form action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST">
+                        @if(auth()->user()->hasRole('Atasan PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
+                            <form action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST" id="tteForm">
                                 @csrf
                                 <input type="hidden" name="target_status" value="ditandatangani">
-                                <div class="mb-4 text-center">
-                                    <span class="material-symbols-outlined text-4xl text-purple-600 mb-2">draw</span>
-                                    <p class="text-xs text-gray-600">Draf jawaban telah disiapkan. Bubuhkan TTE (Tanda Tangan Elektronik) untuk menyetujui surat jawaban final.</p>
+                                <input type="hidden" name="signature_data" id="signature_data">
+                                <input type="hidden" name="use_saved_signature" id="use_saved_signature" value="0">
+                                
+                                <div class="mb-4">
+                                    <h4 class="text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-3">Tanda Tangan Elektronik (TTE)</h4>
+                                    
+                                    @if(auth()->user()->signature_path)
+                                    <div class="mb-3 p-3 border border-blue-200 bg-blue-50 rounded">
+                                        <label class="flex items-start gap-2 cursor-pointer">
+                                            <input type="checkbox" id="toggle_saved_signature" class="mt-0.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                            <div>
+                                                <span class="text-[11px] font-bold text-blue-800 block uppercase tracking-wider">Gunakan Tanda Tangan Tersimpan</span>
+                                                <p class="text-[10px] text-blue-600 mt-1">Centang untuk menggunakan tanda tangan yang sudah Anda simpan di profil.</p>
+                                            </div>
+                                        </label>
+                                        <div id="saved_signature_preview" class="mt-2 hidden bg-white border border-gray-200 p-2 rounded text-center">
+                                            <img src="{{ Storage::url(auth()->user()->signature_path) }}" alt="Tanda Tangan Tersimpan" class="max-h-24 mx-auto">
+                                        </div>
+                                    </div>
+                                    @endif
+
+                                    <div id="new_signature_container" class="border border-gray-300 rounded overflow-hidden bg-white">
+                                        <div class="bg-gray-50 border-b border-gray-200 px-3 py-2 flex justify-between items-center">
+                                            <span class="text-[10px] text-gray-500 font-semibold uppercase">Gambar Tanda Tangan Anda:</span>
+                                            <button type="button" id="clear_signature" class="text-[10px] text-red-600 hover:text-red-800 font-bold uppercase">Bersihkan (Clear)</button>
+                                        </div>
+                                        <canvas id="signature-pad" class="w-full h-40 touch-none cursor-crosshair" width="400" height="160"></canvas>
+                                    </div>
+                                    
+                                    <div id="save_signature_option" class="mt-2">
+                                        <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-600 hover:text-gray-800">
+                                            <input type="checkbox" name="save_signature" value="1" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                            Simpan sebagai tanda tangan *default* di profil saya
+                                        </label>
+                                    </div>
                                 </div>
-                                <button type="submit" class="w-full bg-green-600 text-white font-semibold rounded py-2 px-4 hover:bg-green-700 text-[11px] uppercase tracking-wider">
+                                <button type="submit" id="btnSubmitTTE" class="w-full bg-green-600 text-white font-semibold rounded py-2 px-4 hover:bg-green-700 text-[11px] uppercase tracking-wider">
                                     Tanda Tangani Jawaban
                                 </button>
                             </form>
+                            
+                            <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const canvas = document.getElementById('signature-pad');
+                                    let signaturePad;
+                                    
+                                    if(canvas) {
+                                        // Initialize Signature Pad
+                                        signaturePad = new SignaturePad(canvas, {
+                                            backgroundColor: 'rgb(255, 255, 255)',
+                                            penColor: 'rgb(0, 0, 100)'
+                                        });
+
+                                        // Responsive canvas resizing
+                                        function resizeCanvas() {
+                                            const ratio =  Math.max(window.devicePixelRatio || 1, 1);
+                                            canvas.width = canvas.offsetWidth * ratio;
+                                            canvas.height = canvas.offsetHeight * ratio;
+                                            canvas.getContext("2d").scale(ratio, ratio);
+                                            signaturePad.clear(); // otherwise drawing is offset
+                                        }
+                                        window.addEventListener("resize", resizeCanvas);
+                                        resizeCanvas();
+
+                                        document.getElementById('clear_signature').addEventListener('click', function () {
+                                            signaturePad.clear();
+                                        });
+                                    }
+
+                                    // Toggle saved signature logic
+                                    const toggleSaved = document.getElementById('toggle_saved_signature');
+                                    const newSigContainer = document.getElementById('new_signature_container');
+                                    const saveSigOption = document.getElementById('save_signature_option');
+                                    const savedPreview = document.getElementById('saved_signature_preview');
+                                    const useSavedInput = document.getElementById('use_saved_signature');
+
+                                    if(toggleSaved) {
+                                        toggleSaved.addEventListener('change', function() {
+                                            if(this.checked) {
+                                                newSigContainer.style.display = 'none';
+                                                saveSigOption.style.display = 'none';
+                                                savedPreview.style.display = 'block';
+                                                useSavedInput.value = '1';
+                                            } else {
+                                                newSigContainer.style.display = 'block';
+                                                saveSigOption.style.display = 'block';
+                                                savedPreview.style.display = 'none';
+                                                useSavedInput.value = '0';
+                                                if(signaturePad) signaturePad.clear();
+                                            }
+                                        });
+                                    }
+
+                                    // Form submission
+                                    document.getElementById('tteForm').addEventListener('submit', function(e) {
+                                        if (useSavedInput && useSavedInput.value === '1') {
+                                            // Using saved signature, valid.
+                                            return true;
+                                        }
+                                        
+                                        if (signaturePad && signaturePad.isEmpty()) {
+                                            e.preventDefault();
+                                            alert("Mohon gambar tanda tangan Anda terlebih dahulu, atau gunakan tanda tangan tersimpan.");
+                                        } else if(signaturePad) {
+                                            document.getElementById('signature_data').value = signaturePad.toDataURL('image/png');
+                                        }
+                                    });
+                                });
+                            </script>
                         @else
                             <div class="bg-gray-50 p-4 rounded text-xs text-center text-gray-600 border border-gray-200">
                                 Menunggu persetujuan dan TTE dari <strong>Atasan PPID</strong>.
@@ -379,7 +480,7 @@
 
                     <!-- Desk Layanan: Kirim Jawaban Final -->
                     @elseif($permohonan->status === \App\Enums\PermohonanStatus::Ditandatangani)
-                        @if(auth()->user()->hasRole('Desk Layanan'))
+                        @if(auth()->user()->hasRole('Desk Layanan') || auth()->user()->hasRole('Super Admin'))
                             <form action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST">
                                 @csrf
                                 <input type="hidden" name="target_status" value="selesai">
@@ -396,6 +497,14 @@
                                 Surat ditandatangani. Menunggu Desk Layanan mengirimkan ke pemohon.
                             </div>
                         @endif
+
+                    <!-- Petugas Penghubung: Upload Data -->
+                    @elseif($permohonan->status === \App\Enums\PermohonanStatus::Ditugaskan || $permohonan->status === \App\Enums\PermohonanStatus::MenungguData)
+                        <div class="bg-blue-50 p-4 rounded text-xs text-center text-blue-700 border border-blue-200">
+                            <span class="material-symbols-outlined text-4xl text-blue-500 mb-2 block mx-auto">upload_file</span>
+                            <p class="font-semibold mb-1 uppercase tracking-wider">Menunggu Data dari Petugas</p>
+                            <p>Petugas Penghubung harus mengunggah data pada tabel penugasan di sebelah kiri.</p>
+                        </div>
                         
                     <!-- Terminal State -->
                     @else
@@ -404,7 +513,38 @@
                                 {{ $permohonan->status === \App\Enums\PermohonanStatus::Selesai ? 'task_alt' : 'cancel' }}
                             </span>
                             <p class="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Permohonan {{ $permohonan->status->label() }}</p>
+                            
+                            @if($permohonan->ttd_path)
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block mb-2">Tanda Tangan Pengesahan:</span>
+                                <img src="{{ Storage::url($permohonan->ttd_path) }}" alt="Tanda Tangan Atasan PPID" class="max-h-24 mx-auto border border-gray-100 rounded bg-white">
+                                <p class="text-[9px] text-gray-400 mt-1">Disahkan oleh: {{ $permohonan->ditandatanganiOleh->name ?? 'Atasan PPID' }}</p>
+                            </div>
+                            @endif
                         </div>
+                        
+                        @if($permohonan->status->isTerminal() && (auth()->user()->hasRole('Desk Layanan') || auth()->user()->hasRole('Super Admin')))
+                            <!-- Check if already has Keberatan -->
+                            @if(!\App\Models\PengajuanKeberatan::where('permohonan_informasi_id', $permohonan->id)->exists())
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <h4 class="text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-3">Ajukan Sengketa / Keberatan</h4>
+                                <form action="{{ route('admin.keberatan.store', $permohonan->id) }}" method="POST">
+                                    @csrf
+                                    <div class="space-y-3 mb-3">
+                                        <textarea name="alasan_keberatan" rows="2" class="w-full text-xs px-3 py-2 border border-gray-300 rounded" placeholder="Alasan utama keberatan pemohon..." required></textarea>
+                                        <textarea name="keterangan_tambahan" rows="2" class="w-full text-xs px-3 py-2 border border-gray-300 rounded" placeholder="Keterangan tambahan (opsional)..."></textarea>
+                                    </div>
+                                    <button type="submit" onclick="return confirm('Ajukan Sengketa/Keberatan untuk permohonan ini?')" class="w-full bg-red-600 text-white font-semibold rounded py-2 px-4 hover:bg-red-700 text-[11px] uppercase tracking-wider transition-colors">
+                                        Ajukan Keberatan
+                                    </button>
+                                </form>
+                            </div>
+                            @else
+                            <div class="mt-4 pt-4 border-t border-gray-200 text-center">
+                                <a href="{{ route('admin.keberatan.index') }}" class="text-xs text-blue-600 font-semibold hover:underline">Sengketa/Keberatan telah diajukan. Lihat Detail</a>
+                            </div>
+                            @endif
+                        @endif
                     @endif
                 </div>
             </div>

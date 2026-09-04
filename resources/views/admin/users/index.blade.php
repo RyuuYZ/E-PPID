@@ -43,6 +43,11 @@
                     </td>
                     <td class="px-6 py-3 text-gray-700 text-xs font-semibold">
                         {{ $user->role->name ?? '-' }}
+                        @if($user->hasRole('Petugas Penghubung') && $user->unit_pengolah)
+                            <div class="text-[10px] text-gray-500 font-normal mt-0.5">
+                                Unit: {{ $user->unit_pengolah->nama_bidang }}
+                            </div>
+                        @endif
                     </td>
                     <td class="px-6 py-3 text-center">
                         @if($user->is_active)

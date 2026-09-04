@@ -9,6 +9,16 @@ use App\Enums\PermohonanStatus;
 class PermohonanInformasiPolicy
 {
     /**
+     * Bypass all policy checks for Super Admin
+     */
+    public function before(User $user, $ability)
+    {
+        if ($user->hasRole('Super Admin')) {
+            return true;
+        }
+    }
+
+    /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool

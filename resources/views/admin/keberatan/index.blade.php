@@ -59,16 +59,8 @@
                                 {{ $k->created_at->format('d M Y') }}
                             </td>
                             <td class="px-6 py-4 text-center">
-                                @php
-                                    $statusClass = [
-                                        'Masuk' => 'bg-blue-50 text-blue-600 border-blue-200',
-                                        'Diproses' => 'bg-yellow-50 text-yellow-600 border-yellow-200',
-                                        'Selesai' => 'bg-green-50 text-green-600 border-green-200',
-                                        'Ditolak' => 'bg-red-50 text-red-600 border-red-200',
-                                    ][$k->status] ?? 'bg-gray-50 text-gray-600 border-gray-200';
-                                @endphp
-                                <span class="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase border {{ $statusClass }}">
-                                    {{ $k->status }}
+                                <span class="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase border {{ $k->status->badgeClass() }}">
+                                    {{ $k->status->label() }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-center">

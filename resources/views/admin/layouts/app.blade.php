@@ -153,31 +153,38 @@
                     <span class="material-symbols-outlined text-[14px] transition-transform duration-200" :class="open ? 'rotate-180' : ''">expand_more</span>
                 </button>
                 <div x-show="open" x-collapse>
+                    @php
+                        $isMasuk = (request()->routeIs('admin.permohonan.index') && request('status') == 'diajukan') || (request()->routeIs('admin.permohonan.show') && isset($permohonan) && $permohonan->status->value == 'diajukan');
+                        $isKoordinasi = (request()->routeIs('admin.permohonan.index') && request('status') == 'menunggu_data') || (request()->routeIs('admin.permohonan.show') && isset($permohonan) && $permohonan->status->value == 'menunggu_data');
+                        $isUji = (request()->routeIs('admin.permohonan.index') && request('status') == 'data_diuji') || (request()->routeIs('admin.permohonan.show') && isset($permohonan) && $permohonan->status->value == 'data_diuji');
+                        $isKonsep = (request()->routeIs('admin.permohonan.index') && request('status') == 'menunggu_tanda_tangan') || (request()->routeIs('admin.permohonan.show') && isset($permohonan) && $permohonan->status->value == 'menunggu_tanda_tangan');
+                        $isSemua = request()->routeIs('admin.permohonan.index') && empty(request()->except('page'));
+                    @endphp
                     @if(auth()->user()->hasRole('Desk Layanan') || auth()->user()->hasRole('Super Admin'))
-                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ request()->fullUrl() == route('admin.permohonan.index', ['status' => 'diajukan']) ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'diajukan']) }}">
+                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ $isMasuk ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'diajukan']) }}">
                         <span class="material-symbols-outlined text-[14px]">arrow_right</span>
                         Permohonan Masuk
                     </a>
                     @endif
                     @if(auth()->user()->hasRole('Petugas Penghubung') || auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
-                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ request()->fullUrl() == route('admin.permohonan.index', ['status' => 'menunggu_data']) ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'menunggu_data']) }}">
+                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ $isKoordinasi ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'menunggu_data']) }}">
                         <span class="material-symbols-outlined text-[14px]">arrow_right</span>
                         Koordinasi Data
                     </a>
                     @endif
                     @if(auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
-                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ request()->fullUrl() == route('admin.permohonan.index', ['status' => 'data_diuji']) ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'data_diuji']) }}">
+                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ $isUji ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'data_diuji']) }}">
                         <span class="material-symbols-outlined text-[14px]">arrow_right</span>
                         Uji & Validasi
                     </a>
                     @endif
                     @if(auth()->user()->hasRole('Atasan PPID Pelaksana') || auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
-                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ request()->fullUrl() == route('admin.permohonan.index', ['status' => 'menunggu_tanda_tangan']) ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'menunggu_tanda_tangan']) }}">
+                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ $isKonsep ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'menunggu_tanda_tangan']) }}">
                         <span class="material-symbols-outlined text-[14px]">arrow_right</span>
                         Konsep Jawaban
                     </a>
                     @endif
-                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ request()->fullUrl() == route('admin.permohonan.index') ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index') }}">
+                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ $isSemua ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index') }}">
                         <span class="material-symbols-outlined text-[14px]">arrow_right</span>
                         Semua Permohonan
                     </a>
@@ -251,8 +258,12 @@
         <!-- User Profile Footer -->
         <div class="border-t border-gray-700/50 p-4 shrink-0 bg-[#121c2e] flex flex-col justify-end">
             <div class="flex items-center gap-3 mb-3">
-                <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                    {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
+                <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden">
+                    @if(auth()->user()->profile_photo_path)
+                        <img src="{{ Storage::url(auth()->user()->profile_photo_path) }}" class="w-full h-full object-cover">
+                    @else
+                        {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
+                    @endif
                 </div>
                 <div class="overflow-hidden min-w-0">
                     <p class="text-[13px] font-semibold text-white truncate m-0 leading-tight">{{ auth()->user()->name ?? 'Administrator' }}</p>
@@ -299,8 +310,12 @@
                 
                 <div x-data="{ openProfile: false }" class="relative">
                     <div @click="openProfile = !openProfile" @click.away="openProfile = false" class="flex items-center gap-2 border border-gray-200 rounded-full px-3 py-1 bg-white cursor-pointer hover:bg-gray-50 transition-colors">
-                        <div class="w-5 h-5 rounded-full bg-[#1a2b42] flex items-center justify-center text-white font-bold text-[10px]">
-                            {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
+                        <div class="w-5 h-5 rounded-full bg-[#1a2b42] flex items-center justify-center text-white font-bold text-[10px] overflow-hidden">
+                            @if(auth()->user()->profile_photo_path)
+                                <img src="{{ Storage::url(auth()->user()->profile_photo_path) }}" class="w-full h-full object-cover">
+                            @else
+                                {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
+                            @endif
                         </div>
                         <div class="hidden md:block">
                             <p class="text-xs font-semibold text-gray-700 m-0 leading-none">{{ auth()->user()->name ?? 'Administrator' }}</p>
