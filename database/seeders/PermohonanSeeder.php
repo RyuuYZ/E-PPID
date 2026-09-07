@@ -31,7 +31,7 @@ class PermohonanSeeder extends Seeder
                 'rincian_informasi' => 'Data Statistik Pengangguran 2025',
                 'tujuan_penggunaan' => 'Skripsi / Tesis',
                 'cara_memperoleh_informasi_id' => 2,
-                'status' => 'siap_validasi',
+                'status' => 'data_diuji',
                 'created_at' => Carbon::now()->subDays(4),
             ],
             [
@@ -41,7 +41,7 @@ class PermohonanSeeder extends Seeder
                 'rincian_informasi' => 'Salinan DPA Bappeda TA 2026',
                 'tujuan_penggunaan' => 'Analisis Anggaran Daerah',
                 'cara_memperoleh_informasi_id' => 1, // Langsung
-                'status' => 'masuk',
+                'status' => 'diajukan',
                 'created_at' => Carbon::now()->subHours(2),
             ],
             [
@@ -51,7 +51,7 @@ class PermohonanSeeder extends Seeder
                 'rincian_informasi' => 'Laporan Kinerja Instansi Pemerintah (LKjIP) 2025',
                 'tujuan_penggunaan' => 'Kajian Pribadi',
                 'cara_memperoleh_informasi_id' => 3, // Hardcopy
-                'status' => 'menunggu_koordinasi',
+                'status' => 'ditugaskan',
                 'created_at' => Carbon::now()->subDays(1),
             ],
             [
@@ -61,7 +61,7 @@ class PermohonanSeeder extends Seeder
                 'rincian_informasi' => 'Daftar Proyek Infrastruktur Prioritas 2026',
                 'tujuan_penggunaan' => 'Bahan Berita / Jurnalistik',
                 'cara_memperoleh_informasi_id' => 2,
-                'status' => 'menunggu_ttd',
+                'status' => 'menunggu_tanda_tangan',
                 'created_at' => Carbon::now()->subDays(5),
             ],
             [
@@ -82,7 +82,7 @@ class PermohonanSeeder extends Seeder
                 'rincian_informasi' => 'Rencana Detail Tata Ruang (RDTR) Kecamatan Ciamis',
                 'tujuan_penggunaan' => 'Keperluan Perizinan',
                 'cara_memperoleh_informasi_id' => 2,
-                'status' => 'menunggu_koordinasi',
+                'status' => 'ditugaskan',
                 'created_at' => Carbon::now()->subDays(8),
             ],
         ];

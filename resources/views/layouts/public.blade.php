@@ -19,10 +19,10 @@
         @yield('styles')
     </style>
 </head>
-<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col">
+<body class="bg-[#f8fafc] text-gray-800 antialiased min-h-screen flex flex-col">
 <!-- TopNavBar -->
-<header class="bg-surface-container-lowest border-b border-outline-variant shadow-sm w-full sticky top-0 z-50">
-    <div class="sticky top-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto">
+<header class="bg-white/80 backdrop-blur-md border-b border-gray-200/80 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] w-full sticky top-0 z-50 transition-all duration-300">
+    <div class="w-full flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto">
         <div class="flex items-center gap-2">
             <a href="{{ route('home') }}" class="flex items-center">
                 <img src="{{ asset('ppid_logo.png') }}" alt="Logo Bappeda PPID" class="h-10 w-auto">
@@ -48,8 +48,8 @@
 @yield('content')
 
 <!-- Footer -->
-<footer class="w-full pt-stack-lg pb-stack-md px-margin-mobile md:px-margin-desktop mt-stack-lg bg-primary dark:bg-tertiary-container">
-    <div class="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-start gap-8">
+<footer class="w-full pt-16 pb-8 px-margin-mobile md:px-margin-desktop mt-auto bg-[#0B1B3D]">
+    <div class="max-w-container-max mx-auto flex flex-col md:flex-row justify-between items-start gap-12">
         <div class="flex flex-col gap-4">
             <a href="{{ route('home') }}" class="flex items-center">
                 <img src="{{ asset('ppid_logo.png') }}" alt="Logo Bappeda PPID" class="h-12 w-auto brightness-0 invert object-contain object-left">

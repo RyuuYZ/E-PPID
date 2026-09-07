@@ -2,37 +2,61 @@
 
 @section('content')
 <!-- Main Content -->
-<main class="flex-grow flex flex-col items-center w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
+<main class="flex-grow flex flex-col items-center w-full">
 <!-- Hero Section -->
-<section class="w-full py-16 md:py-24 flex flex-col items-center text-center gap-stack-lg border-b border-surface-variant">
-<h1 class="font-display-lg text-display-lg text-primary max-w-4xl tracking-tight">Ajukan &amp; Pantau Permohonan Informasi Publik</h1>
-<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Layanan informasi publik yang transparan, akuntabel, dan mudah diakses. Kami berkomitmen menyediakan informasi pemerintahan daerah secara cepat dan tepat saji.</p>
-<div class="flex flex-col sm:flex-row gap-4 mt-8 w-full sm:w-auto">
-<a href="{{ route('permohonan.create') }}" class="bg-primary-container text-on-primary font-label-md text-label-md px-8 py-4 rounded-xl shadow-sm hover:shadow-md hover:bg-primary transition-all flex items-center justify-center gap-2">
-<span class="material-symbols-outlined">add_circle</span>
-                    Ajukan Permohonan Baru
-                </a>
-<a href="{{ route('permohonan.lacak') }}" class="bg-surface border border-primary-container text-primary-container font-label-md text-label-md px-8 py-4 rounded-xl hover:bg-surface-container-low transition-all flex items-center justify-center gap-2">
-<span class="material-symbols-outlined">search</span>
-                    Lacak Status Permohonan
-                </a>
-</div>
+<section class="relative w-full py-20 md:py-32 flex flex-col items-center text-center px-6 border-b border-gray-200/50 overflow-hidden">
+    <!-- Subtle Background Gradient -->
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,_var(--tw-gradient-stops))] from-blue-100/50 via-slate-50/20 to-transparent -z-10"></div>
+    <div class="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent opacity-50"></div>
+    
+    <div class="max-w-container-max mx-auto flex flex-col items-center gap-8 relative z-10">
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold tracking-wide mb-2 shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+            Layanan Informasi Publik Terpadu
+        </div>
+        <h1 class="font-display-lg text-[36px] md:text-[56px] leading-[1.1] font-bold text-[#0B1B3D] max-w-4xl tracking-tight">
+            Ajukan & Pantau Permohonan <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-blue-500">Informasi Publik</span>
+        </h1>
+        <p class="font-body-lg text-lg md:text-xl text-gray-600 max-w-2xl leading-relaxed">
+            Layanan informasi publik yang transparan, akuntabel, dan mudah diakses. Kami berkomitmen menyediakan informasi pemerintahan daerah secara cepat dan tepat saji.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 mt-6 w-full sm:w-auto">
+            <a href="{{ route('permohonan.create') }}" class="group bg-[#03224d] text-white font-semibold text-sm px-8 py-4 rounded-xl shadow-[0_8px_20px_-6px_rgba(3,34,77,0.4)] hover:shadow-[0_12px_24px_-8px_rgba(3,34,77,0.5)] hover:bg-[#0B1B3D] hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">add_circle</span>
+                Ajukan Permohonan Baru
+            </a>
+            <a href="{{ route('permohonan.lacak') }}" class="group bg-white border border-gray-200 text-gray-700 font-semibold text-sm px-8 py-4 rounded-xl hover:border-blue-200 hover:bg-blue-50/50 hover:text-blue-700 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">search</span>
+                Lacak Status Permohonan
+            </a>
+        </div>
+    </div>
 </section>
+
 <!-- Categories Section -->
-<section class="w-full py-16 flex flex-col gap-stack-lg">
-<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary text-center">Kategori Informasi Publik</h2>
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter mt-8">
-@foreach($kategoriInformasi as $kategori)
-<!-- Card -->
-<div class="bg-surface-container-lowest border border-surface-variant p-6 rounded-2xl flex flex-col items-center text-center gap-4 hover:shadow-[0_4px_20px_rgba(31,56,100,0.08)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer">
-<div class="w-16 h-16 rounded-full {{ $kategori->bg_color }} flex items-center justify-center {{ $kategori->text_color }} group-hover:scale-110 transition-transform">
-<span class="material-symbols-outlined text-[32px]">{{ $kategori->icon }}</span>
-</div>
-<h3 class="font-headline-md text-headline-md text-primary">{{ $kategori->nama_kategori }}</h3>
-<p class="font-body-md text-body-md text-on-surface-variant">{{ $kategori->deskripsi }}</p>
-</div>
-@endforeach
-</div>
+<section class="w-full py-20 px-6 max-w-container-max mx-auto flex flex-col gap-12">
+    <div class="text-center flex flex-col gap-3">
+        <h2 class="text-3xl md:text-4xl font-bold text-[#0B1B3D]">Kategori Informasi Publik</h2>
+        <p class="text-gray-500 max-w-xl mx-auto">Pilih kategori yang sesuai dengan informasi yang Anda butuhkan.</p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-4">
+        @foreach($kategoriInformasi as $kategori)
+        <!-- Card -->
+        <div class="bg-white border border-gray-100 p-8 rounded-2xl flex flex-col items-center text-center gap-5 hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.06)] hover:border-blue-100 hover:-translate-y-1.5 transition-all duration-300 group cursor-pointer relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-50 to-transparent opacity-0 group-hover:opacity-100 rounded-bl-full transition-opacity duration-500 -z-0"></div>
+            
+            <div class="relative z-10 w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-sm">
+                <span class="material-symbols-outlined text-[32px]">{{ $kategori->icon }}</span>
+            </div>
+            
+            <div class="relative z-10">
+                <h3 class="text-lg font-bold text-gray-800 mb-2">{{ $kategori->nama_kategori }}</h3>
+                <p class="text-sm text-gray-500 leading-relaxed">{{ $kategori->deskripsi }}</p>
+            </div>
+        </div>
+        @endforeach
+    </div>
 </section>
 </main>
 @endsection

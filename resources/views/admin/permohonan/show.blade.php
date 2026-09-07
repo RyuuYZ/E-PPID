@@ -1,163 +1,432 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<main class="flex-1 p-6 bg-[#f4f6f9] overflow-y-auto min-h-screen">
-    <!-- Header -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5">
+@php
+    $currentStatusVal = $permohonan->status->value;
+    
+    // Alur 6 Tahap Penanganan Permohonan E-PPID
+    // 1: Pengajuan, 2: Verifikasi Berkas, 3: Disposisi Penugasan, 4: Validasi & Uji Data, 5: Pengesahan TTE, 6: Selesai
+    if ($currentStatusVal === 'diajukan') {
+        $activeStep = 2; // Pemohon sudah selesai ajukan, sekarang tahap Verifikasi Desk Layanan
+        $stepStatus = [
+            1 => 'completed',
+            2 => 'current',
+            3 => 'pending',
+            4 => 'pending',
+            5 => 'pending',
+            6 => 'pending',
+        ];
+    } elseif ($currentStatusVal === 'menunggu_kelengkapan') {
+        $activeStep = 2;
+        $stepStatus = [
+            1 => 'completed',
+            2 => 'warning', // perlu perbaikan berkas
+            3 => 'pending',
+            4 => 'pending',
+            5 => 'pending',
+            6 => 'pending',
+        ];
+    } elseif ($currentStatusVal === 'ditutup_tidak_lengkap') {
+        $activeStep = 2;
+        $stepStatus = [
+            1 => 'completed',
+            2 => 'rejected',
+            3 => 'pending',
+            4 => 'pending',
+            5 => 'pending',
+            6 => 'pending',
+        ];
+    } elseif ($currentStatusVal === 'diverifikasi') {
+        $activeStep = 3; // Verifikasi selesai, sekarang tahap Disposisi Penugasan
+        $stepStatus = [
+            1 => 'completed',
+            2 => 'completed',
+            3 => 'current',
+            4 => 'pending',
+            5 => 'pending',
+            6 => 'pending',
+        ];
+    } elseif (in_array($currentStatusVal, ['ditugaskan', 'menunggu_data'])) {
+        $activeStep = 4; // Ditugaskan, sekarang tahap Pengumpulan & Validasi Data
+        $stepStatus = [
+            1 => 'completed',
+            2 => 'completed',
+            3 => 'completed',
+            4 => 'current',
+            5 => 'pending',
+            6 => 'pending',
+        ];
+    } elseif ($currentStatusVal === 'data_diuji') {
+        $activeStep = 4; // Pengujian kesesuaian data oleh PPID
+        $stepStatus = [
+            1 => 'completed',
+            2 => 'completed',
+            3 => 'completed',
+            4 => 'current',
+            5 => 'pending',
+            6 => 'pending',
+        ];
+    } elseif ($currentStatusVal === 'menunggu_tanda_tangan') {
+        $activeStep = 5; // Validasi draf selesai, sekarang tahap Pengesahan TTE
+        $stepStatus = [
+            1 => 'completed',
+            2 => 'completed',
+            3 => 'completed',
+            4 => 'completed',
+            5 => 'current',
+            6 => 'pending',
+        ];
+    } elseif ($currentStatusVal === 'ditandatangani') {
+        $activeStep = 6; // TTE selesai, sekarang tahap Pengiriman Jawaban ke Pemohon
+        $stepStatus = [
+            1 => 'completed',
+            2 => 'completed',
+            3 => 'completed',
+            4 => 'completed',
+            5 => 'completed',
+            6 => 'current',
+        ];
+    } elseif (in_array($currentStatusVal, ['selesai', 'keberatan_diajukan', 'keberatan_diputuskan'])) {
+        $activeStep = 6;
+        $stepStatus = [
+            1 => 'completed',
+            2 => 'completed',
+            3 => 'completed',
+            4 => 'completed',
+            5 => 'completed',
+            6 => 'completed',
+        ];
+    } else {
+        $activeStep = 1;
+        $stepStatus = [1 => 'current', 2 => 'pending', 3 => 'pending', 4 => 'pending', 5 => 'pending', 6 => 'pending'];
+    }
+
+    $workflowSteps = [
+        1 => [
+            'title' => 'Pengajuan',
+            'desc' => 'Registrasi Permohonan',
+            'role' => 'Pemohon',
+            'icon' => 'edit_document',
+        ],
+        2 => [
+            'title' => 'Verifikasi',
+            'desc' => 'Pemeriksaan Berkas',
+            'role' => 'Desk Layanan',
+            'icon' => 'fact_check',
+        ],
+        3 => [
+            'title' => 'Penugasan',
+            'desc' => 'Disposisi Unit Pengolah',
+            'role' => 'PPID Pelaksana',
+            'icon' => 'forward_to_inbox',
+        ],
+        4 => [
+            'title' => 'Validasi Data',
+            'desc' => 'Pengujian & Draf Jawaban',
+            'role' => 'Unit & PPID',
+            'icon' => 'rule',
+        ],
+        5 => [
+            'title' => 'Pengesahan TTE',
+            'desc' => 'Tanda Tangan Digital',
+            'role' => 'Atasan PPID',
+            'icon' => 'draw',
+        ],
+        6 => [
+            'title' => 'Selesai',
+            'desc' => 'Penyerahan Jawaban',
+            'role' => 'Desk Layanan',
+            'icon' => 'task_alt',
+        ],
+    ];
+
+    // Status SLA Calculation
+    $slaColor = 'bg-slate-100 text-slate-600 border-slate-200';
+    $slaText = 'Belum Dihitung';
+    if ($permohonan->batas_waktu_jawaban) {
+        $jatuhTempo = \Carbon\Carbon::parse($permohonan->batas_waktu_jawaban);
+        $now = \Carbon\Carbon::now();
+        if ($permohonan->status->isTerminal()) {
+            $slaColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+            $slaText = 'Selesai';
+        } elseif ($now->greaterThan($jatuhTempo)) {
+            $slaColor = 'bg-rose-50 text-rose-700 border-rose-200';
+            $slaText = 'Melewati Batas (SLA Breach)';
+        } else {
+            $sisa = $now->diffInWeekdays($jatuhTempo);
+            if ($sisa <= 2) {
+                $slaColor = 'bg-amber-50 text-amber-700 border-amber-200';
+            } else {
+                $slaColor = 'bg-blue-50 text-blue-700 border-blue-200';
+            }
+            $slaText = "Sisa $sisa Hari Kerja";
+        }
+    }
+@endphp
+
+<main class="flex-1 p-5 md:p-8 bg-[#f8fafc] overflow-y-auto min-h-screen">
+    <!-- Header Halaman -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-            <div class="flex items-center gap-2 mb-1">
-                <a href="{{ route('admin.permohonan.index', ['status' => $permohonan->status->value]) }}" class="text-gray-500 hover:text-gray-700 transition-colors flex items-center">
+            <div class="flex items-center gap-2.5 mb-1.5">
+                <a href="{{ route('admin.permohonan.index', ['status' => $permohonan->status->value]) }}" class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors shadow-xs">
                     <span class="material-symbols-outlined text-[18px]">arrow_back</span>
                 </a>
-                <h2 class="text-lg font-bold text-gray-800 m-0">Detail Permohonan Informasi</h2>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 m-0 tracking-tight">Detail Permohonan Informasi</h1>
+                </div>
             </div>
-            <p class="text-[11px] text-gray-500 ml-7">Nomor Registrasi: <span class="font-bold text-gray-700">{{ $permohonan->nomor_registrasi }}</span></p>
+            <div class="flex items-center gap-2 text-xs text-slate-500 ml-10">
+                <span>Nomor Registrasi:</span>
+                <span class="font-mono font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200/60">{{ $permohonan->nomor_registrasi }}</span>
+                <span class="text-slate-300">•</span>
+                <span>Diajukan: <strong class="text-slate-700 font-medium">{{ $permohonan->created_at->format('d M Y, H:i') }} WIB</strong></span>
+            </div>
         </div>
         
-        <div class="flex items-center">
-            @php
-                $slaColor = 'bg-gray-100 text-gray-600 border-gray-200';
-                $slaText = 'Belum Dihitung';
-                if ($permohonan->batas_waktu_jawaban) {
-                    $jatuhTempo = \Carbon\Carbon::parse($permohonan->batas_waktu_jawaban);
-                    $now = \Carbon\Carbon::now();
-                    if ($permohonan->status->isTerminal()) {
-                        $slaColor = 'bg-green-50 text-green-600 border-green-100';
-                        $slaText = 'Selesai';
-                    } elseif ($now->greaterThan($jatuhTempo)) {
-                        $slaColor = 'bg-red-50 text-red-600 border-red-200';
-                        $slaText = 'Melewati Batas (SLA Breach)';
-                    } else {
-                        $sisa = $now->diffInWeekdays($jatuhTempo); // Simplification for view
-                        if ($sisa <= 2) {
-                            $slaColor = 'bg-orange-50 text-orange-600 border-orange-200';
-                        } else {
-                            $slaColor = 'bg-blue-50 text-blue-600 border-blue-200';
-                        }
-                        $slaText = "Sisa $sisa Hari Kerja";
-                    }
-                }
-            @endphp
-            <div class="flex flex-col items-end gap-1">
-                <span class="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border {{ $permohonan->status->badgeClass() }} border-opacity-30">
-                    {{ $permohonan->status->label() }}
-                </span>
-                @if($permohonan->batas_waktu_jawaban)
-                <span class="inline-flex items-center px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider border {{ $slaColor }}" title="Batas Waktu: {{ \Carbon\Carbon::parse($permohonan->batas_waktu_jawaban)->format('d M Y') }}">
-                    SLA: {{ $slaText }}
-                </span>
-                @endif
-            </div>
+        <div class="flex items-center gap-2 self-stretch md:self-auto justify-end">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border {{ $permohonan->status->badgeClass() }} shadow-xs">
+                <span class="w-2 h-2 rounded-full bg-current opacity-75 animate-pulse"></span>
+                {{ $permohonan->status->label() }}
+            </span>
+            @if($permohonan->batas_waktu_jawaban)
+            <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border {{ $slaColor }} shadow-xs" title="Batas Waktu: {{ \Carbon\Carbon::parse($permohonan->batas_waktu_jawaban)->format('d M Y') }}">
+                <span class="material-symbols-outlined text-[14px]">schedule</span>
+                SLA: {{ $slaText }}
+            </span>
+            @endif
         </div>
     </div>
 
+    <!-- Alert Notifikasi Flash -->
     @if(session('success'))
-        <div class="p-4 mb-6 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md shadow-sm" role="alert">
-            <span class="font-medium">Berhasil!</span> {{ session('success') }}
+        <div class="p-4 mb-6 text-sm text-emerald-800 bg-emerald-50/90 border border-emerald-200 rounded-xl shadow-xs flex items-center gap-2.5" role="alert">
+            <span class="material-symbols-outlined text-emerald-600 text-[20px]">check_circle</span>
+            <div><strong class="font-bold">Berhasil!</strong> {{ session('success') }}</div>
         </div>
     @endif
     
     @if(session('error'))
-        <div class="p-4 mb-6 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md shadow-sm" role="alert">
-            <span class="font-medium">Gagal!</span> {{ session('error') }}
+        <div class="p-4 mb-6 text-sm text-rose-800 bg-rose-50/90 border border-rose-200 rounded-xl shadow-xs flex items-center gap-2.5" role="alert">
+            <span class="material-symbols-outlined text-rose-600 text-[20px]">error</span>
+            <div><strong class="font-bold">Gagal!</strong> {{ session('error') }}</div>
         </div>
     @endif
 
+    <!-- Visual Stepper: Alur Workflow Penanganan Permohonan (Clean & Modern) -->
+    <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xs p-5 md:p-6 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 mb-6 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                    <span class="material-symbols-outlined text-[18px]">account_tree</span>
+                </div>
+                <div>
+                    <h2 class="text-sm font-bold text-slate-800 m-0">Alur Penanganan Permohonan</h2>
+                    <p class="text-[11px] text-slate-500 m-0">Tahapan penanganan dari registrasi pengajuan hingga pengesahan dan penyerahan jawaban</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <span class="text-[11px] font-semibold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200/80">
+                    Tahap {{ $activeStep }} dari 6: <strong class="text-blue-700 font-bold">{{ $workflowSteps[$activeStep]['title'] }}</strong>
+                </span>
+                @if($permohonan->status->responsibleRole())
+                <span class="text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100" title="Penanggung Jawab Saat Ini">
+                    PIC: <strong>{{ $permohonan->status->responsibleRole() }}</strong>
+                </span>
+                @endif
+            </div>
+        </div>
+
+        <!-- Stepper Nodes Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 relative">
+            <!-- Background connecting line (Desktop) -->
+            <div class="hidden lg:block absolute top-5 left-12 right-12 h-0.5 bg-slate-200 z-0"></div>
+            @php
+                $lineProgressPercent = min(100, max(0, (($activeStep - 1) / 5) * 100));
+            @endphp
+            <div class="hidden lg:block absolute top-5 left-12 h-0.5 bg-emerald-500 z-0 transition-all duration-500" style="width: calc(({{ $lineProgressPercent }} / 100) * (100% - 96px));"></div>
+
+            @foreach($workflowSteps as $stepNum => $step)
+                @php
+                    $state = $stepStatus[$stepNum];
+                @endphp
+                <div class="flex flex-col items-center text-center group relative z-10">
+                    <!-- Step Indicator Circle -->
+                    <div class="mb-3 relative">
+                        @if($state === 'completed')
+                            <div class="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm shadow-emerald-200 ring-4 ring-emerald-50 transition-all duration-300">
+                                <span class="material-symbols-outlined text-[20px] font-bold">check</span>
+                            </div>
+                        @elseif($state === 'current')
+                            <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-300 ring-4 ring-blue-100 transition-all duration-300 relative">
+                                <span class="material-symbols-outlined text-[20px]">{{ $step['icon'] }}</span>
+                                <span class="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-amber-400 border-2 border-white rounded-full animate-ping"></span>
+                                <span class="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-amber-400 border-2 border-white rounded-full"></span>
+                            </div>
+                        @elseif($state === 'warning')
+                            <div class="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-sm shadow-amber-200 ring-4 ring-amber-50 transition-all duration-300">
+                                <span class="material-symbols-outlined text-[20px] font-bold">priority_high</span>
+                            </div>
+                        @elseif($state === 'rejected')
+                            <div class="w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-sm shadow-rose-200 ring-4 ring-rose-50 transition-all duration-300">
+                                <span class="material-symbols-outlined text-[20px] font-bold">close</span>
+                            </div>
+                        @else
+                            <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center border border-slate-200/80 transition-all duration-300">
+                                <span class="material-symbols-outlined text-[18px]">{{ $step['icon'] }}</span>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Step Text Info -->
+                    <div class="space-y-0.5">
+                        <div class="flex items-center justify-center gap-1">
+                            <span class="text-[10px] font-bold uppercase tracking-wider {{ $state === 'current' ? 'text-blue-600' : ($state === 'completed' ? 'text-emerald-600' : 'text-slate-400') }}">
+                                Tahap {{ $stepNum }}
+                            </span>
+                        </div>
+                        <h4 class="text-xs font-bold {{ $state === 'current' ? 'text-blue-950' : ($state === 'completed' ? 'text-slate-800' : 'text-slate-400') }} leading-tight">
+                            {{ $step['title'] }}
+                        </h4>
+                        <p class="text-[10px] {{ $state === 'current' ? 'text-slate-600 font-medium' : ($state === 'completed' ? 'text-slate-500' : 'text-slate-400') }} leading-tight">
+                            {{ $step['desc'] }}
+                        </p>
+                        <span class="inline-block mt-1 text-[9px] font-semibold px-2 py-0.5 rounded-full {{ $state === 'current' ? 'bg-blue-100 text-blue-800 font-bold' : ($state === 'completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400') }}">
+                            {{ $step['role'] }}
+                        </span>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
+    <!-- Main Content Layout (2 Kolom) -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <!-- Left Column: Details -->
-        <div class="lg:col-span-2 space-y-5">
+        <!-- Kolom Kiri (2 Kolom): Profil Pemohon & Rincian Permohonan -->
+        <div class="lg:col-span-2 space-y-6">
             
-            <!-- Profil Pemohon (Sembunyikan NIK/Alamat untuk Penghubung) -->
-            <div class="bg-white border border-gray-200 rounded shadow-sm">
-                <div class="px-5 py-3 border-b border-gray-200 bg-gray-50">
-                    <h3 class="text-[13px] font-bold text-gray-800 m-0 uppercase tracking-wider">Data Pemohon</h3>
+            <!-- Profil Pemohon -->
+            <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/70 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-blue-600">person</span>
+                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider m-0">Data Pemohon</h3>
+                    </div>
+                    <span class="text-[11px] font-semibold text-slate-500 bg-white border border-slate-200 px-2.5 py-0.5 rounded-full">
+                        {{ $permohonan->kategori_pemohon->nama_kategori ?? 'Pemohon' }}
+                    </span>
                 </div>
                 <div class="p-0">
-                    <table class="w-full text-[13px] text-left text-gray-600">
-                        <tbody>
-                            <tr class="border-b border-gray-100">
-                                <th class="px-5 py-2.5 font-bold text-gray-500 uppercase tracking-wider bg-gray-50 w-1/3 text-[11px]">Nama / Instansi</th>
-                                <td class="px-5 py-2.5 font-semibold text-gray-800">{{ $permohonan->nama_pemohon }}</td>
+                    <table class="w-full text-xs text-left text-slate-600">
+                        <tbody class="divide-y divide-slate-100">
+                            <tr>
+                                <th class="px-6 py-3 font-semibold text-slate-500 uppercase tracking-wider bg-slate-50/40 w-1/3 text-[11px]">Nama / Instansi</th>
+                                <td class="px-6 py-3 font-bold text-slate-800 text-[13px]">{{ $permohonan->nama_pemohon }}</td>
                             </tr>
-                            <tr class="border-b border-gray-100">
-                                <th class="px-5 py-2.5 font-bold text-gray-500 uppercase tracking-wider bg-gray-50 text-[11px]">Kategori</th>
-                                <td class="px-5 py-2.5 text-gray-700">{{ $permohonan->kategori_pemohon->nama_kategori ?? '-' }}</td>
+                            <tr>
+                                <th class="px-6 py-3 font-semibold text-slate-500 uppercase tracking-wider bg-slate-50/40 text-[11px]">Kategori</th>
+                                <td class="px-6 py-3 text-slate-700 font-medium">{{ $permohonan->kategori_pemohon->nama_kategori ?? '-' }}</td>
                             </tr>
                             
                             @if(!auth()->user()->hasRole('Petugas Penghubung') || auth()->user()->hasRole('Super Admin'))
-                            <tr class="border-b border-gray-100">
-                                <th class="px-5 py-2.5 font-bold text-gray-500 uppercase tracking-wider bg-gray-50 text-[11px]">NIK / No. Badan Hukum</th>
-                                <td class="px-5 py-2.5 text-gray-700">{{ $permohonan->nik_atau_no_badan_hukum ?? '-' }}</td>
+                            <tr>
+                                <th class="px-6 py-3 font-semibold text-slate-500 uppercase tracking-wider bg-slate-50/40 text-[11px]">NIK / No. Badan Hukum</th>
+                                <td class="px-6 py-3 font-mono text-slate-800">{{ $permohonan->nik_atau_no_badan_hukum ?? '-' }}</td>
                             </tr>
-                            <tr class="border-b border-gray-100">
-                                <th class="px-5 py-2.5 font-bold text-gray-500 uppercase tracking-wider bg-gray-50 text-[11px]">Pekerjaan</th>
-                                <td class="px-5 py-2.5 text-gray-700">{{ $permohonan->pekerjaan ?? '-' }}</td>
+                            <tr>
+                                <th class="px-6 py-3 font-semibold text-slate-500 uppercase tracking-wider bg-slate-50/40 text-[11px]">Pekerjaan</th>
+                                <td class="px-6 py-3 text-slate-700">{{ $permohonan->pekerjaan ?? '-' }}</td>
                             </tr>
-                            <tr class="border-b border-gray-100">
-                                <th class="px-5 py-2.5 font-bold text-gray-500 uppercase tracking-wider bg-gray-50 text-[11px]">Alamat</th>
-                                <td class="px-5 py-2.5 text-gray-700">{{ $permohonan->alamat ?? '-' }}</td>
+                            <tr>
+                                <th class="px-6 py-3 font-semibold text-slate-500 uppercase tracking-wider bg-slate-50/40 text-[11px]">Alamat</th>
+                                <td class="px-6 py-3 text-slate-700 leading-relaxed">{{ $permohonan->alamat ?? '-' }}</td>
                             </tr>
                             @else
-                            <tr class="border-b border-gray-100">
-                                <td colspan="2" class="px-5 py-2.5 text-[11px] text-gray-400 italic text-center bg-gray-50">
-                                    <span class="material-symbols-outlined text-[14px] align-middle mr-1">lock</span>
-                                    Data identitas disembunyikan untuk Petugas Penghubung
+                            <tr>
+                                <td colspan="2" class="px-6 py-3 text-[11px] text-slate-400 italic text-center bg-slate-50/60">
+                                    <span class="material-symbols-outlined text-[14px] align-middle mr-1 text-slate-400">lock</span>
+                                    Data identitas disembunyikan untuk Petugas Penghubung sesuai kebijakan privasi PPID.
                                 </td>
                             </tr>
                             @endif
                             
-                            <tr class="border-b border-gray-100">
-                                <th class="px-5 py-2.5 font-bold text-gray-500 uppercase tracking-wider bg-gray-50 text-[11px]">Email</th>
-                                <td class="px-5 py-2.5 text-gray-700">{{ $permohonan->email ?? '-' }}</td>
+                            <tr>
+                                <th class="px-6 py-3 font-semibold text-slate-500 uppercase tracking-wider bg-slate-50/40 text-[11px]">Email</th>
+                                <td class="px-6 py-3 text-slate-700 font-mono">{{ $permohonan->email ?? '-' }}</td>
                             </tr>
                             <tr>
-                                <th class="px-5 py-2.5 font-bold text-gray-500 uppercase tracking-wider bg-gray-50 text-[11px]">No. Telepon</th>
-                                <td class="px-5 py-2.5 text-gray-700">{{ $permohonan->no_telp ?? '-' }}</td>
+                                <th class="px-6 py-3 font-semibold text-slate-500 uppercase tracking-wider bg-slate-50/40 text-[11px]">No. Telepon / WhatsApp</th>
+                                <td class="px-6 py-3 text-slate-700 font-mono">{{ $permohonan->no_telp ?? '-' }}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Rincian Permohonan -->
-            <div class="bg-white border border-gray-200 rounded shadow-sm">
-                <div class="px-5 py-3 border-b border-gray-200 bg-gray-50">
-                    <h3 class="text-[13px] font-bold text-gray-800 m-0 uppercase tracking-wider">Rincian Permohonan</h3>
+            <!-- Rincian Permohonan Informasi -->
+            <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/70 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-blue-600">description</span>
+                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider m-0">Rincian Permohonan</h3>
+                    </div>
                 </div>
-                <div class="p-5 space-y-5">
+                <div class="p-6 space-y-5">
                     <div>
-                        <h4 class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Informasi yang Diminta</h4>
-                        <div class="p-4 bg-gray-50 border border-gray-200 rounded text-[13px] text-gray-700 whitespace-pre-line leading-relaxed">
+                        <h4 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[15px] text-slate-400">info</span>
+                            Informasi yang Diminta
+                        </h4>
+                        <div class="p-4 bg-slate-50/80 border border-slate-200/80 rounded-xl text-[13px] text-slate-800 whitespace-pre-line leading-relaxed">
                             {{ $permohonan->rincian_informasi }}
                         </div>
                     </div>
+                    
                     <div>
-                        <h4 class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Tujuan Penggunaan Informasi</h4>
-                        <div class="p-4 bg-gray-50 border border-gray-200 rounded text-[13px] text-gray-700 whitespace-pre-line leading-relaxed">
+                        <h4 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[15px] text-slate-400">target</span>
+                            Tujuan Penggunaan Informasi
+                        </h4>
+                        <div class="p-4 bg-slate-50/80 border border-slate-200/80 rounded-xl text-[13px] text-slate-800 whitespace-pre-line leading-relaxed">
                             {{ $permohonan->tujuan_penggunaan }}
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-gray-100">
-                        <div>
-                            <span class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Cara Memperoleh Informasi</span>
-                            <span class="text-[13px] font-semibold text-gray-800">{{ $permohonan->cara_memperoleh_informasi->nama_cara ?? 'Melihat/Membaca' }}</span>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                        <div class="p-3 bg-slate-50/60 rounded-xl border border-slate-100">
+                            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cara Memperoleh Informasi</span>
+                            <span class="text-xs font-bold text-slate-800">{{ $permohonan->cara_memperoleh_informasi->nama_cara ?? 'Melihat/Membaca' }}</span>
                         </div>
-                        <div>
-                            <span class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Cara Mendapatkan Salinan</span>
-                            <span class="text-[13px] font-semibold text-gray-800">{{ $permohonan->cara_mendapatkan_salinan ?? 'Softcopy (Email)' }}</span>
+                        <div class="p-3 bg-slate-50/60 rounded-xl border border-slate-100">
+                            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cara Mendapatkan Salinan</span>
+                            <span class="text-xs font-bold text-slate-800">{{ $permohonan->cara_mendapatkan_salinan ?? 'Softcopy (Email)' }}</span>
                         </div>
                     </div>
+
                     @if(!auth()->user()->hasRole('Petugas Penghubung') || auth()->user()->hasRole('Super Admin'))
-                    <div class="pt-4 border-t border-gray-100">
-                        <h4 class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Berkas Lampiran Identitas</h4>
+                    <div class="pt-4 border-t border-slate-100">
+                        <h4 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[15px] text-slate-400">badge</span>
+                            Berkas Lampiran Identitas (KTP/Akta)
+                        </h4>
                         @if($permohonan->file_identitas)
-                        <a href="{{ route('admin.permohonan.file-identitas', $permohonan->id) }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                            <span class="material-symbols-outlined text-[18px]">description</span>
-                            Lihat Dokumen
-                        </a>
+                        <div class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200/80 rounded-xl">
+                            <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[20px]">id_card</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-bold text-slate-800 truncate">Dokumen Identitas Pemohon</p>
+                                <p class="text-[11px] text-slate-500">Tersimpan aman pada storage privat server</p>
+                            </div>
+                            <a href="{{ route('admin.permohonan.file-identitas', $permohonan->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-blue-700 transition-colors shadow-xs">
+                                <span class="material-symbols-outlined text-[16px]">visibility</span>
+                                Lihat Berkas
+                            </a>
+                        </div>
                         @else
-                        <div class="text-[12px] text-gray-400 italic bg-gray-50 p-3 rounded border border-gray-100">
+                        <div class="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-xl border border-slate-200/60">
                             Tidak ada berkas lampiran yang disertakan oleh pemohon.
                         </div>
                         @endif
@@ -166,240 +435,334 @@
                 </div>
             </div>
 
-            <!-- Penugasan Unit Pengolah -->
-            @if(in_array($permohonan->status->value, ['ditugaskan', 'menunggu_data', 'data_diuji', 'menunggu_tanda_tangan', 'ditandatangani', 'selesai']))
-            <div class="bg-white border border-gray-200 rounded shadow-sm">
-                <div class="px-5 py-3 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                    <h3 class="text-[13px] font-bold text-gray-800 m-0 uppercase tracking-wider">Penugasan Unit Pengolah</h3>
+        </div>
+
+        <!-- Kolom Kanan: PENUGASAN DI BAGIAN ATAS, Kemudian TINDAK LANJUT, Kemudian LOG AKTIVITAS -->
+        <div class="space-y-6">
+            
+            <!-- [REPOSISI] 1. PENUGASAN UNIT PENGOLAH (Ditempatkan di Atas Tindak Lanjut) -->
+            @if($permohonan->penugasan->isNotEmpty())
+            <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+                <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/80 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-indigo-600">assignment_ind</span>
+                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider m-0">Penugasan Unit Pengolah</h3>
+                    </div>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                        {{ $permohonan->penugasan->count() }} Unit
+                    </span>
                 </div>
-                <div class="p-0">
-                    <table class="w-full text-left border-collapse text-sm text-gray-600">
-                        <thead>
-                            <tr class="bg-gray-50 border-b border-gray-200 text-[10px] uppercase tracking-wider text-gray-500">
-                                <th class="px-5 py-3 font-bold">Unit Pengolah</th>
-                                <th class="px-5 py-3 font-bold">Petugas</th>
-                                <th class="px-5 py-3 font-bold">Status</th>
-                                <th class="px-5 py-3 font-bold">Data/Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @forelse($permohonan->penugasan as $tugas)
-                            <tr>
-                                <td class="px-5 py-4 font-semibold text-gray-800">{{ $tugas->unitPengolah->nama_bidang }}</td>
-                                <td class="px-5 py-4">{{ $tugas->petugasPenghubung->name }}</td>
-                                <td class="px-5 py-4">
-                                    <span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase border {{ $tugas->status->badgeClass() }} border-opacity-30">
-                                        {{ $tugas->status->label() }}
+                
+                <div class="p-4 space-y-3">
+                    @foreach($permohonan->penugasan as $tugas)
+                    <div class="p-3.5 bg-slate-50/80 border border-slate-200/90 rounded-xl space-y-2.5">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-800 leading-tight">{{ $tugas->unitPengolah->nama_bidang }}</h4>
+                                <p class="text-[11px] text-slate-500 flex items-center gap-1 mt-1">
+                                    <span class="material-symbols-outlined text-[13px] text-slate-400">person</span>
+                                    <span>Petugas: <strong class="text-slate-700">{{ $tugas->petugasPenghubung->name }}</strong></span>
+                                </p>
+                            </div>
+                            <div class="text-right flex flex-col items-end gap-1">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border {{ $tugas->status->badgeClass() }} border-opacity-40 shadow-2xs">
+                                    {{ $tugas->status->label() }}
+                                </span>
+                                @if($tugas->hasil_uji !== \App\Enums\HasilUji::Pending)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border {{ $tugas->hasil_uji->badgeClass() }} border-opacity-40 shadow-2xs">
+                                    {{ $tugas->hasil_uji->label() }}
+                                </span>
+                                @endif
+                            </div>
+                        </div>
+
+                        @if($tugas->instruksi)
+                        <div class="text-[11px] text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200/70 italic">
+                            <span class="font-semibold text-slate-700 not-italic">Instruksi:</span> "{{ $tugas->instruksi }}"
+                        </div>
+                        @endif
+
+                        <!-- Aksi / Berkas Data -->
+                        <div class="pt-2 border-t border-slate-200/60">
+                            <!-- Petugas Penghubung mengunggah data -->
+                            @if((auth()->user()->id === $tugas->petugas_penghubung_id || auth()->user()->hasRole('Super Admin')) && $tugas->status === \App\Enums\PenugasanStatus::Ditugaskan)
+                            <form action="{{ route('admin.penugasan.submit-data', $tugas->id) }}" method="POST" enctype="multipart/form-data" class="space-y-2">
+                                @csrf
+                                <label class="block text-[10px] font-bold text-slate-600 uppercase tracking-wider">Unggah Berkas Informasi:</label>
+                                <input type="file" name="data_file" class="block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" required>
+                                <textarea name="catatan" rows="1" class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500" placeholder="Catatan berkas (opsional)..."></textarea>
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 bg-blue-600 text-white text-[11px] font-bold px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors uppercase tracking-wider shadow-xs">
+                                    <span class="material-symbols-outlined text-[15px]">cloud_upload</span> Kirim Data ke PPID
+                                </button>
+                            </form>
+                            @elseif($tugas->data_path)
+                            <div class="space-y-2">
+                                <a href="{{ Storage::url($tugas->data_path) }}" target="_blank" class="inline-flex items-center justify-between w-full p-2.5 bg-white border border-blue-200 rounded-lg text-blue-700 text-xs font-semibold hover:bg-blue-50 transition-colors shadow-2xs">
+                                    <span class="flex items-center gap-1.5 truncate">
+                                        <span class="material-symbols-outlined text-[16px] text-blue-600">attachment</span>
+                                        <span class="truncate">Unduh Berkas Data</span>
                                     </span>
-                                    @if($tugas->hasil_uji !== \App\Enums\HasilUji::Pending)
-                                    <br>
-                                    <span class="inline-flex items-center px-2 py-1 mt-1 rounded-md text-[10px] font-bold uppercase border {{ $tugas->hasil_uji->badgeClass() }} border-opacity-30">
-                                        {{ $tugas->hasil_uji->label() }}
-                                    </span>
-                                    @endif
-                                </td>
-                                <td class="px-5 py-4">
-                                    <!-- Aksi untuk Petugas Penghubung submit data -->
-                                    @if((auth()->user()->id === $tugas->petugas_penghubung_id || auth()->user()->hasRole('Super Admin')) && $tugas->status === \App\Enums\PenugasanStatus::Ditugaskan)
-                                    <form action="{{ route('admin.penugasan.submit-data', $tugas->id) }}" method="POST" enctype="multipart/form-data" class="space-y-2">
+                                    <span class="material-symbols-outlined text-[14px]">download</span>
+                                </a>
+                                
+                                @if($tugas->catatan_petugas_penghubung)
+                                <p class="text-[11px] text-slate-500 italic bg-white p-2 rounded-lg border border-slate-200/60">
+                                    <span class="font-semibold text-slate-600 not-italic">Catatan Petugas:</span> {{ $tugas->catatan_petugas_penghubung }}
+                                </p>
+                                @endif
+
+                                <!-- Review oleh PPID Pelaksana saat Data Sedang Diuji -->
+                                @if((auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin')) && $permohonan->status === \App\Enums\PermohonanStatus::DataDiuji && $tugas->hasil_uji === \App\Enums\HasilUji::Pending)
+                                <div class="pt-2 border-t border-slate-200/70">
+                                    <span class="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-2">Uji Kelayakan Data:</span>
+                                    <form action="{{ route('admin.penugasan.review', $tugas->id) }}" method="POST" class="grid grid-cols-2 gap-2">
                                         @csrf
-                                        <input type="file" name="data_file" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" required>
-                                        <textarea name="catatan" rows="1" class="w-full text-xs p-1 border rounded" placeholder="Catatan..."></textarea>
-                                        <button type="submit" class="bg-blue-600 text-white text-[10px] px-2 py-1 rounded uppercase font-bold tracking-wider">Kirim Data</button>
+                                        <button type="submit" name="hasil_uji" value="sesuai" class="inline-flex items-center justify-center gap-1 bg-emerald-600 text-white text-[11px] py-1.5 px-3 rounded-lg font-bold uppercase tracking-wider hover:bg-emerald-700 transition-colors shadow-xs">
+                                            <span class="material-symbols-outlined text-[14px]">check_circle</span> Sesuai
+                                        </button>
+                                        <button type="submit" name="hasil_uji" value="perlu_revisi" class="inline-flex items-center justify-center gap-1 bg-amber-600 text-white text-[11px] py-1.5 px-3 rounded-lg font-bold uppercase tracking-wider hover:bg-amber-700 transition-colors shadow-xs">
+                                            <span class="material-symbols-outlined text-[14px]">replay</span> Revisi
+                                        </button>
                                     </form>
-                                    @elseif($tugas->data_path)
-                                    <!-- Link download data untuk PPID/Atasan -->
-                                    <a href="{{ Storage::url($tugas->data_path) }}" target="_blank" class="text-blue-600 text-xs font-semibold hover:underline flex items-center gap-1 mb-2">
-                                        <span class="material-symbols-outlined text-[14px]">download</span> Unduh Data
-                                    </a>
-                                        <!-- Aksi PPID review data -->
-                                        @if((auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin')) && $permohonan->status === \App\Enums\PermohonanStatus::DataDiuji && $tugas->hasil_uji === \App\Enums\HasilUji::Pending)
-                                        <form action="{{ route('admin.penugasan.review', $tugas->id) }}" method="POST" class="mt-2 pt-2 border-t border-gray-100 flex gap-2">
-                                            @csrf
-                                            <button type="submit" name="hasil_uji" value="sesuai" class="bg-green-100 text-green-700 text-[10px] px-2 py-1 rounded uppercase font-bold border border-green-200">Sesuai</button>
-                                            <button type="submit" name="hasil_uji" value="perlu_revisi" class="bg-red-100 text-red-700 text-[10px] px-2 py-1 rounded uppercase font-bold border border-red-200">Revisi</button>
-                                        </form>
-                                        @endif
-                                    @else
-                                    <span class="text-xs text-gray-400 italic">Belum ada data</span>
-                                    @endif
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="4" class="px-5 py-4 text-center text-sm text-gray-500">Belum ada penugasan</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                                </div>
+                                @endif
+                            </div>
+                            @else
+                            <div class="text-[11px] text-slate-400 italic flex items-center gap-1.5 py-1">
+                                <span class="material-symbols-outlined text-[15px] text-amber-500">pending</span>
+                                Menunggu petugas mengunggah data...
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                    @endforeach
                 </div>
             </div>
             @endif
-        </div>
 
-        <!-- Right Column: Action Panel & Timeline -->
-        <div class="space-y-5">
-            
-            <!-- Action Panel / State Machine Controls -->
-            <div class="bg-white border border-gray-200 rounded shadow-sm">
-                <div class="px-5 py-3 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                    <h3 class="text-[13px] font-bold text-gray-800 uppercase tracking-wider m-0">Tindak Lanjut</h3>
+            <!-- 2. PANEL TINDAK LANJUT (Aksi Sesuai Status Workflow) -->
+            <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+                <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/80 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-blue-600">play_circle</span>
+                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider m-0">Tindak Lanjut</h3>
+                    </div>
                     @if($permohonan->status === \App\Enums\PermohonanStatus::DataDiuji && (auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin')) && !$permohonan->diperpanjang)
                     <form action="{{ route('admin.permohonan.extend-deadline', $permohonan->id) }}" method="POST">
                         @csrf
-                        <button type="submit" onclick="return confirm('Perpanjang waktu jawaban 7 hari kerja?')" class="text-[10px] bg-white border border-gray-300 text-gray-600 px-2 py-1 rounded hover:bg-gray-50 font-bold uppercase">
-                            +7 Hari
+                        <button type="submit" onclick="return confirm('Perpanjang waktu jawaban 7 hari kerja?')" class="text-[10px] bg-white border border-slate-300 text-slate-700 px-2.5 py-1 rounded-lg hover:bg-slate-50 font-bold uppercase tracking-wider shadow-2xs">
+                            +7 Hari Perpanjangan
                         </button>
                     </form>
                     @endif
                 </div>
                 
                 <div class="p-5">
-                    <!-- Desk Layanan: Verifikasi Masuk -->
+                    <!-- Desk Layanan: Verifikasi Permohonan Masuk -->
                     @if($permohonan->status === \App\Enums\PermohonanStatus::Diajukan || $permohonan->status === \App\Enums\PermohonanStatus::MenungguKelengkapan)
                         @if(auth()->user()->hasRole('Desk Layanan') || auth()->user()->hasRole('Super Admin'))
-                            <form action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST">
+                            <form action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST" class="space-y-4">
                                 @csrf
-                                <div class="mb-4">
-                                    <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2">Aksi Verifikasi:</label>
-                                    <select name="target_status" id="verifikasi_action" class="w-full text-xs px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" onchange="document.getElementById('catatan_tak_lengkap').style.display = this.value === 'menunggu_kelengkapan' ? 'block' : 'none'">
-                                        <option value="diverifikasi">Berkas Lengkap (Diverifikasi)</option>
-                                        <option value="menunggu_kelengkapan">Berkas Tidak Lengkap</option>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">Hasil Verifikasi Berkas:</label>
+                                    <select name="target_status" id="verifikasi_action" class="w-full text-xs px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium text-slate-800" onchange="document.getElementById('catatan_tak_lengkap').style.display = this.value === 'menunggu_kelengkapan' ? 'block' : 'none'">
+                                        <option value="diverifikasi">Berkas Lengkap & Terverifikasi</option>
+                                        <option value="menunggu_kelengkapan">Berkas Belum Lengkap (Perlu Dilengkapi)</option>
                                     </select>
                                 </div>
-                                <div id="catatan_tak_lengkap" class="mb-4" style="display: none;">
-                                    <label class="block text-[11px] font-bold text-red-700 uppercase tracking-wider mb-2">Kekurangan Berkas:</label>
-                                    <textarea name="alasan_tidak_lengkap" rows="3" class="w-full text-xs px-3 py-2 border border-red-300 rounded bg-red-50" placeholder="Jelaskan berkas apa yang kurang..."></textarea>
+                                <div id="catatan_tak_lengkap" style="display: none;">
+                                    <label class="block text-[11px] font-bold text-rose-700 uppercase tracking-wider mb-2">Rincian Kekurangan Berkas:</label>
+                                    <textarea name="alasan_tidak_lengkap" rows="3" class="w-full text-xs px-3 py-2.5 border border-rose-300 rounded-xl bg-rose-50/50 text-slate-800 focus:ring-2 focus:ring-rose-200" placeholder="Jelaskan berkas atau persyaratan apa yang kurang..."></textarea>
                                 </div>
-                                <button type="submit" class="w-full bg-blue-600 text-white font-semibold rounded py-2 px-4 hover:bg-blue-700 text-[11px] uppercase tracking-wider">
-                                    Proses Verifikasi
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-bold rounded-xl py-2.5 px-4 hover:bg-blue-700 text-xs uppercase tracking-wider shadow-sm transition-colors">
+                                    <span class="material-symbols-outlined text-[16px]">verified</span>
+                                    Simpan & Proses Verifikasi
                                 </button>
                             </form>
                         @else
-                            <div class="bg-gray-50 p-4 rounded text-xs text-center text-gray-600 border border-gray-200">
+                            <div class="bg-slate-50 p-5 rounded-xl text-xs text-center text-slate-600 border border-slate-200/80">
+                                <span class="material-symbols-outlined text-3xl text-slate-400 mb-1 block mx-auto">hourglass_top</span>
                                 Menunggu verifikasi berkas oleh <strong>Desk Layanan</strong>.
                             </div>
                         @endif
 
-                    <!-- PPID Pelaksana: Penugasan Multi-Unit -->
+                    <!-- PPID Pelaksana: Disposisi Penugasan ke Unit Pengolah -->
                     @elseif($permohonan->status === \App\Enums\PermohonanStatus::Diverifikasi)
                         @if(auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
-                            <form action="{{ route('admin.permohonan.assign', $permohonan->id) }}" method="POST" id="assignForm">
+                            <form action="{{ route('admin.permohonan.assign', $permohonan->id) }}" method="POST" id="assignForm" class="space-y-4">
                                 @csrf
-                                <div class="mb-3 flex justify-between items-center">
-                                    <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider m-0">Tugaskan ke Unit:</label>
-                                    <button type="button" onclick="addAssignRow()" class="text-[10px] bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded uppercase font-bold">+ Tambah</button>
+                                <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                                    <div>
+                                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider m-0">Tugaskan ke Unit Pengolah</h4>
+                                        <p class="text-[11px] text-slate-500 m-0">Pilih unit kerja dan petugas untuk pencarian data</p>
+                                    </div>
+                                    <button type="button" onclick="addAssignRow()" class="inline-flex items-center gap-1 text-[11px] bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg uppercase font-bold tracking-wider transition-colors">
+                                        <span class="material-symbols-outlined text-[14px]">add</span> Tambah Unit
+                                    </button>
                                 </div>
                                 
-                                <div id="assignContainer" class="space-y-3 mb-4">
-                                    <div class="p-3 bg-gray-50 border border-gray-200 rounded text-xs assign-row">
-                                        <select name="assignments[0][unit_pengolah_id]" class="w-full mb-2 p-1.5 border rounded" required>
-                                            <option value="">Pilih Unit/Bidang...</option>
-                                            @foreach($unitPengolahs as $up)
-                                            <option value="{{ $up->id }}">{{ $up->nama_bidang }}</option>
-                                            @endforeach
-                                        </select>
-                                        <select name="assignments[0][petugas_penghubung_id]" class="w-full mb-2 p-1.5 border rounded" required>
-                                            <option value="">Pilih Petugas Penghubung...</option>
-                                            @foreach($petugasPenghubungs as $petugas)
-                                            <option value="{{ $petugas->id }}">{{ $petugas->name }}</option>
-                                            @endforeach
-                                        </select>
-                                        <input type="text" name="assignments[0][instruksi]" placeholder="Instruksi spesifik (opsional)" class="w-full p-1.5 border rounded">
+                                <div id="assignContainer" class="space-y-3">
+                                    <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2.5 assign-row">
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Unit Pengolah / Bidang:</label>
+                                            <select name="assignments[0][unit_pengolah_id]" class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white" required>
+                                                <option value="">Pilih Unit/Bidang...</option>
+                                                @foreach($unitPengolahs as $up)
+                                                <option value="{{ $up->id }}">{{ $up->nama_bidang }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Petugas Penghubung:</label>
+                                            <select name="assignments[0][petugas_penghubung_id]" class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white" required>
+                                                <option value="">Pilih Petugas Penghubung...</option>
+                                                @foreach($petugasPenghubungs as $petugas)
+                                                <option value="{{ $petugas->id }}">{{ $petugas->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Instruksi Khusus (Opsional):</label>
+                                            <input type="text" name="assignments[0][instruksi]" placeholder="Contoh: Lampirkan data tahun 2026 format PDF..." class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white">
+                                        </div>
                                     </div>
                                 </div>
-                                <button type="submit" class="w-full bg-blue-600 text-white font-semibold rounded py-2 px-4 hover:bg-blue-700 text-[11px] uppercase tracking-wider">
-                                    Minta Data
+                                
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-bold rounded-xl py-2.5 px-4 hover:bg-blue-700 text-xs uppercase tracking-wider shadow-sm transition-colors">
+                                    <span class="material-symbols-outlined text-[16px]">send</span>
+                                    Disposisikan & Minta Data
                                 </button>
                             </form>
                             
                             <script>
                                 let assignIdx = 1;
                                 function addAssignRow() {
-                                    const template = document.querySelector('.assign-row').cloneNode(true);
-                                    template.innerHTML = template.innerHTML.replace(/assignments\[0\]/g, `assignments[${assignIdx}]`);
-                                    template.querySelectorAll('input, select').forEach(el => el.value = '');
-                                    document.getElementById('assignContainer').appendChild(template);
+                                    const container = document.getElementById('assignContainer');
+                                    const newRow = document.createElement('div');
+                                    newRow.className = 'p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2.5 assign-row relative pt-8';
+                                    newRow.innerHTML = `
+                                        <button type="button" onclick="this.closest('.assign-row').remove()" class="absolute top-2 right-2 text-rose-600 hover:text-rose-800 text-[10px] font-bold flex items-center gap-0.5">
+                                            <span class="material-symbols-outlined text-[14px]">delete</span> Hapus
+                                        </button>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Unit Pengolah / Bidang:</label>
+                                            <select name="assignments[${assignIdx}][unit_pengolah_id]" class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white" required>
+                                                <option value="">Pilih Unit/Bidang...</option>
+                                                @foreach($unitPengolahs as $up)
+                                                <option value="{{ $up->id }}">{{ $up->nama_bidang }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Petugas Penghubung:</label>
+                                            <select name="assignments[${assignIdx}][petugas_penghubung_id]" class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white" required>
+                                                <option value="">Pilih Petugas Penghubung...</option>
+                                                @foreach($petugasPenghubungs as $petugas)
+                                                <option value="{{ $petugas->id }}">{{ $petugas->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Instruksi Khusus (Opsional):</label>
+                                            <input type="text" name="assignments[${assignIdx}][instruksi]" placeholder="Contoh: Lampirkan data tahun 2026 format PDF..." class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white">
+                                        </div>
+                                    `;
+                                    container.appendChild(newRow);
                                     assignIdx++;
                                 }
                             </script>
                         @else
-                            <div class="bg-gray-50 p-4 rounded text-xs text-center text-gray-600 border border-gray-200">
-                                Menunggu <strong>PPID Pelaksana</strong> mendisposisikan tugas pencarian data.
+                            <div class="bg-slate-50 p-5 rounded-xl text-xs text-center text-slate-600 border border-slate-200/80">
+                                <span class="material-symbols-outlined text-3xl text-slate-400 mb-1 block mx-auto">forward_to_inbox</span>
+                                Menunggu <strong>PPID Pelaksana</strong> mendisposisikan tugas pencarian data ke Unit Pengolah.
                             </div>
                         @endif
 
-                    <!-- PPID Pelaksana: Susun Jawaban (Setelah Semua Data Sesuai) -->
+                    <!-- PPID Pelaksana: Susun Draf Jawaban & Ajukan ke Atasan -->
                     @elseif($permohonan->status === \App\Enums\PermohonanStatus::DataDiuji)
                         @if(auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
                             @if($permohonan->allPenugasanSesuai())
-                            <form action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST">
+                            <form action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST" class="space-y-4">
                                 @csrf
                                 <input type="hidden" name="target_status" value="menunggu_tanda_tangan">
-                                <div class="mb-4">
-                                    <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2">Draf Jawaban (Opsional Path):</label>
-                                    <input type="text" name="surat_jawaban_path" class="w-full text-xs px-3 py-2 border rounded" placeholder="/storage/draf/jawaban.pdf">
-                                    <p class="text-[10px] text-gray-500 mt-1">Semua data telah valid. Lanjutkan ke Atasan untuk TTE.</p>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">Tautan Draf Surat Jawaban (Opsional):</label>
+                                    <input type="text" name="surat_jawaban_path" class="w-full text-xs px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-200" placeholder="Contoh: /storage/draf/jawaban_reg003.pdf">
+                                    <p class="text-[11px] text-emerald-600 mt-1.5 flex items-center gap-1 font-medium">
+                                        <span class="material-symbols-outlined text-[15px]">verified</span>
+                                        Semua berkas data telah sesuai. Siap diajukan ke Atasan PPID untuk disahkan.
+                                    </p>
                                 </div>
-                                <button type="submit" class="w-full bg-purple-600 text-white font-semibold rounded py-2 px-4 hover:bg-purple-700 text-[11px] uppercase tracking-wider">
-                                    Ajukan ke Atasan
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold rounded-xl py-2.5 px-4 hover:bg-indigo-700 text-xs uppercase tracking-wider shadow-sm transition-colors">
+                                    <span class="material-symbols-outlined text-[16px]">draw</span>
+                                    Ajukan ke Atasan untuk TTE
                                 </button>
                             </form>
                             @else
-                            <div class="bg-yellow-50 p-4 rounded text-xs text-center text-yellow-700 border border-yellow-200">
-                                Anda harus menguji dan menandai <strong>Semua Penugasan = Sesuai</strong> di tabel sebelah kiri sebelum dapat menyusun draf jawaban.
+                            <div class="bg-amber-50/80 p-4 rounded-xl text-xs text-amber-800 border border-amber-200/80 flex items-start gap-2.5">
+                                <span class="material-symbols-outlined text-amber-600 text-[18px] shrink-0 mt-0.5">info</span>
+                                <div>
+                                    <p class="font-bold mb-1">Menunggu Validasi Kelayakan Data</p>
+                                    <p class="text-[11px] leading-relaxed">Silakan periksa berkas data pada kotak <strong>Penugasan Unit Pengolah</strong> di atas dan tandai statusnya <strong>Sesuai</strong> sebelum mengajukan ke Atasan PPID.</p>
+                                </div>
                             </div>
                             @endif
                         @else
-                            <div class="bg-gray-50 p-4 rounded text-xs text-center text-gray-600 border border-gray-200">
-                                PPID Pelaksana sedang memvalidasi data dan menyusun konsep jawaban.
+                            <div class="bg-slate-50 p-5 rounded-xl text-xs text-center text-slate-600 border border-slate-200/80">
+                                <span class="material-symbols-outlined text-3xl text-slate-400 mb-1 block mx-auto">rule</span>
+                                PPID Pelaksana sedang memvalidasi data dan menyusun konsep surat jawaban.
                             </div>
                         @endif
 
-                    <!-- Atasan PPID: TTE -->
+                    <!-- Atasan PPID: Tanda Tangan Elektronik (TTE) -->
                     @elseif($permohonan->status === \App\Enums\PermohonanStatus::MenungguTandaTangan)
                         @if(auth()->user()->hasRole('Atasan PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
-                            <form action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST" id="tteForm">
+                            <form action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST" id="tteForm" class="space-y-4">
                                 @csrf
                                 <input type="hidden" name="target_status" value="ditandatangani">
                                 <input type="hidden" name="signature_data" id="signature_data">
                                 <input type="hidden" name="use_saved_signature" id="use_saved_signature" value="0">
                                 
-                                <div class="mb-4">
-                                    <h4 class="text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-3">Tanda Tangan Elektronik (TTE)</h4>
+                                <div>
+                                    <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Tanda Tangan Elektronik (TTE)</h4>
+                                    <p class="text-[11px] text-slate-500 mb-3">Bubuhkan tanda tangan elektronik untuk mengesahkan draf jawaban permohonan.</p>
                                     
                                     @if(auth()->user()->signature_path)
-                                    <div class="mb-3 p-3 border border-blue-200 bg-blue-50 rounded">
-                                        <label class="flex items-start gap-2 cursor-pointer">
-                                            <input type="checkbox" id="toggle_saved_signature" class="mt-0.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                    <div class="mb-3 p-3 border border-blue-200 bg-blue-50/70 rounded-xl">
+                                        <label class="flex items-start gap-2.5 cursor-pointer">
+                                            <input type="checkbox" id="toggle_saved_signature" class="mt-0.5 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
                                             <div>
-                                                <span class="text-[11px] font-bold text-blue-800 block uppercase tracking-wider">Gunakan Tanda Tangan Tersimpan</span>
-                                                <p class="text-[10px] text-blue-600 mt-1">Centang untuk menggunakan tanda tangan yang sudah Anda simpan di profil.</p>
+                                                <span class="text-xs font-bold text-blue-900 block">Gunakan Tanda Tangan Tersimpan</span>
+                                                <p class="text-[10px] text-blue-700 mt-0.5">Centang untuk menggunakan tanda tangan profil Anda secara otomatis.</p>
                                             </div>
                                         </label>
-                                        <div id="saved_signature_preview" class="mt-2 hidden bg-white border border-gray-200 p-2 rounded text-center">
+                                        <div id="saved_signature_preview" class="mt-2.5 hidden bg-white border border-slate-200 p-2.5 rounded-lg text-center">
                                             <img src="{{ Storage::url(auth()->user()->signature_path) }}" alt="Tanda Tangan Tersimpan" class="max-h-24 mx-auto">
                                         </div>
                                     </div>
                                     @endif
 
-                                    <div id="new_signature_container" class="border border-gray-300 rounded overflow-hidden bg-white">
-                                        <div class="bg-gray-50 border-b border-gray-200 px-3 py-2 flex justify-between items-center">
-                                            <span class="text-[10px] text-gray-500 font-semibold uppercase">Gambar Tanda Tangan Anda:</span>
-                                            <button type="button" id="clear_signature" class="text-[10px] text-red-600 hover:text-red-800 font-bold uppercase">Bersihkan (Clear)</button>
+                                    <div id="new_signature_container" class="border border-slate-300 rounded-xl overflow-hidden bg-white shadow-2xs">
+                                        <div class="bg-slate-50 border-b border-slate-200 px-3 py-2 flex justify-between items-center">
+                                            <span class="text-[10px] text-slate-600 font-bold uppercase tracking-wider">Gambar Tanda Tangan:</span>
+                                            <button type="button" id="clear_signature" class="text-[10px] text-rose-600 hover:text-rose-800 font-bold uppercase tracking-wider flex items-center gap-0.5">
+                                                <span class="material-symbols-outlined text-[13px]">refresh</span> Bersihkan
+                                            </button>
                                         </div>
-                                        <canvas id="signature-pad" class="w-full h-40 touch-none cursor-crosshair" width="400" height="160"></canvas>
+                                        <canvas id="signature-pad" class="w-full h-36 touch-none cursor-crosshair bg-white" width="400" height="150"></canvas>
                                     </div>
                                     
                                     <div id="save_signature_option" class="mt-2">
-                                        <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-600 hover:text-gray-800">
-                                            <input type="checkbox" name="save_signature" value="1" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                            Simpan sebagai tanda tangan *default* di profil saya
+                                        <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-600 hover:text-slate-800">
+                                            <input type="checkbox" name="save_signature" value="1" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                            <span>Simpan sebagai tanda tangan default di profil saya</span>
                                         </label>
                                     </div>
                                 </div>
-                                <button type="submit" id="btnSubmitTTE" class="w-full bg-green-600 text-white font-semibold rounded py-2 px-4 hover:bg-green-700 text-[11px] uppercase tracking-wider">
-                                    Tanda Tangani Jawaban
+                                
+                                <button type="submit" id="btnSubmitTTE" class="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 text-white font-bold rounded-xl py-2.5 px-4 hover:bg-emerald-700 text-xs uppercase tracking-wider shadow-sm transition-colors">
+                                    <span class="material-symbols-outlined text-[16px]">verified_user</span>
+                                    Sahkan & Tandatangani Surat Jawaban
                                 </button>
                             </form>
                             
@@ -410,19 +773,17 @@
                                     let signaturePad;
                                     
                                     if(canvas) {
-                                        // Initialize Signature Pad
                                         signaturePad = new SignaturePad(canvas, {
                                             backgroundColor: 'rgb(255, 255, 255)',
-                                            penColor: 'rgb(0, 0, 100)'
+                                            penColor: 'rgb(3, 34, 77)'
                                         });
 
-                                        // Responsive canvas resizing
                                         function resizeCanvas() {
-                                            const ratio =  Math.max(window.devicePixelRatio || 1, 1);
+                                            const ratio = Math.max(window.devicePixelRatio || 1, 1);
                                             canvas.width = canvas.offsetWidth * ratio;
                                             canvas.height = canvas.offsetHeight * ratio;
                                             canvas.getContext("2d").scale(ratio, ratio);
-                                            signaturePad.clear(); // otherwise drawing is offset
+                                            signaturePad.clear();
                                         }
                                         window.addEventListener("resize", resizeCanvas);
                                         resizeCanvas();
@@ -432,7 +793,6 @@
                                         });
                                     }
 
-                                    // Toggle saved signature logic
                                     const toggleSaved = document.getElementById('toggle_saved_signature');
                                     const newSigContainer = document.getElementById('new_signature_container');
                                     const saveSigOption = document.getElementById('save_signature_option');
@@ -456,16 +816,14 @@
                                         });
                                     }
 
-                                    // Form submission
                                     document.getElementById('tteForm').addEventListener('submit', function(e) {
                                         if (useSavedInput && useSavedInput.value === '1') {
-                                            // Using saved signature, valid.
                                             return true;
                                         }
                                         
                                         if (signaturePad && signaturePad.isEmpty()) {
                                             e.preventDefault();
-                                            alert("Mohon gambar tanda tangan Anda terlebih dahulu, atau gunakan tanda tangan tersimpan.");
+                                            alert("Mohon gambar tanda tangan Anda terlebih dahulu, atau centang tanda tangan tersimpan.");
                                         } else if(signaturePad) {
                                             document.getElementById('signature_data').value = signaturePad.toDataURL('image/png');
                                         }
@@ -473,75 +831,81 @@
                                 });
                             </script>
                         @else
-                            <div class="bg-gray-50 p-4 rounded text-xs text-center text-gray-600 border border-gray-200">
-                                Menunggu persetujuan dan TTE dari <strong>Atasan PPID</strong>.
+                            <div class="bg-slate-50 p-5 rounded-xl text-xs text-center text-slate-600 border border-slate-200/80">
+                                <span class="material-symbols-outlined text-3xl text-slate-400 mb-1 block mx-auto">history_edu</span>
+                                Menunggu persetujuan dan Tanda Tangan Elektronik (TTE) dari <strong>Atasan PPID</strong>.
                             </div>
                         @endif
 
-                    <!-- Desk Layanan: Kirim Jawaban Final -->
+                    <!-- Desk Layanan: Kirim Surat Jawaban Final ke Pemohon -->
                     @elseif($permohonan->status === \App\Enums\PermohonanStatus::Ditandatangani)
                         @if(auth()->user()->hasRole('Desk Layanan') || auth()->user()->hasRole('Super Admin'))
-                            <form action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST">
+                            <form action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST" class="space-y-4">
                                 @csrf
                                 <input type="hidden" name="target_status" value="selesai">
-                                <div class="mb-4 text-center">
-                                    <span class="material-symbols-outlined text-4xl text-green-600 mb-2">mark_email_read</span>
-                                    <p class="text-xs text-gray-600">Surat jawaban telah ditandatangani oleh Atasan. Kirimkan surat jawaban ke portal pemohon sekarang.</p>
+                                <div class="text-center p-3 bg-emerald-50 border border-emerald-200/80 rounded-xl">
+                                    <span class="material-symbols-outlined text-3xl text-emerald-600 mb-1">mark_email_read</span>
+                                    <p class="text-xs font-bold text-emerald-900">Surat Jawaban Telah Ditandatangani</p>
+                                    <p class="text-[11px] text-emerald-700 mt-1">Kirimkan notifikasi dan surat jawaban resmi ke pemohon untuk menyelesaikan permohonan.</p>
                                 </div>
-                                <button type="submit" class="w-full bg-blue-600 text-white font-semibold rounded py-2 px-4 hover:bg-blue-700 text-[11px] uppercase tracking-wider">
-                                    Kirim ke Pemohon & Selesai
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-bold rounded-xl py-2.5 px-4 hover:bg-blue-700 text-xs uppercase tracking-wider shadow-sm transition-colors">
+                                    <span class="material-symbols-outlined text-[16px]">send_and_archive</span>
+                                    Kirim Jawaban ke Pemohon & Selesaikan
                                 </button>
                             </form>
                         @else
-                            <div class="bg-gray-50 p-4 rounded text-xs text-center text-gray-600 border border-gray-200">
-                                Surat ditandatangani. Menunggu Desk Layanan mengirimkan ke pemohon.
+                            <div class="bg-slate-50 p-5 rounded-xl text-xs text-center text-slate-600 border border-slate-200/80">
+                                <span class="material-symbols-outlined text-3xl text-slate-400 mb-1 block mx-auto">mark_email_unread</span>
+                                Surat telah disahkan. Menunggu Desk Layanan mengirimkan berkas jawaban kepada pemohon.
                             </div>
                         @endif
 
-                    <!-- Petugas Penghubung: Upload Data -->
+                    <!-- Petugas Penghubung: Menunggu Pengunggahan Data -->
                     @elseif($permohonan->status === \App\Enums\PermohonanStatus::Ditugaskan || $permohonan->status === \App\Enums\PermohonanStatus::MenungguData)
-                        <div class="bg-blue-50 p-4 rounded text-xs text-center text-blue-700 border border-blue-200">
-                            <span class="material-symbols-outlined text-4xl text-blue-500 mb-2 block mx-auto">upload_file</span>
-                            <p class="font-semibold mb-1 uppercase tracking-wider">Menunggu Data dari Petugas</p>
-                            <p>Petugas Penghubung harus mengunggah data pada tabel penugasan di sebelah kiri.</p>
+                        <div class="bg-blue-50/70 p-5 rounded-xl text-xs text-center text-blue-800 border border-blue-200/80">
+                            <span class="material-symbols-outlined text-3xl text-blue-600 mb-1 block mx-auto">cloud_sync</span>
+                            <p class="font-bold uppercase tracking-wider mb-1">Proses Pengumpulan Data</p>
+                            <p class="text-[11px] text-blue-600 leading-relaxed">Petugas Penghubung dari unit yang ditugaskan dapat mengunggah berkas data melalui kotak penugasan di atas.</p>
                         </div>
                         
-                    <!-- Terminal State -->
+                    <!-- Status Selesai / Ditutup -->
                     @else
                         <div class="text-center py-4">
-                            <span class="material-symbols-outlined {{ $permohonan->status === \App\Enums\PermohonanStatus::Selesai ? 'text-green-500' : 'text-red-500' }} text-4xl mb-2">
+                            <span class="material-symbols-outlined {{ $permohonan->status === \App\Enums\PermohonanStatus::Selesai ? 'text-emerald-500' : 'text-rose-500' }} text-4xl mb-1">
                                 {{ $permohonan->status === \App\Enums\PermohonanStatus::Selesai ? 'task_alt' : 'cancel' }}
                             </span>
-                            <p class="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Permohonan {{ $permohonan->status->label() }}</p>
+                            <p class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1">Permohonan {{ $permohonan->status->label() }}</p>
+                            <p class="text-[11px] text-slate-500">Seluruh rangkaian proses penanganan permohonan informasi telah selesai.</p>
                             
                             @if($permohonan->ttd_path)
-                            <div class="mt-4 pt-4 border-t border-gray-200">
-                                <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block mb-2">Tanda Tangan Pengesahan:</span>
-                                <img src="{{ Storage::url($permohonan->ttd_path) }}" alt="Tanda Tangan Atasan PPID" class="max-h-24 mx-auto border border-gray-100 rounded bg-white">
-                                <p class="text-[9px] text-gray-400 mt-1">Disahkan oleh: {{ $permohonan->ditandatanganiOleh->name ?? 'Atasan PPID' }}</p>
+                            <div class="mt-4 pt-4 border-t border-slate-100">
+                                <span class="text-[10px] text-slate-500 uppercase tracking-wider font-bold block mb-2">Tanda Tangan Pengesahan:</span>
+                                <img src="{{ Storage::url($permohonan->ttd_path) }}" alt="Tanda Tangan Atasan PPID" class="max-h-20 mx-auto border border-slate-200 rounded-lg p-1 bg-white shadow-2xs">
+                                <p class="text-[10px] text-slate-500 mt-1 font-medium">Disahkan oleh: {{ $permohonan->ditandatanganiOleh->name ?? 'Atasan PPID' }}</p>
                             </div>
                             @endif
                         </div>
                         
                         @if($permohonan->status->isTerminal() && (auth()->user()->hasRole('Desk Layanan') || auth()->user()->hasRole('Super Admin')))
-                            <!-- Check if already has Keberatan -->
                             @if(!\App\Models\PengajuanKeberatan::where('permohonan_informasi_id', $permohonan->id)->exists())
-                            <div class="mt-4 pt-4 border-t border-gray-200">
-                                <h4 class="text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-3">Ajukan Sengketa / Keberatan</h4>
-                                <form action="{{ route('admin.keberatan.store', $permohonan->id) }}" method="POST">
+                            <div class="mt-4 pt-4 border-t border-slate-100">
+                                <h4 class="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">Registrasi Sengketa / Keberatan</h4>
+                                <form action="{{ route('admin.keberatan.store', $permohonan->id) }}" method="POST" class="space-y-3">
                                     @csrf
-                                    <div class="space-y-3 mb-3">
-                                        <textarea name="alasan_keberatan" rows="2" class="w-full text-xs px-3 py-2 border border-gray-300 rounded" placeholder="Alasan utama keberatan pemohon..." required></textarea>
-                                        <textarea name="keterangan_tambahan" rows="2" class="w-full text-xs px-3 py-2 border border-gray-300 rounded" placeholder="Keterangan tambahan (opsional)..."></textarea>
-                                    </div>
-                                    <button type="submit" onclick="return confirm('Ajukan Sengketa/Keberatan untuk permohonan ini?')" class="w-full bg-red-600 text-white font-semibold rounded py-2 px-4 hover:bg-red-700 text-[11px] uppercase tracking-wider transition-colors">
-                                        Ajukan Keberatan
+                                    <textarea name="alasan_keberatan" rows="2" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-xl focus:ring-1 focus:ring-rose-500" placeholder="Alasan utama keberatan pemohon..." required></textarea>
+                                    <textarea name="keterangan_tambahan" rows="2" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-xl focus:ring-1 focus:ring-rose-500" placeholder="Keterangan tambahan (opsional)..."></textarea>
+                                    <button type="submit" onclick="return confirm('Ajukan Sengketa/Keberatan untuk permohonan ini?')" class="w-full inline-flex items-center justify-center gap-1.5 bg-rose-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-rose-700 text-[11px] uppercase tracking-wider transition-colors shadow-xs">
+                                        <span class="material-symbols-outlined text-[14px]">gavel</span>
+                                        Ajukan Sengketa Keberatan
                                     </button>
                                 </form>
                             </div>
                             @else
-                            <div class="mt-4 pt-4 border-t border-gray-200 text-center">
-                                <a href="{{ route('admin.keberatan.index') }}" class="text-xs text-blue-600 font-semibold hover:underline">Sengketa/Keberatan telah diajukan. Lihat Detail</a>
+                            <div class="mt-4 pt-4 border-t border-slate-100 text-center">
+                                <a href="{{ route('admin.keberatan.index') }}" class="text-xs text-blue-600 font-bold hover:underline inline-flex items-center gap-1">
+                                    <span>Lihat Berkas Sengketa/Keberatan</span>
+                                    <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                                </a>
                             </div>
                             @endif
                         @endif
@@ -549,34 +913,40 @@
                 </div>
             </div>
 
-            <!-- Activity Logs -->
-            <div class="bg-white border border-gray-200 rounded shadow-sm p-5">
-                <h3 class="text-[13px] font-bold text-gray-800 uppercase tracking-wider mb-5">Log Aktivitas</h3>
+            <!-- 3. LOG AKTIVITAS (Riwayat Alur Penanganan) -->
+            <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xs p-5">
+                <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-blue-600">history</span>
+                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider m-0">Log Aktivitas</h3>
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-medium">{{ $permohonan->logs->count() }} Aktivitas</span>
+                </div>
                 
-                <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                <div class="space-y-3.5 max-h-[380px] overflow-y-auto pr-1">
                     @forelse($permohonan->logs as $log)
-                        <div class="flex gap-3 text-sm">
-                            <div class="flex-shrink-0">
-                                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                                    <span class="material-symbols-outlined text-[16px]">history</span>
+                        <div class="flex gap-3 text-xs">
+                            <div class="flex-shrink-0 mt-0.5">
+                                <div class="w-7 h-7 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+                                    <span class="material-symbols-outlined text-[14px]">commit</span>
                                 </div>
                             </div>
-                            <div class="flex-1 bg-gray-50 border border-gray-100 p-3 rounded">
-                                <div class="flex justify-between mb-1">
-                                    <span class="font-bold text-gray-800 text-[11px] uppercase tracking-wider">{{ $log->aksi }}</span>
-                                    <span class="text-[10px] text-gray-500">{{ $log->created_at->format('d M Y H:i') }}</span>
+                            <div class="flex-1 bg-slate-50/80 border border-slate-200/70 p-3 rounded-xl">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-bold text-slate-800 text-[11px] uppercase tracking-wider">{{ $log->aksi }}</span>
+                                    <span class="text-[10px] text-slate-400 font-mono">{{ $log->created_at->format('d M, H:i') }}</span>
                                 </div>
-                                <div class="text-[12px] text-gray-600">
-                                    <span class="font-semibold text-gray-700">{{ $log->user->name ?? 'Sistem' }}</span> 
+                                <div class="text-[11px] text-slate-600">
+                                    <span class="font-medium text-slate-700">Oleh: {{ $log->user->name ?? 'Sistem' }}</span> 
                                     @if($log->catatan)
-                                        <p class="mt-1 text-gray-500 italic bg-white p-2 border border-gray-200 rounded">"{{ $log->catatan }}"</p>
+                                        <p class="mt-1.5 text-slate-500 italic bg-white p-2 border border-slate-200/60 rounded-lg">"{{ $log->catatan }}"</p>
                                     @endif
                                 </div>
                             </div>
                         </div>
                     @empty
-                        <div class="text-center p-4 bg-gray-50 text-gray-500 text-xs rounded border border-gray-100">
-                            Belum ada aktivitas tercatat.
+                        <div class="text-center py-6 bg-slate-50 text-slate-400 text-xs rounded-xl border border-slate-200/60">
+                            Belum ada riwayat aktivitas tercatat.
                         </div>
                     @endforelse
                 </div>

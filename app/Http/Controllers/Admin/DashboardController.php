@@ -12,10 +12,10 @@ class DashboardController extends Controller
     public function index()
     {
         // Statistik
-        $countBaru = PermohonanInformasi::where('status', 'masuk')->count();
-        $countMenungguData = PermohonanInformasi::whereIn('status', ['menunggu_koordinasi', 'menunggu_data'])->count();
-        $countSiapValidasi = PermohonanInformasi::where('status', 'siap_validasi')->count();
-        $countTenggat = PermohonanInformasi::whereNotIn('status', ['selesai', 'ditolak'])
+        $countBaru = PermohonanInformasi::whereIn('status', ['diajukan', 'masuk'])->count();
+        $countMenungguData = PermohonanInformasi::whereIn('status', ['ditugaskan', 'menunggu_data', 'menunggu_koordinasi'])->count();
+        $countSiapValidasi = PermohonanInformasi::whereIn('status', ['data_diuji', 'siap_validasi'])->count();
+        $countTenggat = PermohonanInformasi::whereNotIn('status', ['selesai', 'ditolak', 'ditutup_tidak_lengkap'])
             ->where('created_at', '<=', now()->subDays(7))
             ->count();
 
