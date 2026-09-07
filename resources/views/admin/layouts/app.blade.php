@@ -114,45 +114,70 @@
         }
     </style>
 </head>
-<body class="bg-surface text-on-surface flex min-h-screen">
+<body class="bg-surface text-on-surface flex min-h-screen" x-data="{ mobileSidebarOpen: false }">
     
-    <!-- SideNavBar -->
-    <nav class="hidden md:flex h-screen w-[240px] flex-col fixed left-0 top-0 bg-[#1a2b42] text-gray-300 shadow-xl z-20">
+    <!-- Mobile Sidebar Backdrop -->
+    <div x-show="mobileSidebarOpen" 
+         x-transition:enter="transition-opacity ease-linear duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition-opacity ease-linear duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 md:hidden"
+         @click="mobileSidebarOpen = false"
+         style="display: none;"></div>
+
+    <!-- SideNavBar (Desktop & Mobile Drawer) -->
+    <nav :class="mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
+         class="fixed top-0 left-0 bottom-0 w-64 flex flex-col bg-[#0f172a] text-slate-300 border-r border-slate-800/80 shadow-2xl z-50 transition-transform duration-300 ease-in-out">
+        
         <!-- Brand Header -->
-        <div class="px-5 py-4 flex items-center gap-3 border-b border-gray-700/50">
-            <div class="w-8 h-8 rounded bg-white p-1 flex items-center justify-center shrink-0">
-                <img alt="Bappeda Logo" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtX_U2XLH_I1i15-52gLHX6xO-ZMvIWSEXuwC0Gmqe9FUcJUw02S-fvYKmCl8m5lNarR7LyGNFYzw3C80fG3bLDiLuRnQ_tKrdJgcSt14YJwvn1SDIaPD4lLbpACkSKqDRajmLT0hTdC7q7hOxe2xm7Kwo5VtzSPmlHdRIB5tN_lCE8k42SCkmMmJHeWOayGOsVETHk0HTdmnA8fhIR089BrqE1gkSrqbkEBgtQpw3bHDEhhKbKKJA">
+        <div class="px-5 py-4 flex items-center justify-between border-b border-slate-800/80 shrink-0">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-xl bg-white p-1.5 flex items-center justify-center shrink-0 shadow-sm ring-1 ring-white/20">
+                    <img alt="Bappeda Logo" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtX_U2XLH_I1i15-52gLHX6xO-ZMvIWSEXuwC0Gmqe9FUcJUw02S-fvYKmCl8m5lNarR7LyGNFYzw3C80fG3bLDiLuRnQ_tKrdJgcSt14YJwvn1SDIaPD4lLbpACkSKqDRajmLT0hTdC7q7hOxe2xm7Kwo5VtzSPmlHdRIB5tN_lCE8k42SCkmMmJHeWOayGOsVETHk0HTdmnA8fhIR089BrqE1gkSrqbkEBgtQpw3bHDEhhKbKKJA">
+                </div>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-1.5">
+                        <h1 class="text-white text-sm font-bold m-0 tracking-tight leading-tight">E-PPID</h1>
+                        <span class="text-[9px] font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.2 rounded border border-blue-500/20">ADMIN</span>
+                    </div>
+                    <p class="text-slate-400 text-[11px] m-0 mt-0.5 font-medium truncate">Bappeda Ciamis</p>
+                </div>
             </div>
-            <div>
-                <h1 class="text-white text-sm font-bold m-0 leading-tight tracking-wide">E-PPID</h1>
-                <p class="text-gray-400 text-[10px] m-0">Bappeda Ciamis</p>
-            </div>
+            <button @click="mobileSidebarOpen = false" class="md:hidden text-slate-400 hover:text-white p-1 rounded-lg">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
         </div>
 
         <!-- Scrollable Menu Area -->
-        <div class="flex-1 overflow-y-auto sidebar-scroll py-3"
+        <div class="flex-1 overflow-y-auto sidebar-scroll py-3 px-3 space-y-0.5"
              x-data="{ scroll: $persist(0).as('sidebar-scroll') }"
              x-init="$nextTick(() => { $el.scrollTop = scroll })"
              @scroll.debounce.100ms="scroll = $el.scrollTop">
             
-            <div class="px-5 mb-1.5 text-[9px] font-bold text-gray-500 uppercase tracking-widest">Utama</div>
-            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.dashboard') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.dashboard') }}">
-                <span class="material-symbols-outlined text-[16px]">dashboard</span>
-                Dashboard
+            <!-- SECTION: UTAMA -->
+            <div class="px-3 pt-2 pb-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Utama</div>
+            
+            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.dashboard') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.dashboard') }}">
+                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.dashboard') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">dashboard</span>
+                <span>Dashboard</span>
             </a>
             
-            <div class="mt-4 mb-1.5 px-5 text-[9px] font-bold text-gray-500 uppercase tracking-widest">Menu Utama</div>
+            <!-- SECTION: LAYANAN INFORMASI -->
+            <div class="px-3 pt-4 pb-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Layanan Informasi</div>
             
             <!-- Permohonan Group -->
-            <div x-data="{ open: $persist(true).as('sidebar-permohonan-menu') }" class="mb-1">
-                <button @click="open = !open" class="w-full flex items-center justify-between px-5 py-2 text-[13px] {{ request()->routeIs('admin.permohonan.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'text-gray-300 hover:text-white hover:bg-white/5 border-l-2 border-transparent' }} transition-all duration-200">
-                    <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-[16px]">folder_open</span>
-                        <span>Permohonan Informasi</span>
+            <div x-data="{ open: $persist(true).as('sidebar-permohonan-menu') }">
+                <button @click="open = !open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.permohonan.*') ? 'bg-slate-800/90 text-white font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.permohonan.*') ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-200' }}">folder_open</span>
+                        <span class="truncate">Permohonan Informasi</span>
                     </div>
-                    <span class="material-symbols-outlined text-[14px] transition-transform duration-200" :class="open ? 'rotate-180' : ''">expand_more</span>
+                    <span class="material-symbols-outlined text-[16px] transition-transform duration-200 text-slate-500 group-hover:text-slate-300" :class="open ? 'rotate-180' : ''">expand_more</span>
                 </button>
-                <div x-show="open" x-collapse>
+                <div x-show="open" x-collapse class="pl-4 ml-5 my-1 space-y-1 border-l border-slate-800/80">
                     @php
                         $isMasuk = (request()->routeIs('admin.permohonan.index') && request('status') == 'diajukan') || (request()->routeIs('admin.permohonan.show') && isset($permohonan) && $permohonan->status->value == 'diajukan');
                         $isKoordinasi = (request()->routeIs('admin.permohonan.index') && request('status') == 'menunggu_data') || (request()->routeIs('admin.permohonan.show') && isset($permohonan) && $permohonan->status->value == 'menunggu_data');
@@ -161,131 +186,146 @@
                         $isSemua = request()->routeIs('admin.permohonan.index') && empty(request()->except('page'));
                     @endphp
                     @if(auth()->user()->hasRole('Desk Layanan') || auth()->user()->hasRole('Super Admin'))
-                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ $isMasuk ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'diajukan']) }}">
-                        <span class="material-symbols-outlined text-[14px]">arrow_right</span>
-                        Permohonan Masuk
+                    <a class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-150 group {{ $isMasuk ? 'text-blue-400 font-bold bg-blue-500/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40' }}" href="{{ route('admin.permohonan.index', ['status' => 'diajukan']) }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ $isMasuk ? 'bg-blue-400 shadow-xs shadow-blue-400/50' : 'bg-slate-600 group-hover:bg-slate-400' }}"></span>
+                        <span>Permohonan Masuk</span>
                     </a>
                     @endif
                     @if(auth()->user()->hasRole('Petugas Penghubung') || auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
-                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ $isKoordinasi ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'menunggu_data']) }}">
-                        <span class="material-symbols-outlined text-[14px]">arrow_right</span>
-                        Koordinasi Data
+                    <a class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-150 group {{ $isKoordinasi ? 'text-blue-400 font-bold bg-blue-500/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40' }}" href="{{ route('admin.permohonan.index', ['status' => 'menunggu_data']) }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ $isKoordinasi ? 'bg-blue-400 shadow-xs shadow-blue-400/50' : 'bg-slate-600 group-hover:bg-slate-400' }}"></span>
+                        <span>Koordinasi Data</span>
                     </a>
                     @endif
                     @if(auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
-                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ $isUji ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'data_diuji']) }}">
-                        <span class="material-symbols-outlined text-[14px]">arrow_right</span>
-                        Uji & Validasi
+                    <a class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-150 group {{ $isUji ? 'text-blue-400 font-bold bg-blue-500/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40' }}" href="{{ route('admin.permohonan.index', ['status' => 'data_diuji']) }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ $isUji ? 'bg-blue-400 shadow-xs shadow-blue-400/50' : 'bg-slate-600 group-hover:bg-slate-400' }}"></span>
+                        <span>Uji & Validasi</span>
                     </a>
                     @endif
                     @if(auth()->user()->hasRole('Atasan PPID Pelaksana') || auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
-                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ $isKonsep ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index', ['status' => 'menunggu_tanda_tangan']) }}">
-                        <span class="material-symbols-outlined text-[14px]">arrow_right</span>
-                        Konsep Jawaban
+                    <a class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-150 group {{ $isKonsep ? 'text-blue-400 font-bold bg-blue-500/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40' }}" href="{{ route('admin.permohonan.index', ['status' => 'menunggu_tanda_tangan']) }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ $isKonsep ? 'bg-blue-400 shadow-xs shadow-blue-400/50' : 'bg-slate-600 group-hover:bg-slate-400' }}"></span>
+                        <span>Konsep Jawaban</span>
                     </a>
                     @endif
-                    <a class="flex items-center gap-3 pl-11 pr-5 py-1.5 text-[12px] transition-all duration-200 {{ $isSemua ? 'text-[#f5d76e]' : 'hover:text-white text-gray-400' }}" href="{{ route('admin.permohonan.index') }}">
-                        <span class="material-symbols-outlined text-[14px]">arrow_right</span>
-                        Semua Permohonan
+                    <a class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-150 group {{ $isSemua ? 'text-blue-400 font-bold bg-blue-500/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40' }}" href="{{ route('admin.permohonan.index') }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ $isSemua ? 'bg-blue-400 shadow-xs shadow-blue-400/50' : 'bg-slate-600 group-hover:bg-slate-400' }}"></span>
+                        <span>Semua Permohonan</span>
                     </a>
                 </div>
             </div>
             
             <!-- Keberatan Menu -->
             @if(auth()->user()->hasRole('Atasan PPID Pelaksana') || auth()->user()->hasRole('Desk Layanan') || auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
-            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.keberatan.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.keberatan.index') }}">
-                <span class="material-symbols-outlined text-[16px]">gavel</span>
-                Sengketa & Keberatan
+            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.keberatan.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.keberatan.index') }}">
+                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.keberatan.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">gavel</span>
+                <span>Sengketa & Keberatan</span>
             </a>
             @endif
             
+            <!-- SECTION: PERSURATAN / E-OFFICE -->
             @if(auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
-            <div class="mt-4 mb-1.5 px-5 text-[9px] font-bold text-gray-500 uppercase tracking-widest">E-Office</div>
-            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.surat-masuk.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.surat-masuk.index') }}">
-                <span class="material-symbols-outlined text-[16px]">mark_email_unread</span>
-                Surat Masuk
+            <div class="px-3 pt-4 pb-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Persuratan (E-Office)</div>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.surat-masuk.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.surat-masuk.index') }}">
+                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.surat-masuk.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">mark_email_unread</span>
+                <span>Surat Masuk</span>
             </a>
-            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.surat-keluar.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.surat-keluar.index') }}">
-                <span class="material-symbols-outlined text-[16px]">forward_to_inbox</span>
-                Surat Keluar
+            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.surat-keluar.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.surat-keluar.index') }}">
+                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.surat-keluar.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">forward_to_inbox</span>
+                <span>Surat Keluar</span>
             </a>
             @endif
             
+            <!-- SECTION: MASTER DATA -->
             @if(auth()->user()->hasRole('Super Admin'))
-            <div class="mt-4 mb-1.5 px-5 text-[9px] font-bold text-gray-500 uppercase tracking-widest">Pengaturan & Sistem</div>
-            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.unit-pengolah.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.unit-pengolah.index') }}">
-                <span class="material-symbols-outlined text-[16px]">corporate_fare</span>
-                Master Bidang
+            <div class="px-3 pt-4 pb-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Master Data</div>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.unit-pengolah.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.unit-pengolah.index') }}">
+                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.unit-pengolah.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">corporate_fare</span>
+                <span>Master Bidang</span>
             </a>
-            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.klasifikasi-arsip.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.klasifikasi-arsip.index') }}">
-                <span class="material-symbols-outlined text-[16px]">folder_special</span>
-                Klasifikasi Arsip
+            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.klasifikasi-arsip.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.klasifikasi-arsip.index') }}">
+                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.klasifikasi-arsip.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">folder_special</span>
+                <span>Klasifikasi Arsip</span>
             </a>
-            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.kategori-pemohon.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.kategori-pemohon.index') }}">
-                <span class="material-symbols-outlined text-[16px]">groups</span>
-                Kategori Pemohon
+            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.kategori-pemohon.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.kategori-pemohon.index') }}">
+                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.kategori-pemohon.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">groups</span>
+                <span>Kategori Pemohon</span>
             </a>
-            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.cara-memperoleh-informasi.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.cara-memperoleh-informasi.index') }}">
-                <span class="material-symbols-outlined text-[16px]">receipt_long</span>
-                Cara Memperoleh Info
+            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.cara-memperoleh-informasi.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.cara-memperoleh-informasi.index') }}">
+                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.cara-memperoleh-informasi.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">receipt_long</span>
+                <span>Cara Perolehan Info</span>
             </a>
-            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.kategori-informasi-publik.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.kategori-informasi-publik.index') }}">
-                <span class="material-symbols-outlined text-[16px]">category</span>
-                Kategori Info Publik
+            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.kategori-informasi-publik.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.kategori-informasi-publik.index') }}">
+                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.kategori-informasi-publik.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">category</span>
+                <span>Kategori Info Publik</span>
             </a>
             @endif
 
+            <!-- SECTION: ADMINISTRATOR & SISTEM -->
             @if(auth()->user()->hasRole('Super Admin'))
-            <div class="mt-4 mb-1.5 px-5 text-[9px] font-bold text-gray-500 uppercase tracking-widest">Super Admin</div>
-            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.users.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.users.index') }}">
-                <span class="material-symbols-outlined text-[16px]">manage_accounts</span>
-                Pengguna & Akun
+            <div class="px-3 pt-4 pb-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Administrator</div>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.users.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.users.index') }}">
+                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.users.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">manage_accounts</span>
+                <span>Kelola Pengguna</span>
             </a>
-            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.roles.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.roles.index') }}">
-                <span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>
-                Hak Akses (Role)
+            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.roles.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.roles.index') }}">
+                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.roles.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">admin_panel_settings</span>
+                <span>Hak Akses (Role)</span>
             </a>
             @endif
 
-            <!-- Pengaturan Link (Single Page) -->
-            <div class="mt-4 mb-1.5 px-5 text-[9px] font-bold text-gray-500 uppercase tracking-widest">Pengaturan</div>
-            <a class="flex items-center gap-3 px-5 py-2 text-[13px] transition-all duration-200 {{ request()->routeIs('admin.profile.*') || request()->routeIs('admin.settings.*') || request()->routeIs('admin.logs.*') ? 'text-[#f5d76e] bg-white/5 border-l-2 border-[#f5d76e]' : 'hover:text-white hover:bg-white/5 border-l-2 border-transparent text-gray-300' }}" href="{{ route('admin.profile.index') }}">
-                <span class="material-symbols-outlined text-[16px]">settings</span>
-                Pengaturan
+            <!-- SECTION: PENGATURAN & AUDIT -->
+            <div class="px-3 pt-4 pb-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pengaturan & Log</div>
+            
+            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.logs.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.logs.index') }}">
+                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.logs.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">history</span>
+                <span>Log Aktivitas</span>
+            </a>
+
+            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.profile.*') || request()->routeIs('admin.settings.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.profile.index') }}">
+                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.profile.*') || request()->routeIs('admin.settings.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">settings</span>
+                <span>Pengaturan Sistem</span>
             </a>
         </div>
 
-        <!-- User Profile Footer -->
-        <div class="border-t border-gray-700/50 p-4 shrink-0 bg-[#121c2e] flex flex-col justify-end">
-            <div class="flex items-center gap-3 mb-3">
-                <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden">
+        <!-- User Profile Card Footer -->
+        <div class="p-3 border-t border-slate-800/80 bg-slate-900/60 shrink-0">
+            <div class="flex items-center gap-3 p-2 rounded-xl bg-slate-800/60 border border-slate-700/60">
+                <div class="relative w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden ring-1 ring-white/10">
                     @if(auth()->user()->profile_photo_path)
                         <img src="{{ Storage::url(auth()->user()->profile_photo_path) }}" class="w-full h-full object-cover">
                     @else
                         {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
                     @endif
+                    <span class="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-slate-800"></span>
                 </div>
-                <div class="overflow-hidden min-w-0">
-                    <p class="text-[13px] font-semibold text-white truncate m-0 leading-tight">{{ auth()->user()->name ?? 'Administrator' }}</p>
-                    <p class="text-[9px] text-gray-400 truncate m-0 mt-0.5">{{ auth()->user()->role->name ?? 'Admin' }}</p>
+                <div class="overflow-hidden min-w-0 flex-1">
+                    <p class="text-xs font-bold text-white truncate m-0 leading-tight">{{ auth()->user()->name ?? 'Administrator' }}</p>
+                    <p class="text-[10px] text-slate-400 truncate m-0 mt-0.5 font-medium">{{ auth()->user()->role->name ?? 'Admin' }}</p>
                 </div>
+                <form action="{{ route('admin.logout') }}" method="POST" class="m-0 shrink-0">
+                    @csrf
+                    <button type="submit" title="Keluar (Logout)" class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">logout</span>
+                    </button>
+                </form>
             </div>
-            <form action="{{ route('admin.logout') }}" method="POST" class="m-0">
-                @csrf
-                <button type="submit" class="w-full flex items-center gap-2 text-gray-400 hover:text-white hover:bg-white/5 transition-colors duration-200 px-2 py-1.5 rounded text-[12px] font-medium bg-transparent cursor-pointer">
-                    <span class="material-symbols-outlined text-[16px] text-red-400">logout</span>
-                    Logout
-                </button>
-            </form>
         </div>
     </nav>
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col min-w-0 md:pl-[240px]">
+    <div class="flex-1 flex flex-col min-w-0 md:pl-64">
         <!-- TopAppBar -->
-        <header class="bg-white border-b border-gray-200 shadow-sm docked full-width top-0 sticky z-50 flex justify-between items-center w-full px-6 py-2.5">
+        <header class="bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-2xs docked full-width top-0 sticky z-30 flex justify-between items-center w-full px-5 md:px-8 py-3">
             <div class="flex items-center">
-                <span class="text-primary font-bold text-sm md:hidden mr-4">E-PPID</span>
+                <!-- Mobile Toggle Button -->
+                <button @click="mobileSidebarOpen = true" class="md:hidden mr-3 p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">menu</span>
+                </button>
+                
+                <span class="text-blue-950 font-bold text-sm md:hidden">E-PPID</span>
+
                 
                 <!-- Desktop Header Title -->
                 <div class="hidden md:flex items-center gap-3">
