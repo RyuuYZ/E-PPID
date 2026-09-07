@@ -15,26 +15,9 @@ class InformasiPublikController extends Controller
     {
         $query = InformasiPublik::with(['kategori', 'unitPengolah']);
 
-        if ($request->filled('kategori')) {
-            $query->where('kategori_informasi_publik_id', $request->kategori);
-        }
-
-        if ($request->filled('jenis') && $request->jenis !== 'all') {
-            $query->where('jenis_dokumen', $request->jenis);
-        }
-
-        if ($request->filled('tahun') && $request->tahun !== 'all') {
-            $query->where('tahun', $request->tahun);
-        }
-
-        if ($request->filled('q')) {
-            $query->search($request->q);
-        }
-
         $dokumen = $query->orderBy('tahun', 'desc')
                          ->orderBy('created_at', 'desc')
-                         ->paginate(10)
-                         ->withQueryString();
+                         ->get();
 
         $kategoriList = KategoriInformasiPublik::where('nama_kategori', '!=', 'Keberatan')->get();
         $jenisOptions = InformasiPublik::getJenisDokumenOptions();

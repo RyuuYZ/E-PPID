@@ -624,6 +624,11 @@
                                 searchInput.setAttribute('placeholder', el.dataset.searchPlaceholder || 'Ketik untuk mencari...');
                                 searchInput.setAttribute('autocomplete', 'off');
                             }
+                        },
+                        onChange: function(value) {
+                            // Dispatch native change event so Alpine.js @change and x-model work
+                            el.value = value;
+                            el.dispatchEvent(new Event('change', { bubbles: true }));
                         }
                     });
                 } catch (err) {

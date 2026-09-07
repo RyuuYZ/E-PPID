@@ -84,15 +84,63 @@
         </div>
     </div>
 
+    <!-- Client-Side Filter + Table (Alpine.js) -->
+    <div x-data="{
+        search: '',
+        kategori: '',
+        jenis: 'all',
+        tahun: 'all',
+        applyFilters() {
+            const rows = document.querySelectorAll('#dokumenTable tr.doc-row');
+            const q = this.search.toLowerCase().trim();
+            let visibleCount = 0;
+            rows.forEach(row => {
+                const rowKategori = row.dataset.kategori || '';
+                const rowJenis = row.dataset.jenis || '';
+                const rowTahun = row.dataset.tahun || '';
+                const rowText = row.dataset.searchtext || '';
+
+                let show = true;
+                if (this.kategori && rowKategori !== this.kategori) show = false;
+                if (this.jenis !== 'all' && rowJenis !== this.jenis) show = false;
+                if (this.tahun !== 'all' && rowTahun !== this.tahun) show = false;
+                if (q && !rowText.includes(q)) show = false;
+
+                row.style.display = show ? '' : 'none';
+                if (show) visibleCount++;
+            });
+
+            const counter = document.getElementById('filterCounter');
+            const emptyRow = document.getElementById('emptyRow');
+            if (counter) counter.textContent = 'Menampilkan ' + visibleCount + ' dari {{ $dokumen->count() }} dokumen';
+            if (emptyRow) emptyRow.style.display = visibleCount === 0 ? '' : 'none';
+        },
+        resetFilters() {
+            this.search = '';
+            this.kategori = '';
+            this.jenis = 'all';
+            this.tahun = 'all';
+            this.$nextTick(() => this.applyFilters());
+            document.querySelectorAll('#filterToolbar select.custom-select').forEach(el => {
+                if (el.tomselect) {
+                    el.tomselect.setValue(el.options[0].value, true);
+                }
+            });
+        },
+        get hasActiveFilter() {
+            return this.search !== '' || this.kategori !== '' || this.jenis !== 'all' || this.tahun !== 'all';
+        }
+    }" x-init="$nextTick(() => applyFilters())">
+
     <!-- Filter Toolbar Card -->
-    <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs mb-6">
-        <form action="{{ route('admin.informasi-publik.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+    <div id="filterToolbar" class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
             <!-- Search Input -->
             <div class="md:col-span-4">
                 <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Pencarian</label>
                 <div class="relative">
                     <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">search</span>
-                    <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari judul, kata kunci, atau ringkasan..." 
+                    <input type="text" x-model="search" @input.debounce.300ms="applyFilters()" placeholder="Cari judul, kata kunci, atau ringkasan..." 
                            class="w-full h-10 pl-9 pr-3 text-xs bg-slate-50/60 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 font-medium text-slate-800 transition-all">
                 </div>
             </div>
@@ -100,13 +148,13 @@
             <!-- Kategori UU KIP -->
             <div class="md:col-span-3">
                 <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Kategori UU KIP</label>
-                <select name="kategori" 
+                <select x-model="kategori" @change="applyFilters()"
                         data-placeholder="Semua Kategori"
                         data-search-placeholder="Cari kategori..."
                         class="custom-select ts-compact w-full text-xs font-medium">
                     <option value="">Semua Kategori</option>
                     @foreach($kategoriList as $kat)
-                    <option value="{{ $kat->id }}" {{ request('kategori') == $kat->id ? 'selected' : '' }}>{{ $kat->nama_kategori }}</option>
+                    <option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</option>
                     @endforeach
                 </select>
             </div>
@@ -114,13 +162,13 @@
             <!-- Jenis Dokumen Perencanaan Bapperida -->
             <div class="md:col-span-3">
                 <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Jenis Dokumen Bapperida</label>
-                <select name="jenis" 
+                <select x-model="jenis" @change="applyFilters()"
                         data-placeholder="Semua Jenis Dokumen"
                         data-search-placeholder="Cari jenis dokumen..."
                         class="custom-select ts-compact w-full text-xs font-medium">
                     <option value="all">Semua Jenis Dokumen</option>
                     @foreach($jenisOptions as $key => $label)
-                    <option value="{{ $key }}" {{ request('jenis') == $key ? 'selected' : '' }}>{{ $key }} - {{ $label }}</option>
+                    <option value="{{ $key }}">{{ $key }} - {{ $label }}</option>
                     @endforeach
                 </select>
             </div>
@@ -128,29 +176,26 @@
             <!-- Filter Tahun -->
             <div class="md:col-span-1">
                 <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Tahun</label>
-                <select name="tahun" 
+                <select x-model="tahun" @change="applyFilters()"
                         data-placeholder="Semua"
                         data-no-search="true"
                         class="custom-select ts-compact w-full text-xs font-medium">
                     <option value="all">Semua</option>
                     @foreach($availableYears as $yr)
-                    <option value="{{ $yr }}" {{ request('tahun') == $yr ? 'selected' : '' }}>{{ $yr }}</option>
+                    <option value="{{ $yr }}">{{ $yr }}</option>
                     @endforeach
                 </select>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="md:col-span-1 flex gap-1.5">
-                <button type="submit" class="w-full h-10 bg-slate-800 hover:bg-slate-900 text-white rounded-xl flex items-center justify-center transition-colors shadow-2xs font-bold text-xs" title="Terapkan Filter">
-                    <span class="material-symbols-outlined text-[18px]">filter_alt</span>
+            <!-- Reset -->
+            <div class="md:col-span-1 flex items-end">
+                <button type="button" x-show="hasActiveFilter" x-cloak @click="resetFilters()"
+                        class="w-full h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl flex items-center justify-center gap-1.5 transition-colors text-xs font-semibold cursor-pointer" title="Reset Filter">
+                    <span class="material-symbols-outlined text-[16px]">refresh</span>
+                    <span>Reset</span>
                 </button>
-                @if(request()->hasAny(['q', 'kategori', 'jenis', 'tahun']))
-                <a href="{{ route('admin.informasi-publik.index') }}" class="h-10 px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl flex items-center justify-center transition-colors text-xs font-semibold" title="Reset Filter">
-                    <span class="material-symbols-outlined text-[18px]">refresh</span>
-                </a>
-                @endif
             </div>
-        </form>
+        </div>
     </div>
 
     <!-- Data Table Card -->
@@ -160,25 +205,29 @@
                 <span class="material-symbols-outlined text-slate-400 text-[18px]">table_rows</span>
                 <h2 class="text-sm font-bold text-slate-800 m-0">Katalog Dokumen Terdaftar</h2>
             </div>
-            <span class="text-xs text-slate-500 font-medium">Menampilkan {{ $dokumen->firstItem() ?? 0 }} - {{ $dokumen->lastItem() ?? 0 }} dari {{ $dokumen->total() }} dokumen</span>
+            <span id="filterCounter" class="text-xs text-slate-500 font-medium">Menampilkan {{ $dokumen->count() }} dari {{ $dokumen->count() }} dokumen</span>
         </div>
 
         <div class="w-full overflow-hidden">
             <table class="w-full table-fixed text-left border-collapse">
                 <thead>
                     <tr class="border-b border-slate-200/80 bg-slate-50/60 text-[11px] text-slate-500 uppercase tracking-wider">
-                        <th class="w-[36%] px-4 py-3 font-bold">Judul Dokumen &amp; Klasifikasi</th>
-                        <th class="w-[15%] px-3 py-3 font-bold whitespace-nowrap">Kategori UU KIP</th>
-                        <th class="w-[8%] px-2 py-3 font-bold text-center whitespace-nowrap">Tahun</th>
-                        <th class="w-[18%] px-3 py-3 font-bold whitespace-nowrap">Penanggung Jawab</th>
-                        <th class="w-[8%] px-2 py-3 font-bold text-center whitespace-nowrap">Unduhan</th>
-                        <th class="w-[7%] px-2 py-3 font-bold text-center whitespace-nowrap">Status</th>
-                        <th class="w-[8%] px-3 py-3 font-bold text-right whitespace-nowrap">Aksi</th>
+                        <th class="w-[34%] px-4 py-3.5 font-bold">Judul Dokumen &amp; Klasifikasi</th>
+                        <th class="w-[16%] px-3 py-3.5 font-bold whitespace-nowrap">Kategori UU KIP</th>
+                        <th class="w-[7%] px-2 py-3.5 font-bold text-center whitespace-nowrap">Tahun</th>
+                        <th class="w-[19%] px-3 py-3.5 font-bold whitespace-nowrap">Penanggung Jawab</th>
+                        <th class="w-[8%] px-2 py-3.5 font-bold text-center whitespace-nowrap">Unduhan</th>
+                        <th class="w-[8%] px-2 py-3.5 font-bold text-center whitespace-nowrap">Status</th>
+                        <th class="w-[8%] px-3 py-3.5 font-bold text-center whitespace-nowrap">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 text-slate-600 text-xs">
-                    @forelse($dokumen as $item)
-                    <tr class="hover:bg-slate-50/80 transition-colors">
+                <tbody id="dokumenTable" class="divide-y divide-slate-100 text-slate-600 text-xs">
+                    @foreach($dokumen as $item)
+                    <tr class="doc-row hover:bg-slate-50/80 transition-colors"
+                        data-kategori="{{ $item->kategori_informasi_publik_id }}"
+                        data-jenis="{{ $item->jenis_dokumen }}"
+                        data-tahun="{{ $item->tahun }}"
+                        data-searchtext="{{ strtolower($item->judul . ' ' . $item->jenis_dokumen . ' ' . ($item->ringkasan ?? '') . ' ' . ($item->penanggung_jawab ?? '') . ' ' . ($item->kategori?->nama_kategori ?? '')) }}">
                         <!-- Judul & Klasifikasi -->
                         <td class="px-4 py-3">
                             <div class="flex items-start gap-2.5">
@@ -260,49 +309,66 @@
                             @endif
                         </td>
 
-                        <!-- Aksi -->
-                        <td class="px-3 py-3 text-right whitespace-nowrap">
-                            <div class="inline-flex items-center gap-1 justify-end">
-                                <a href="{{ route('informasi-publik.download', $item->id) }}" 
-                                   target="_blank"
-                                   class="p-1 rounded-md text-slate-500 hover:text-blue-600 hover:bg-blue-50 border border-slate-200/80 transition-colors shadow-2xs" 
-                                   title="Unduh Berkas PDF">
-                                    <span class="material-symbols-outlined text-[16px]">download</span>
-                                </a>
-                                <a href="{{ route('admin.informasi-publik.edit', $item->id) }}" 
-                                   class="p-1 rounded-md text-slate-500 hover:text-amber-600 hover:bg-amber-50 border border-slate-200/80 transition-colors shadow-2xs" 
-                                   title="Edit Dokumen">
-                                    <span class="material-symbols-outlined text-[16px]">edit</span>
-                                </a>
-                                <form action="{{ route('admin.informasi-publik.destroy', $item->id) }}" method="POST" class="inline m-0" onsubmit="return confirm('Apakah Anda yakin ingin menghapus dokumen ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="p-1 rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200/80 transition-colors shadow-2xs cursor-pointer" title="Hapus Dokumen">
-                                        <span class="material-symbols-outlined text-[16px]">delete</span>
-                                    </button>
-                                </form>
+                        <!-- Aksi (3-dot dropdown) -->
+                        <td class="px-3 py-3 text-center whitespace-nowrap">
+                            <div x-data="{ open: false }" class="relative inline-block">
+                                <button @click="open = !open" @click.away="open = false" type="button" 
+                                        class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors shadow-2xs cursor-pointer">
+                                    <span class="material-symbols-outlined text-[18px]">more_vert</span>
+                                </button>
+                                <div x-show="open" x-cloak
+                                     x-transition:enter="transition ease-out duration-100" 
+                                     x-transition:enter-start="transform opacity-0 scale-95" 
+                                     x-transition:enter-end="transform opacity-100 scale-100" 
+                                     x-transition:leave="transition ease-in duration-75" 
+                                     x-transition:leave-start="transform opacity-100 scale-100" 
+                                     x-transition:leave-end="transform opacity-0 scale-95" 
+                                     class="origin-top-right absolute right-0 mt-1.5 w-44 rounded-xl shadow-lg bg-white ring-1 ring-slate-200 z-50 py-1.5 border border-slate-100">
+                                    <a href="{{ route('informasi-publik.download', $item->id) }}" target="_blank" 
+                                       class="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors font-medium">
+                                        <span class="material-symbols-outlined text-[16px]">download</span>
+                                        Unduh Berkas
+                                    </a>
+                                    <a href="{{ route('admin.informasi-publik.edit', $item->id) }}" 
+                                       class="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-amber-600 transition-colors font-medium">
+                                        <span class="material-symbols-outlined text-[16px]">edit</span>
+                                        Edit Dokumen
+                                    </a>
+                                    <div class="border-t border-slate-100 my-1"></div>
+                                    <form action="{{ route('admin.informasi-publik.destroy', $item->id) }}" method="POST" class="m-0" onsubmit="return confirm('Apakah Anda yakin ingin menghapus dokumen ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors font-medium cursor-pointer">
+                                            <span class="material-symbols-outlined text-[16px]">delete</span>
+                                            Hapus Dokumen
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </td>
                     </tr>
-                    @empty
-                    <tr>
+                    @endforeach
+                    <!-- Empty state row (shown by JS when no results match) -->
+                    <tr id="emptyRow" style="display: none;">
                         <td colspan="7" class="px-6 py-12 text-center text-slate-400">
                             <div class="flex flex-col items-center justify-center gap-2">
                                 <span class="material-symbols-outlined text-4xl text-slate-300">find_in_page</span>
-                                <p class="text-sm font-semibold text-slate-600">Belum ada dokumen informasi publik yang sesuai.</p>
-                                <p class="text-xs text-slate-400">Coba sesuaikan kata kunci pencarian atau filter Anda.</p>
+                                <p class="text-sm font-semibold text-slate-600">Tidak ada dokumen yang cocok dengan filter.</p>
+                                <p class="text-xs text-slate-400">Coba sesuaikan kata kunci pencarian atau ubah filter Anda.</p>
                             </div>
                         </td>
                     </tr>
-                    @endforelse
                 </tbody>
             </table>
         </div>
 
-        <!-- Pagination -->
-        <div class="px-6 py-4 border-t border-slate-100 bg-slate-50/40">
-            {{ $dokumen->links() }}
+        <!-- Footer info -->
+        <div class="px-6 py-3 border-t border-slate-100 bg-slate-50/40 text-xs text-slate-500 font-medium">
+            Total {{ $dokumen->count() }} dokumen terdaftar
         </div>
     </div>
+
+    </div>{{-- end x-data --}}
+
 </main>
 @endsection
