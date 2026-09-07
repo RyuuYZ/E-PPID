@@ -191,51 +191,53 @@
             </a>
         </div>
         
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-xs">
+        <div class="w-full overflow-hidden">
+            <table class="w-full table-fixed text-left border-collapse text-xs">
                 <thead>
                     <tr class="bg-slate-50/50 text-slate-500 text-[10px] uppercase tracking-wider border-b border-slate-100">
-                        <th class="px-6 py-3.5 font-bold">No. Registrasi</th>
-                        <th class="px-6 py-3.5 font-bold">Pemohon & Kategori</th>
-                        <th class="px-6 py-3.5 font-bold">Rincian Informasi</th>
-                        <th class="px-6 py-3.5 font-bold">Tanggal Masuk</th>
-                        <th class="px-6 py-3.5 font-bold">Status Alur</th>
-                        <th class="px-6 py-3.5 font-bold text-right">Aksi</th>
+                        <th class="w-[18%] px-3.5 py-3.5 font-bold">No. Registrasi</th>
+                        <th class="w-[17%] px-3.5 py-3.5 font-bold">Pemohon & Kategori</th>
+                        <th class="w-[21%] px-3.5 py-3.5 font-bold">Rincian Informasi</th>
+                        <th class="w-[11%] px-3.5 py-3.5 font-bold">Tanggal Masuk</th>
+                        <th class="w-[21%] px-3.5 py-3.5 font-bold">Status Alur</th>
+                        <th class="w-[12%] px-3.5 py-3.5 font-bold text-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-slate-600">
                     @forelse($permohonanTerbaru as $p)
                     <tr class="hover:bg-slate-50/80 transition-colors">
-                        <td class="px-6 py-4 whitespace-nowrap font-mono font-bold text-slate-800">
-                            <a href="{{ route('admin.permohonan.show', $p->id) }}" class="text-blue-600 hover:underline">
+                        <td class="px-3.5 py-3 font-mono font-bold text-slate-800 truncate">
+                            <a href="{{ route('admin.permohonan.show', $p->id) }}" class="text-blue-600 hover:text-blue-800 hover:underline">
                                 {{ $p->nomor_registrasi }}
                             </a>
                         </td>
-                        <td class="px-6 py-4">
-                            <span class="font-bold text-slate-800 block text-xs">{{ $p->nama_pemohon }}</span>
-                            <span class="text-[11px] text-slate-400 font-medium">{{ $p->kategori_pemohon->nama_kategori ?? 'Perorangan' }}</span>
+                        <td class="px-3.5 py-3">
+                            <span class="font-bold text-slate-800 block text-xs truncate" title="{{ $p->nama_pemohon }}">{{ $p->nama_pemohon }}</span>
+                            <span class="text-[10px] text-slate-400 font-medium block truncate">{{ $p->kategori_pemohon->nama_kategori ?? 'Perorangan' }}</span>
                         </td>
-                        <td class="px-6 py-4 text-slate-600 max-w-sm truncate leading-relaxed" title="{{ $p->rincian_informasi }}">
-                            {{ Str::limit($p->rincian_informasi, 65) }}
+                        <td class="px-3.5 py-3 text-slate-600 truncate leading-relaxed" title="{{ $p->rincian_informasi }}">
+                            {{ Str::limit($p->rincian_informasi, 45) }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-slate-500 text-[11px]">
-                            {{ $p->created_at->format('d M Y, H:i') }} WIB
+                        <td class="px-3.5 py-3 whitespace-nowrap text-slate-500 text-[11px]">
+                            <span class="font-medium text-slate-700 block">{{ $p->created_at->format('d M Y') }}</span>
+                            <span class="text-[10px] text-slate-400">{{ $p->created_at->format('H:i') }} WIB</span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border {{ $p->status->badgeClass() }} shadow-2xs">
-                                {{ $p->status->label() }}
+                        <td class="px-3.5 py-3 whitespace-nowrap">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9.5px] font-bold uppercase tracking-wide border border-current/20 {{ $p->status->badgeClass() }} shadow-2xs max-w-full" title="{{ $p->status->label() }}">
+                                <span class="w-1.5 h-1.5 rounded-full bg-current opacity-70 shrink-0"></span>
+                                <span class="truncate">{{ $p->status->label() }}</span>
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-right whitespace-nowrap">
-                            <a href="{{ route('admin.permohonan.show', $p->id) }}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white text-slate-700 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 transition-colors shadow-2xs font-semibold" title="Lihat Detail">
-                                <span class="material-symbols-outlined text-[15px]">visibility</span>
+                        <td class="px-3.5 py-3 text-right whitespace-nowrap">
+                            <a href="{{ route('admin.permohonan.show', $p->id) }}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white text-slate-700 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 transition-colors shadow-2xs text-[11px] font-semibold" title="Lihat Detail">
+                                <span class="material-symbols-outlined text-[14px]">visibility</span>
                                 <span>Detail</span>
                             </a>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-slate-400">Belum ada data permohonan tercatat.</td>
+                        <td colspan="6" class="px-4 py-12 text-center text-slate-400">Belum ada data permohonan tercatat.</td>
                     </tr>
                     @endforelse
                 </tbody>

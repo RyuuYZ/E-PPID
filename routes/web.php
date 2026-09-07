@@ -61,11 +61,18 @@ Route::get('/lacak', function (\Illuminate\Http\Request $request) {
     
     if ($request->has('tracking_id')) {
         $searched = true;
-        $permohonan = \App\Models\PermohonanInformasi::with('logs')->where('nomor_registrasi', $request->tracking_id)->first();
+        $permohonan = \App\Models\PermohonanInformasi::with(['logs', 'keberatan'])->where('nomor_registrasi', $request->tracking_id)->first();
     }
     
     return view('lacak', compact('permohonan', 'searched'));
 })->name('permohonan.lacak');
+
+// Public Daftar Informasi Publik (DIP) Routes
+Route::get('/informasi-publik', [\App\Http\Controllers\InformasiPublikPublicController::class, 'index'])->name('informasi-publik.index');
+Route::get('/informasi-publik/download/{id}', [\App\Http\Controllers\InformasiPublikPublicController::class, 'download'])->name('informasi-publik.download');
+
+// Public Keberatan Submission
+Route::post('/permohonan/{nomor_registrasi}/keberatan', [\App\Http\Controllers\KeberatanPublicController::class, 'store'])->name('permohonan.keberatan.store');
 
 Route::prefix('admin')->group(function () {
     Route::get('/login', [\App\Http\Controllers\Admin\AuthController::class, 'showLoginForm'])->name('admin.login');
@@ -131,6 +138,9 @@ Route::prefix('admin')->group(function () {
                 'as' => 'admin'
             ]);
             Route::resource('kategori-informasi-publik', \App\Http\Controllers\Admin\KategoriInformasiPublikController::class, [
+                'as' => 'admin'
+            ]);
+            Route::resource('informasi-publik', \App\Http\Controllers\Admin\InformasiPublikController::class, [
                 'as' => 'admin'
             ]);
 

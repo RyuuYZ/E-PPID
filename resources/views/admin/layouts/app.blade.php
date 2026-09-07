@@ -11,6 +11,9 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <!-- Tom Select for Rich Modern Custom Dropdowns -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.default.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -111,6 +114,180 @@
         }
         .sidebar-scroll:hover::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* ===================================================
+           Custom Modern Tom Select (Midnight Slate / Tailwind)
+           =================================================== */
+        .ts-wrapper {
+            width: 100% !important;
+            position: relative;
+            font-family: inherit !important;
+        }
+
+        .ts-wrapper.single .ts-control,
+        .ts-control {
+            display: flex !important;
+            align-items: center !important;
+            min-height: 42px !important;
+            padding: 0.5rem 2.25rem 0.5rem 0.875rem !important;
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 0.75rem !important; /* rounded-xl */
+            font-size: 0.8125rem !important;
+            font-weight: 500 !important;
+            color: #1e293b !important;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
+            cursor: pointer !important;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+            background-position: right 0.75rem center !important;
+            background-repeat: no-repeat !important;
+            background-size: 1.25rem 1.25rem !important;
+        }
+
+        .ts-wrapper.focus .ts-control,
+        .ts-wrapper.dropdown-active .ts-control {
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%232563eb' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 12 4-4 4 4'/%3e%3c/svg%3e") !important;
+        }
+
+        .ts-wrapper .ts-control .item {
+            font-size: 0.8125rem !important;
+            color: #1e293b !important;
+            font-weight: 500 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            max-width: calc(100% - 1rem) !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .ts-wrapper.plugin-dropdown_input .ts-control > input {
+            display: none !important;
+        }
+
+        .ts-wrapper .ts-control > input {
+            font-size: 0.8125rem !important;
+            color: #1e293b !important;
+            font-family: inherit !important;
+        }
+
+        /* Dropdown Menu Box */
+        .ts-dropdown {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 0.875rem !important;
+            box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.12), 0 4px 6px -2px rgba(15, 23, 42, 0.04) !important;
+            padding: 0.4rem !important;
+            margin-top: 0.375rem !important;
+            font-size: 0.8125rem !important;
+            z-index: 9999 !important;
+        }
+
+        /* Search input inside dropdown */
+        .ts-dropdown .dropdown-input-wrap {
+            padding: 0.25rem 0.25rem 0.5rem 0.25rem !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            margin-bottom: 0.35rem !important;
+        }
+
+        .ts-dropdown .dropdown-input {
+            width: 100% !important;
+            padding: 0.45rem 0.75rem !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 0.5rem !important;
+            font-size: 0.775rem !important;
+            font-family: inherit !important;
+            background-color: #f8fafc !important;
+            color: #1e293b !important;
+            outline: none !important;
+            box-sizing: border-box !important;
+            transition: all 0.15s ease !important;
+        }
+
+        .ts-dropdown .dropdown-input:focus {
+            background-color: #ffffff !important;
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1) !important;
+        }
+
+        /* Dropdown Content & Options */
+        .ts-dropdown .ts-dropdown-content {
+            max-height: 240px !important;
+            overflow-y: auto !important;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+
+        .ts-dropdown .ts-dropdown-content::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .ts-dropdown .ts-dropdown-content::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 9999px;
+        }
+
+        .ts-dropdown .option {
+            padding: 0.5rem 0.75rem !important;
+            border-radius: 0.5rem !important;
+            color: #334155 !important;
+            font-size: 0.8125rem !important;
+            font-weight: 500 !important;
+            cursor: pointer !important;
+            transition: background-color 0.1s ease, color 0.1s ease !important;
+            margin-bottom: 2px !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        .ts-dropdown .option.active,
+        .ts-dropdown .option:hover {
+            background-color: #eff6ff !important;
+            color: #1d4ed8 !important;
+            font-weight: 600 !important;
+        }
+
+        .ts-dropdown .option.selected {
+            background-color: #dbeafe !important;
+            color: #1e40af !important;
+            font-weight: 600 !important;
+        }
+
+        .ts-dropdown .no-results {
+            padding: 0.875rem !important;
+            color: #94a3b8 !important;
+            font-size: 0.775rem !important;
+            text-align: center !important;
+        }
+
+        /* Optgroup Header */
+        .ts-dropdown .optgroup-header {
+            font-size: 0.6875rem !important;
+            font-weight: 700 !important;
+            color: #64748b !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+            padding: 0.5rem 0.75rem 0.25rem 0.75rem !important;
+            background: #f8fafc !important;
+            border-radius: 0.375rem !important;
+            margin-top: 0.25rem !important;
+            margin-bottom: 0.25rem !important;
+        }
+
+        /* Compact variant for toolbars/filters */
+        .ts-wrapper.ts-compact .ts-control {
+            min-height: 40px !important;
+            height: 40px !important;
+            padding: 0.35rem 2rem 0.35rem 0.75rem !important;
+            font-size: 0.75rem !important;
+            background-color: #f8fafc !important;
+        }
+        .ts-wrapper.ts-compact .ts-control .item {
+            font-size: 0.75rem !important;
         }
     </style>
 </head>
@@ -216,6 +393,12 @@
                 </div>
             </div>
             
+            <!-- Daftar Informasi Publik (DIP) -->
+            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.informasi-publik.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.informasi-publik.index') }}">
+                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.informasi-publik.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">public</span>
+                <span>Daftar Info Publik (DIP)</span>
+            </a>
+
             <!-- Keberatan Menu -->
             @if(auth()->user()->hasRole('Atasan PPID Pelaksana') || auth()->user()->hasRole('Desk Layanan') || auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
             <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.keberatan.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.keberatan.index') }}">
@@ -408,5 +591,51 @@
         <!-- Dashboard Content -->
         @yield('content')
     </div>
+
+    <!-- Global Custom Select Initialization Script -->
+    <script>
+        function initCustomSelects(parent = document) {
+            if (typeof TomSelect === 'undefined') return;
+            
+            parent.querySelectorAll('select.custom-select:not(.tomselected)').forEach(function(el) {
+                const noSearch = el.dataset.noSearch === 'true';
+                const placeholder = el.getAttribute('placeholder') || el.dataset.placeholder || (el.options[0] && el.options[0].value === '' ? el.options[0].text : '-- Pilih --');
+                
+                const plugins = [];
+                if (!noSearch) {
+                    plugins.push('dropdown_input');
+                }
+                if (el.hasAttribute('multiple')) {
+                    plugins.push('remove_button');
+                }
+
+                try {
+                    const ts = new TomSelect(el, {
+                        plugins: plugins,
+                        create: false,
+                        allowEmptyOption: true,
+                        maxOptions: null, // show all items
+                        sortField: { field: '$order' }, // preserve original order
+                        placeholder: placeholder,
+                        searchField: ['text'],
+                        onInitialize: function() {
+                            const searchInput = this.dropdown.querySelector('.dropdown-input');
+                            if (searchInput) {
+                                searchInput.setAttribute('placeholder', el.dataset.searchPlaceholder || 'Ketik untuk mencari...');
+                                searchInput.setAttribute('autocomplete', 'off');
+                            }
+                        }
+                    });
+                } catch (err) {
+                    console.error('Error initializing TomSelect on', el, err);
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initCustomSelects();
+        });
+    </script>
+    @yield('scripts')
 </body>
 </html>

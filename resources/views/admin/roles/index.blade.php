@@ -24,32 +24,32 @@
         </div>
     @endif
 
-    <div class="bg-white border border-gray-200 rounded shadow-sm overflow-visible mt-2">
-        <table class="w-full text-left border-collapse">
+    <div class="bg-white border border-gray-200 rounded shadow-sm overflow-hidden mt-2">
+        <table class="w-full table-fixed text-left border-collapse">
             <thead>
                 <tr class="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px]">
-                    <th class="px-6 py-3 font-bold border-b border-gray-200 w-1/4">Nama Role</th>
-                    <th class="px-6 py-3 font-bold border-b border-gray-200">Deskripsi</th>
-                    <th class="px-6 py-3 font-bold border-b border-gray-200 text-center w-24">Jumlah User</th>
-                    <th class="px-6 py-3 font-bold border-b border-gray-200 text-right w-24">Aksi</th>
+                    <th class="px-4 py-3 font-bold border-b border-gray-200 w-[28%]">Nama Role</th>
+                    <th class="px-4 py-3 font-bold border-b border-gray-200 w-[46%]">Deskripsi</th>
+                    <th class="px-4 py-3 font-bold border-b border-gray-200 text-center w-[14%]">Jumlah User</th>
+                    <th class="px-4 py-3 font-bold border-b border-gray-200 text-right w-[12%]">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 text-sm">
                 @forelse($roles as $role)
                 <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-3">
+                    <td class="px-4 py-3">
                         <span class="font-bold text-gray-800">{{ $role->name }}</span>
                     </td>
-                    <td class="px-6 py-3 text-gray-600 text-xs">
+                    <td class="px-4 py-3 text-gray-600 text-xs truncate">
                         {{ $role->description ?? '-' }}
                         @if($role->name === 'Super Admin')
-                        <div class="mt-1 text-[10px] text-red-500 font-bold uppercase tracking-wider">Akses Penuh Tanpa Batas</div>
+                        <span class="ml-2 text-[10px] text-red-500 font-bold uppercase tracking-wider">Akses Penuh</span>
                         @endif
                     </td>
-                    <td class="px-6 py-3 text-center text-gray-800 font-semibold text-xs">
+                    <td class="px-4 py-3 text-center text-gray-800 font-semibold text-xs">
                         {{ $role->users()->count() }}
                     </td>
-                    <td class="px-6 py-3 text-right">
+                    <td class="px-4 py-3 text-right">
                         <div x-data="{ open: false }" class="relative inline-block text-left">
                             <button @click="open = !open" @click.away="open = false" type="button" class="inline-flex items-center justify-center bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors px-2 py-1 rounded shadow-sm">
                                 <span class="material-symbols-outlined text-[16px]">more_vert</span>

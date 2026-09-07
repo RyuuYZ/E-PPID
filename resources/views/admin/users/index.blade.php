@@ -24,39 +24,39 @@
         </div>
     @endif
 
-    <div class="bg-white border border-gray-200 rounded shadow-sm overflow-visible mt-2">
-        <table class="w-full text-left border-collapse">
+    <div class="bg-white border border-gray-200 rounded shadow-sm overflow-hidden mt-2">
+        <table class="w-full table-fixed text-left border-collapse">
             <thead>
                 <tr class="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px]">
-                    <th class="px-6 py-3 font-bold border-b border-gray-200">Nama Lengkap & Email</th>
-                    <th class="px-6 py-3 font-bold border-b border-gray-200">Hak Akses (Role)</th>
-                    <th class="px-6 py-3 font-bold border-b border-gray-200 text-center w-24">Status</th>
-                    <th class="px-6 py-3 font-bold border-b border-gray-200 text-right w-24">Aksi</th>
+                    <th class="w-[45%] px-4 py-3 font-bold border-b border-gray-200">Nama Lengkap & Email</th>
+                    <th class="w-[35%] px-4 py-3 font-bold border-b border-gray-200">Hak Akses (Role)</th>
+                    <th class="w-[10%] px-4 py-3 font-bold border-b border-gray-200 text-center">Status</th>
+                    <th class="w-[10%] px-4 py-3 font-bold border-b border-gray-200 text-right">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 text-sm">
                 @forelse($users as $user)
                 <tr class="hover:bg-gray-50 transition-colors {{ !$user->is_active ? 'bg-red-50/30' : '' }}">
-                    <td class="px-6 py-3">
-                        <div class="font-bold text-gray-800">{{ $user->name }}</div>
-                        <div class="text-gray-500 text-xs mt-0.5">{{ $user->email }}</div>
+                    <td class="px-4 py-3">
+                        <div class="font-bold text-gray-800 truncate">{{ $user->name }}</div>
+                        <div class="text-gray-500 text-xs mt-0.5 truncate">{{ $user->email }}</div>
                     </td>
-                    <td class="px-6 py-3 text-gray-700 text-xs font-semibold">
-                        {{ $user->role->name ?? '-' }}
+                    <td class="px-4 py-3 text-gray-700 text-xs font-semibold">
+                        <div class="truncate">{{ $user->role->name ?? '-' }}</div>
                         @if($user->hasRole('Petugas Penghubung') && $user->unit_pengolah)
-                            <div class="text-[10px] text-gray-500 font-normal mt-0.5">
+                            <div class="text-[10px] text-gray-500 font-normal mt-0.5 truncate">
                                 Unit: {{ $user->unit_pengolah->nama_bidang }}
                             </div>
                         @endif
                     </td>
-                    <td class="px-6 py-3 text-center">
+                    <td class="px-4 py-3 text-center whitespace-nowrap">
                         @if($user->is_active)
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-green-100 text-green-700">Aktif</span>
                         @else
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-700">Diblokir</span>
                         @endif
                     </td>
-                    <td class="px-6 py-3 text-right">
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
                         <div x-data="{ open: false }" class="relative inline-block text-left">
                             <button @click="open = !open" @click.away="open = false" type="button" class="inline-flex items-center justify-center bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors px-2 py-1 rounded shadow-sm">
                                 <span class="material-symbols-outlined text-[16px]">more_vert</span>

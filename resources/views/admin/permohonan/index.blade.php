@@ -34,36 +34,37 @@
     </div>
 
     <!-- Data Table -->
-    <div class="bg-white rounded-md border border-gray-200 shadow-sm overflow-visible mt-2">
-        <div class="w-full">
-            <table class="w-full text-left border-collapse text-sm text-gray-600">
+    <div class="bg-white rounded-md border border-gray-200 shadow-sm overflow-hidden mt-2">
+        <div class="w-full overflow-hidden">
+            <table class="w-full table-fixed text-left border-collapse text-sm text-gray-600">
                 <thead>
                     <tr class="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px]">
-                        <th class="px-6 py-3 font-bold border-b border-gray-200">No. Registrasi</th>
-                        <th class="px-6 py-3 font-bold border-b border-gray-200">Pemohon</th>
-                        <th class="px-6 py-3 font-bold border-b border-gray-200">Tanggal Masuk</th>
-                        <th class="px-6 py-3 font-bold border-b border-gray-200">Status</th>
-                        <th class="px-6 py-3 font-bold border-b border-gray-200 text-right">Aksi</th>
+                        <th class="w-[20%] px-4 py-3 font-bold border-b border-gray-200">No. Registrasi</th>
+                        <th class="w-[24%] px-4 py-3 font-bold border-b border-gray-200">Pemohon</th>
+                        <th class="w-[16%] px-4 py-3 font-bold border-b border-gray-200">Tanggal Masuk</th>
+                        <th class="w-[26%] px-4 py-3 font-bold border-b border-gray-200">Status</th>
+                        <th class="w-[14%] px-4 py-3 font-bold border-b border-gray-200 text-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 text-sm">
                     @forelse($permohonan as $p)
                     <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="px-6 py-3 whitespace-nowrap text-gray-600 font-medium">
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-600 font-medium">
                             <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs border border-gray-200">{{ $p->nomor_registrasi }}</span>
                         </td>
-                        <td class="px-6 py-3">
+                        <td class="px-4 py-3 truncate">
                             <span class="font-semibold text-gray-800">{{ $p->nama_pemohon }}</span>
                         </td>
-                        <td class="px-6 py-3 text-gray-500">
+                        <td class="px-4 py-3 text-gray-500 whitespace-nowrap">
                             {{ $p->created_at->format('d M Y') }}
                         </td>
-                        <td class="px-6 py-3">
-                            <span class="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-semibold border {{ $p->status->badgeClass() }} border-opacity-30">
-                                {{ $p->status->label() }}
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border border-current/20 {{ $p->status->badgeClass() }} max-w-full" title="{{ $p->status->label() }}">
+                                <span class="w-1.5 h-1.5 rounded-full bg-current opacity-70 shrink-0"></span>
+                                <span class="truncate">{{ $p->status->label() }}</span>
                             </span>
                         </td>
-                        <td class="px-6 py-3 text-right">
+                        <td class="px-4 py-3 text-right whitespace-nowrap">
                             <div x-data="{ open: false }" class="relative inline-block text-left">
                                 <button @click="open = !open" @click.away="open = false" type="button" class="inline-flex items-center justify-center bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors px-2 py-1 rounded shadow-sm">
                                     <span class="material-symbols-outlined text-[16px]">more_vert</span>
@@ -80,7 +81,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="px-6 py-8 text-center text-gray-500 text-sm">Belum ada data permohonan.</td>
+                        <td colspan="5" class="px-4 py-8 text-center text-gray-500 text-sm">Belum ada data permohonan.</td>
                     </tr>
                     @endforelse
                 </tbody>

@@ -31,40 +31,40 @@
             </div>
         </div>
         
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm text-gray-600">
+        <div class="w-full overflow-hidden">
+            <table class="w-full table-fixed text-left text-sm text-gray-600">
                 <thead class="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
                     <tr>
-                        <th class="px-6 py-4">No. Registrasi</th>
-                        <th class="px-6 py-4">Pemohon</th>
-                        <th class="px-6 py-4">Alasan Keberatan</th>
-                        <th class="px-6 py-4">Tanggal Pengajuan</th>
-                        <th class="px-6 py-4 text-center">Status</th>
-                        <th class="px-6 py-4 text-center">Aksi</th>
+                        <th class="w-[18%] px-4 py-3">No. Registrasi</th>
+                        <th class="w-[18%] px-4 py-3">Pemohon</th>
+                        <th class="w-[26%] px-4 py-3">Alasan Keberatan</th>
+                        <th class="w-[14%] px-4 py-3">Tanggal Pengajuan</th>
+                        <th class="w-[13%] px-4 py-3 text-center">Status</th>
+                        <th class="w-[11%] px-4 py-3 text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse($keberatan as $k)
                         <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="px-6 py-4 font-semibold text-gray-800">
+                            <td class="px-4 py-3 font-semibold text-gray-800 truncate">
                                 {{ $k->permohonan_informasi->nomor_registrasi }}
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-4 py-3 truncate">
                                 {{ $k->permohonan_informasi->nama_pemohon }}
                             </td>
-                            <td class="px-6 py-4 truncate max-w-[200px]">
+                            <td class="px-4 py-3 truncate" title="{{ $k->alasan_keberatan }}">
                                 {{ $k->alasan_keberatan }}
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-4 py-3 whitespace-nowrap">
                                 {{ $k->created_at->format('d M Y') }}
                             </td>
-                            <td class="px-6 py-4 text-center">
-                                <span class="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase border {{ $k->status->badgeClass() }}">
-                                    {{ $k->status->label() }}
+                            <td class="px-4 py-3 text-center whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border border-current/20 {{ $k->status->badgeClass() }} max-w-full" title="{{ $k->status->label() }}">
+                                    <span class="truncate">{{ $k->status->label() }}</span>
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-center">
-                                <a href="{{ route('admin.keberatan.show', $k->id) }}" class="inline-flex items-center justify-center w-8 h-8 rounded bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors" title="Detail Keberatan">
+                            <td class="px-4 py-3 text-center whitespace-nowrap">
+                                <a href="{{ route('admin.keberatan.show', $k->id) }}" class="inline-flex items-center justify-center w-8 h-8 rounded bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-2xs" title="Detail Keberatan">
                                     <span class="material-symbols-outlined text-[18px]">visibility</span>
                                 </a>
                             </td>

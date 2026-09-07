@@ -19,42 +19,42 @@
         </div>
     @endif
 
-    <div class="bg-white border border-gray-200 rounded shadow-sm overflow-visible mt-2">
-        <table class="w-full text-left border-collapse">
+    <div class="bg-white border border-gray-200 rounded shadow-sm overflow-hidden mt-2">
+        <table class="w-full table-fixed text-left border-collapse">
             <thead>
                 <tr class="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px]">
-                    <th class="px-6 py-3 font-bold border-b border-gray-200">No. Surat / Pengirim</th>
-                    <th class="px-6 py-3 font-bold border-b border-gray-200">Perihal</th>
-                    <th class="px-6 py-3 font-bold border-b border-gray-200">Tgl Terima</th>
-                    <th class="px-6 py-3 font-bold border-b border-gray-200">Status</th>
-                    <th class="px-6 py-3 font-bold border-b border-gray-200 text-right w-32">Aksi</th>
+                    <th class="w-[28%] px-4 py-3 font-bold border-b border-gray-200">No. Surat / Pengirim</th>
+                    <th class="w-[32%] px-4 py-3 font-bold border-b border-gray-200">Perihal</th>
+                    <th class="w-[18%] px-4 py-3 font-bold border-b border-gray-200">Tgl Terima</th>
+                    <th class="w-[12%] px-4 py-3 font-bold border-b border-gray-200">Status</th>
+                    <th class="w-[10%] px-4 py-3 font-bold border-b border-gray-200 text-right">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 text-sm">
                 @forelse($suratMasuks as $sm)
                 <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-3">
-                        <div class="font-bold text-gray-800 text-[13px]">{{ $sm->nomor_surat }}</div>
-                        <div class="text-[11px] text-gray-500 mt-0.5">{{ $sm->pengirim }}</div>
+                    <td class="px-4 py-3">
+                        <div class="font-bold text-gray-800 text-[13px] truncate">{{ $sm->nomor_surat }}</div>
+                        <div class="text-[11px] text-gray-500 mt-0.5 truncate">{{ $sm->pengirim }}</div>
                     </td>
-                    <td class="px-6 py-3 text-gray-700 text-xs truncate max-w-[200px]">{{ $sm->perihal }}</td>
-                    <td class="px-6 py-3 text-gray-500 text-xs">{{ \Carbon\Carbon::parse($sm->tanggal_diterima)->translatedFormat('d M Y') }}</td>
-                    <td class="px-6 py-3">
+                    <td class="px-4 py-3 text-gray-700 text-xs truncate" title="{{ $sm->perihal }}">{{ $sm->perihal }}</td>
+                    <td class="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{{ \Carbon\Carbon::parse($sm->tanggal_diterima)->translatedFormat('d M Y') }}</td>
+                    <td class="px-4 py-3 whitespace-nowrap">
                         @if($sm->status == 'Baru')
-                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-600 border border-red-100">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-600 border border-red-100">
                                 <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Baru
                             </span>
                         @elseif($sm->status == 'Didisposisikan')
-                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-yellow-50 text-yellow-600 border border-yellow-100">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-yellow-50 text-yellow-600 border border-yellow-100">
                                 <span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> Disposisi
                             </span>
                         @else
-                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-green-50 text-green-600 border border-green-100">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-green-50 text-green-600 border border-green-100">
                                 <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Selesai
                             </span>
                         @endif
                     </td>
-                    <td class="px-6 py-3 text-right">
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
                         <div x-data="{ open: false }" class="relative inline-block text-left">
                             <button @click="open = !open" @click.away="open = false" type="button" class="inline-flex items-center justify-center bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors px-2 py-1 rounded shadow-sm">
                                 <span class="material-symbols-outlined text-[16px]">more_vert</span>

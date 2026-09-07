@@ -51,8 +51,8 @@
                     <!-- Kategori Pemohon -->
                     <div class="flex flex-col gap-1.5">
                         <label for="kategori_pemohon" class="text-xs font-semibold text-gray-700">Kategori Pemohon <span class="text-red-500">*</span></label>
-                        <select id="kategori_pemohon" name="kategori_pemohon_id" class="w-full text-sm border-gray-300 rounded focus:border-[#1a2b42] focus:ring focus:ring-[#1a2b42] focus:ring-opacity-20 transition-shadow h-10 px-3 bg-white" required>
-                            <option value="" disabled selected>Pilih Kategori Pemohon...</option>
+                        <select id="kategori_pemohon" name="kategori_pemohon_id" data-placeholder="Pilih Kategori Pemohon..." class="custom-select w-full text-xs font-medium" required>
+                            <option value="">Pilih Kategori Pemohon...</option>
                             @foreach($kategoriPemohons as $kp)
                                 <option value="{{ $kp->id }}" {{ old('kategori_pemohon_id') == $kp->id ? 'selected' : '' }}>{{ $kp->nama_kategori }}</option>
                             @endforeach

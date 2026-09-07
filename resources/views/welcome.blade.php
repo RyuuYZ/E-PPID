@@ -42,8 +42,13 @@
     
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-4">
         @foreach($kategoriInformasi as $kategori)
+        @php
+            $targetUrl = $kategori->nama_kategori == 'Keberatan' 
+                ? route('permohonan.lacak') 
+                : route('informasi-publik.index', ['kategori' => $kategori->id]);
+        @endphp
         <!-- Card -->
-        <div class="bg-white border border-gray-100 p-8 rounded-2xl flex flex-col items-center text-center gap-5 hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.06)] hover:border-blue-100 hover:-translate-y-1.5 transition-all duration-300 group cursor-pointer relative overflow-hidden">
+        <a href="{{ $targetUrl }}" class="bg-white border border-gray-100 p-8 rounded-2xl flex flex-col items-center text-center gap-5 hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.06)] hover:border-blue-200 hover:-translate-y-1.5 transition-all duration-300 group cursor-pointer relative overflow-hidden">
             <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-50 to-transparent opacity-0 group-hover:opacity-100 rounded-bl-full transition-opacity duration-500 -z-0"></div>
             
             <div class="relative z-10 w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-sm">
@@ -51,11 +56,55 @@
             </div>
             
             <div class="relative z-10">
-                <h3 class="text-lg font-bold text-gray-800 mb-2">{{ $kategori->nama_kategori }}</h3>
+                <h3 class="text-lg font-bold text-gray-800 mb-2 group-hover:text-blue-700 transition-colors">{{ $kategori->nama_kategori }}</h3>
                 <p class="text-sm text-gray-500 leading-relaxed">{{ $kategori->deskripsi }}</p>
+                <div class="mt-4 flex items-center justify-center gap-1 text-xs font-bold text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span>Lihat Dokumen</span>
+                    <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                </div>
             </div>
-        </div>
+        </a>
         @endforeach
+    </div>
+
+    <!-- Quick Access: Dokumen Perencanaan Utama Bapperida -->
+    <div class="mt-12 p-8 rounded-3xl bg-slate-50 border border-slate-200/80">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+                <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Produk Utama Bapperida</span>
+                <h3 class="text-xl font-bold text-[#0B1B3D] mt-0.5">Dokumen Perencanaan Paling Sering Dicari</h3>
+            </div>
+            <a href="{{ route('informasi-publik.index') }}" class="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                <span>Lihat Semua Dokumen</span>
+                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+            </a>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <a href="{{ route('informasi-publik.index', ['jenis' => 'RPJPD']) }}" class="bg-white p-3.5 rounded-xl border border-slate-200/70 hover:border-blue-400 hover:shadow-sm text-center group transition-all">
+                <span class="text-xs font-bold text-slate-700 group-hover:text-blue-700 block">RPJPD Ciamis</span>
+                <span class="text-[10px] text-slate-400">Rencana 20 Tahun</span>
+            </a>
+            <a href="{{ route('informasi-publik.index', ['jenis' => 'RPJMD']) }}" class="bg-white p-3.5 rounded-xl border border-slate-200/70 hover:border-blue-400 hover:shadow-sm text-center group transition-all">
+                <span class="text-xs font-bold text-slate-700 group-hover:text-blue-700 block">RPJMD Ciamis</span>
+                <span class="text-[10px] text-slate-400">Rencana 5 Tahun</span>
+            </a>
+            <a href="{{ route('informasi-publik.index', ['jenis' => 'RKPD']) }}" class="bg-white p-3.5 rounded-xl border border-slate-200/70 hover:border-blue-400 hover:shadow-sm text-center group transition-all">
+                <span class="text-xs font-bold text-slate-700 group-hover:text-blue-700 block">RKPD 2025</span>
+                <span class="text-[10px] text-slate-400">Rencana Tahunan</span>
+            </a>
+            <a href="{{ route('informasi-publik.index', ['jenis' => 'RTRW']) }}" class="bg-white p-3.5 rounded-xl border border-slate-200/70 hover:border-blue-400 hover:shadow-sm text-center group transition-all">
+                <span class="text-xs font-bold text-slate-700 group-hover:text-blue-700 block">RTRW & RDTR</span>
+                <span class="text-[10px] text-slate-400">Tata Ruang Daerah</span>
+            </a>
+            <a href="{{ route('informasi-publik.index', ['jenis' => 'Kajian & Riset']) }}" class="bg-white p-3.5 rounded-xl border border-slate-200/70 hover:border-blue-400 hover:shadow-sm text-center group transition-all">
+                <span class="text-xs font-bold text-slate-700 group-hover:text-blue-700 block">Kajian & Riset</span>
+                <span class="text-[10px] text-slate-400">Makro & Sosial</span>
+            </a>
+            <a href="{{ route('informasi-publik.index', ['jenis' => 'Roadmap SIDa']) }}" class="bg-white p-3.5 rounded-xl border border-slate-200/70 hover:border-blue-400 hover:shadow-sm text-center group transition-all">
+                <span class="text-xs font-bold text-slate-700 group-hover:text-blue-700 block">Roadmap SIDa</span>
+                <span class="text-[10px] text-slate-400">Sistem Inovasi</span>
+            </a>
+        </div>
     </div>
 </section>
 </main>

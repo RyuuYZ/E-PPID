@@ -565,7 +565,7 @@
                                 @csrf
                                 <div>
                                     <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">Hasil Verifikasi Berkas:</label>
-                                    <select name="target_status" id="verifikasi_action" class="w-full text-xs px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium text-slate-800" onchange="document.getElementById('catatan_tak_lengkap').style.display = this.value === 'menunggu_kelengkapan' ? 'block' : 'none'">
+                                    <select name="target_status" id="verifikasi_action" data-no-search="true" class="custom-select w-full text-xs font-medium text-slate-800" onchange="document.getElementById('catatan_tak_lengkap').style.display = this.value === 'menunggu_kelengkapan' ? 'block' : 'none'">
                                         <option value="diverifikasi">Berkas Lengkap & Terverifikasi</option>
                                         <option value="menunggu_kelengkapan">Berkas Belum Lengkap (Perlu Dilengkapi)</option>
                                     </select>
@@ -605,7 +605,7 @@
                                     <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2.5 assign-row">
                                         <div>
                                             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Unit Pengolah / Bidang:</label>
-                                            <select name="assignments[0][unit_pengolah_id]" class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white" required>
+                                            <select name="assignments[0][unit_pengolah_id]" data-placeholder="Pilih Unit/Bidang..." class="custom-select w-full text-xs font-medium" required>
                                                 <option value="">Pilih Unit/Bidang...</option>
                                                 @foreach($unitPengolahs as $up)
                                                 <option value="{{ $up->id }}">{{ $up->nama_bidang }}</option>
@@ -614,7 +614,7 @@
                                         </div>
                                         <div>
                                             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Petugas Penghubung:</label>
-                                            <select name="assignments[0][petugas_penghubung_id]" class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white" required>
+                                            <select name="assignments[0][petugas_penghubung_id]" data-placeholder="Pilih Petugas Penghubung..." class="custom-select w-full text-xs font-medium" required>
                                                 <option value="">Pilih Petugas Penghubung...</option>
                                                 @foreach($petugasPenghubungs as $petugas)
                                                 <option value="{{ $petugas->id }}">{{ $petugas->name }}</option>
@@ -623,7 +623,7 @@
                                         </div>
                                         <div>
                                             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Instruksi Khusus (Opsional):</label>
-                                            <input type="text" name="assignments[0][instruksi]" placeholder="Contoh: Lampirkan data tahun 2026 format PDF..." class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white">
+                                            <input type="text" name="assignments[0][instruksi]" placeholder="Contoh: Lampirkan data tahun 2026 format PDF..." class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:ring-1 focus:ring-blue-500 bg-white">
                                         </div>
                                     </div>
                                 </div>
@@ -646,7 +646,7 @@
                                         </button>
                                         <div>
                                             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Unit Pengolah / Bidang:</label>
-                                            <select name="assignments[${assignIdx}][unit_pengolah_id]" class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white" required>
+                                            <select name="assignments[${assignIdx}][unit_pengolah_id]" data-placeholder="Pilih Unit/Bidang..." class="custom-select w-full text-xs font-medium" required>
                                                 <option value="">Pilih Unit/Bidang...</option>
                                                 @foreach($unitPengolahs as $up)
                                                 <option value="{{ $up->id }}">{{ $up->nama_bidang }}</option>
@@ -655,7 +655,7 @@
                                         </div>
                                         <div>
                                             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Petugas Penghubung:</label>
-                                            <select name="assignments[${assignIdx}][petugas_penghubung_id]" class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white" required>
+                                            <select name="assignments[${assignIdx}][petugas_penghubung_id]" data-placeholder="Pilih Petugas Penghubung..." class="custom-select w-full text-xs font-medium" required>
                                                 <option value="">Pilih Petugas Penghubung...</option>
                                                 @foreach($petugasPenghubungs as $petugas)
                                                 <option value="{{ $petugas->id }}">{{ $petugas->name }}</option>
@@ -664,10 +664,13 @@
                                         </div>
                                         <div>
                                             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Instruksi Khusus (Opsional):</label>
-                                            <input type="text" name="assignments[${assignIdx}][instruksi]" placeholder="Contoh: Lampirkan data tahun 2026 format PDF..." class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white">
+                                            <input type="text" name="assignments[${assignIdx}][instruksi]" placeholder="Contoh: Lampirkan data tahun 2026 format PDF..." class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:ring-1 focus:ring-blue-500 bg-white">
                                         </div>
                                     `;
                                     container.appendChild(newRow);
+                                    if (typeof initCustomSelects === 'function') {
+                                        initCustomSelects(newRow);
+                                    }
                                     assignIdx++;
                                 }
                             </script>

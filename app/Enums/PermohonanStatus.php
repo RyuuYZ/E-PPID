@@ -23,18 +23,19 @@ enum PermohonanStatus: string
     public function allowedTransitions(): array
     {
         return match ($this) {
-            self::Diajukan => [self::Diverifikasi, self::MenungguKelengkapan],
+            self::Diajukan => [self::Diverifikasi, self::MenungguKelengkapan, self::KeberatanDiajukan],
             self::MenungguKelengkapan => [self::Diverifikasi, self::DitutupTidakLengkap],
-            self::Diverifikasi => [self::Ditugaskan],
-            self::Ditugaskan => [self::MenungguData],
-            self::MenungguData => [self::DataDiuji],
-            self::DataDiuji => [self::MenungguTandaTangan, self::Ditugaskan], // Ditugaskan = revisi
-            self::MenungguTandaTangan => [self::Ditandatangani],
-            self::Ditandatangani => [self::Selesai],
+            self::Diverifikasi => [self::Ditugaskan, self::KeberatanDiajukan],
+            self::Ditugaskan => [self::MenungguData, self::KeberatanDiajukan],
+            self::MenungguData => [self::DataDiuji, self::KeberatanDiajukan],
+            self::DataDiuji => [self::MenungguTandaTangan, self::Ditugaskan, self::KeberatanDiajukan], // Ditugaskan = revisi
+            self::MenungguTandaTangan => [self::Ditandatangani, self::KeberatanDiajukan],
+            self::Ditandatangani => [self::Selesai, self::KeberatanDiajukan],
             self::Selesai => [self::KeberatanDiajukan],
+            self::DitutupTidakLengkap => [self::KeberatanDiajukan],
             self::KeberatanDiajukan => [self::KeberatanDiputuskan],
-            // Terminal states
-            self::DitutupTidakLengkap, self::KeberatanDiputuskan => [],
+            // Terminal state
+            self::KeberatanDiputuskan => [],
         };
     }
 

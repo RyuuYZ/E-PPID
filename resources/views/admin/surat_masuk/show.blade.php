@@ -101,7 +101,7 @@
                         @csrf
                         <div class="mb-4">
                             <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1.5">Tujuan (Unit Pengolah) <span class="text-red-500">*</span></label>
-                            <select name="unit_pengolah_id" class="w-full text-xs px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors bg-gray-50" required>
+                            <select name="unit_pengolah_id" data-placeholder="-- Pilih Bidang --" data-search-placeholder="Cari bidang / unit..." class="custom-select w-full text-xs font-medium" required>
                                 <option value="">-- Pilih Bidang --</option>
                                 @foreach($unitPengolahs as $up)
                                     <option value="{{ $up->id }}">{{ $up->nama_bidang }}</option>

@@ -115,8 +115,13 @@
                                     document.getElementById('unit_pengolah_id').required = true;
                                 } else {
                                     unitPengolahContainer.style.display = 'none';
-                                    document.getElementById('unit_pengolah_id').required = false;
-                                    document.getElementById('unit_pengolah_id').value = '';
+                                    const upEl = document.getElementById('unit_pengolah_id');
+                                    upEl.required = false;
+                                    if (upEl.tomselect) {
+                                        upEl.tomselect.clear();
+                                    } else {
+                                        upEl.value = '';
+                                    }
                                 }
                             }
                         }
@@ -134,7 +139,7 @@
                     <div class="flex flex-col gap-1.5">
                         <label for="unit_pengolah_id" class="text-xs font-semibold text-gray-700">Unit Pengolah / Bidang <span class="text-red-500">*</span></label>
                         <p class="text-[10px] text-gray-500 mb-1">Khusus untuk role "Petugas Penghubung", wajib memilih asal unit pengolah/bidang.</p>
-                        <select id="unit_pengolah_id" name="unit_pengolah_id" class="w-full text-sm border-gray-300 rounded focus:border-[#1a2b42] focus:ring focus:ring-[#1a2b42] focus:ring-opacity-20 transition-shadow h-10 px-3">
+                        <select id="unit_pengolah_id" name="unit_pengolah_id" data-placeholder="-- Pilih Unit Pengolah --" data-search-placeholder="Cari unit pengolah..." class="custom-select w-full text-xs font-medium">
                             <option value="">-- Pilih Unit Pengolah --</option>
                             @foreach($unitPengolahs as $unit)
                                 <option value="{{ $unit->id }}" {{ old('unit_pengolah_id', $user->unit_pengolah_id) == $unit->id ? 'selected' : '' }}>{{ $unit->nama_bidang }}</option>

@@ -26,25 +26,25 @@
         </div>
     @endif
 
-    <div class="bg-white border border-gray-200 rounded shadow-sm overflow-visible mt-2">
-        <table class="w-full text-left border-collapse">
+    <div class="bg-white border border-gray-200 rounded shadow-sm overflow-hidden mt-2">
+        <table class="w-full table-fixed text-left border-collapse">
             <thead>
                 <tr class="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px]">
-                    <th class="px-6 py-3 font-bold border-b border-gray-200 w-16">ID</th>
-                    <th class="px-6 py-3 font-bold border-b border-gray-200">Nama Cara</th>
-                    <th class="px-6 py-3 font-bold border-b border-gray-200">Deskripsi</th>
-                    <th class="px-6 py-3 font-bold border-b border-gray-200 text-right w-32">Aksi</th>
+                    <th class="px-4 py-3 font-bold border-b border-gray-200 w-[10%]">ID</th>
+                    <th class="px-4 py-3 font-bold border-b border-gray-200 w-[38%]">Nama Cara</th>
+                    <th class="px-4 py-3 font-bold border-b border-gray-200 w-[40%]">Deskripsi</th>
+                    <th class="px-4 py-3 font-bold border-b border-gray-200 text-right w-[12%]">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 text-sm">
                 @forelse($cara as $c)
                 <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-3 text-gray-600 font-medium">
+                    <td class="px-4 py-3 text-gray-600 font-medium">
                         <span class="bg-gray-100 px-2 py-1 rounded text-xs border border-gray-200">{{ $c->id }}</span>
                     </td>
-                    <td class="px-6 py-3 font-semibold text-gray-800">{{ $c->nama_cara }}</td>
-                    <td class="px-6 py-3 text-gray-500 text-xs">{{ $c->deskripsi ?? '-' }}</td>
-                    <td class="px-6 py-3 text-right">
+                    <td class="px-4 py-3 font-semibold text-gray-800 truncate">{{ $c->nama_cara }}</td>
+                    <td class="px-4 py-3 text-gray-500 text-xs truncate">{{ $c->deskripsi ?? '-' }}</td>
+                    <td class="px-4 py-3 text-right">
                         <div x-data="{ open: false }" class="relative inline-block text-left">
                             <button @click="open = !open" @click.away="open = false" type="button" class="inline-flex items-center justify-center bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors px-2 py-1 rounded shadow-sm">
                                 <span class="material-symbols-outlined text-[16px]">more_vert</span>

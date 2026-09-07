@@ -73,6 +73,7 @@ class DatabaseSeeder extends Seeder
             CaraMemperolehInformasiSeeder::class,
             KategoriInformasiPublikSeeder::class,
             PermohonanSeeder::class,
+            InformasiPublikSeeder::class,
         ]);
     }
 }

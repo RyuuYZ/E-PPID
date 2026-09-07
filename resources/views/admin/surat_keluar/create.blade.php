@@ -23,7 +23,7 @@
 
             <div class="mb-4">
                 <label class="block text-[13px] font-semibold text-gray-700 mb-1.5">Klasifikasi Arsip (Opsional)</label>
-                <select name="klasifikasi_arsip_id" class="w-full text-sm px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+                <select name="klasifikasi_arsip_id" data-placeholder="-- Pilih Kode Klasifikasi --" data-search-placeholder="Cari kode atau klasifikasi..." class="custom-select w-full text-xs font-medium">
                     <option value="">-- Pilih Kode Klasifikasi --</option>
                     @foreach($klasifikasiArsips as $ka)
                         <option value="{{ $ka->id }}" {{ old('klasifikasi_arsip_id') == $ka->id ? 'selected' : '' }}>
