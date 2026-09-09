@@ -14,14 +14,17 @@
             'no_telp' => $p->no_telp ?? '-',
             'pekerjaan' => $p->pekerjaan ?? '-',
             'alamat' => $p->alamat ?? '-',
-            'kategori_pemohon' => $p->kategori_pemohon?->nama_kategori_pemohon ?? '-',
+            'kategori_pemohon_id' => $p->kategori_pemohon_id,
+            'kategori_pemohon' => $p->kategori_pemohon?->nama_kategori ?? '-',
+            'cara_memperoleh_id' => $p->cara_memperoleh_informasi_id,
+            'cara_memperoleh' => $p->cara_memperoleh_informasi?->nama_cara ?? '-',
+            'cara_salinan' => $p->cara_mendapatkan_salinan ?? '-',
             'rincian_informasi' => $p->rincian_informasi ?? '-',
             'tujuan_penggunaan' => $p->tujuan_penggunaan ?? '-',
-            'cara_memperoleh' => $p->cara_memperoleh_informasi?->nama_cara_memperoleh_informasi ?? '-',
-            'cara_salinan' => $p->cara_mendapatkan_salinan ?? '-',
             'status_value' => $p->status->value,
             'status_label' => $p->status->label(),
             'status_badge_class' => $p->status->badgeClass(),
+            'created_timestamp' => $p->created_at->timestamp,
             'tanggal_masuk_date' => $p->created_at->format('d M Y'),
             'tanggal_masuk_time' => $p->created_at->format('H:i') . ' WIB',
             'tanggal_masuk' => $p->created_at->format('d M Y, H:i') . ' WIB',
@@ -30,13 +33,70 @@
             'url_tanda_terima' => route('permohonan.tanda_terima', $p->nomor_registrasi),
         ];
     });
+
+    $kategoriOptions = $kategoriPemohons->map(function($kp) {
+        return [
+            'value' => (string) $kp->id,
+            'label' => $kp->nama_kategori,
+            'icon' => 'account_circle',
+        ];
+    })->prepend([
+        'value' => 'all',
+        'label' => 'Semua Kategori Pemohon',
+        'icon' => 'groups',
+    ]);
+
+    $caraOptions = $caraMemperoleh->map(function($cm) {
+        return [
+            'value' => (string) $cm->id,
+            'label' => $cm->nama_cara,
+            'icon' => 'contact_support',
+        ];
+    })->prepend([
+        'value' => 'all',
+        'label' => 'Semua Metode',
+        'icon' => 'hub',
+    ]);
+
+    $totalSemua = $permohonan->count();
+    $totalMasuk = $permohonan->where('status.value', 'diajukan')->count();
+    $totalProses = $permohonan->filter(fn($p) => in_array($p->status->value, [
+        'diajukan', 'menunggu_kelengkapan', 'diverifikasi', 'ditugaskan', 'menunggu_data', 'data_diuji', 'menunggu_tanda_tangan', 'ditandatangani'
+    ]))->count();
+    $totalSelesai = $permohonan->where('status.value', 'selesai')->count();
 @endphp
 
 <main class="flex-1 p-5 md:p-8 bg-[#f8fafc] overflow-y-auto min-h-screen"
       x-data="{
           items: {{ Js::from($itemsPayload) }},
+          kategoriOptions: {{ Js::from($kategoriOptions) }},
+          caraOptions: {{ Js::from($caraOptions) }},
+          statusOptions: [
+              { value: 'all', label: 'Semua Status Permohonan', icon: 'all_inclusive', iconBg: 'bg-slate-100 text-slate-700' },
+              { value: 'diajukan', label: 'Permohonan Masuk (Diajukan)', icon: 'inbox', iconBg: 'bg-blue-50 text-blue-700' },
+              { value: 'menunggu_kelengkapan', label: 'Menunggu Kelengkapan Berkas', icon: 'hourglass_top', iconBg: 'bg-amber-50 text-amber-700' },
+              { value: 'diverifikasi', label: 'Diverifikasi (Siap Disposisi)', icon: 'verified', iconBg: 'bg-indigo-50 text-indigo-700' },
+              { value: 'ditugaskan', label: 'Koordinasi / Ditugaskan ke Unit', icon: 'forward_to_inbox', iconBg: 'bg-sky-50 text-sky-700' },
+              { value: 'menunggu_data', label: 'Menunggu Pengunggahan Data', icon: 'cloud_upload', iconBg: 'bg-cyan-50 text-cyan-700' },
+              { value: 'data_diuji', label: 'Uji & Validasi Data', icon: 'rule', iconBg: 'bg-violet-50 text-violet-700' },
+              { value: 'menunggu_tanda_tangan', label: 'Menunggu Pengesahan TTE', icon: 'draw', iconBg: 'bg-purple-50 text-purple-700' },
+              { value: 'ditandatangani', label: 'Telah Ditandatangani (Siap Kirim)', icon: 'verified_user', iconBg: 'bg-teal-50 text-teal-700' },
+              { value: 'selesai', label: 'Selesai (Tuntas)', icon: 'task_alt', iconBg: 'bg-emerald-50 text-emerald-700' },
+              { value: 'ditolak', label: 'Ditolak', icon: 'cancel', iconBg: 'bg-rose-50 text-rose-700' },
+              { value: 'ditutup_tidak_lengkap', label: 'Ditutup Tidak Lengkap', icon: 'block', iconBg: 'bg-slate-100 text-slate-600' }
+          ],
+          sortOptions: [
+              { value: 'latest', label: 'Terbaru Masuk', icon: 'arrow_downward' },
+              { value: 'oldest', label: 'Terlama Masuk', icon: 'arrow_upward' },
+              { value: 'name_asc', label: 'Nama A-Z', icon: 'sort_by_alpha' }
+          ],
+
           search: '',
           statusFilter: '{{ $currentStatus }}',
+          kategoriFilter: 'all',
+          caraFilter: 'all',
+          sortBy: 'latest',
+          openDropdown: null,
           perPage: 10,
           currentPage: 1,
           targetPageInput: 1,
@@ -45,26 +105,83 @@
           copied: false,
 
           init() {
-              // Ensure URL stays clean at /admin/permohonan without query strings
               if (window.location.search) {
                   window.history.replaceState({}, document.title, window.location.pathname);
               }
               this.targetPageInput = this.currentPage;
           },
 
+          get selectedStatusObj() {
+              return this.statusOptions.find(opt => opt.value === this.statusFilter) || this.statusOptions[0];
+          },
+
+          get selectedKategoriObj() {
+              return this.kategoriOptions.find(opt => String(opt.value) === String(this.kategoriFilter)) || this.kategoriOptions[0];
+          },
+
+          get selectedCaraObj() {
+              return this.caraOptions.find(opt => String(opt.value) === String(this.caraFilter)) || this.caraOptions[0];
+          },
+
+          get selectedSortObj() {
+              return this.sortOptions.find(opt => opt.value === this.sortBy) || this.sortOptions[0];
+          },
+
+          get hasActiveFilters() {
+              return this.search.trim() !== '' || 
+                     this.statusFilter !== 'all' || 
+                     this.kategoriFilter !== 'all' || 
+                     this.caraFilter !== 'all' || 
+                     this.sortBy !== 'latest';
+          },
+
+          resetFilters() {
+              this.search = '';
+              this.statusFilter = 'all';
+              this.kategoriFilter = 'all';
+              this.caraFilter = 'all';
+              this.sortBy = 'latest';
+              this.openDropdown = null;
+              this.currentPage = 1;
+              this.targetPageInput = 1;
+          },
+
           get filteredItems() {
               const q = this.search.toLowerCase().trim();
-              return this.items.filter(item => {
-                  const matchesStatus = (this.statusFilter === 'all' || !this.statusFilter) ? true : (item.status_value === this.statusFilter);
-                  const matchesSearch = !q ? true : (
+              let result = this.items.filter(item => {
+                  const matchStatus = (this.statusFilter === 'all' || !this.statusFilter) 
+                      ? true 
+                      : (item.status_value === this.statusFilter);
+
+                  const matchKategori = (this.kategoriFilter === 'all') 
+                      ? true 
+                      : (String(item.kategori_pemohon_id) === String(this.kategoriFilter));
+
+                  const matchCara = (this.caraFilter === 'all') 
+                      ? true 
+                      : (String(item.cara_memperoleh_id) === String(this.caraFilter));
+
+                  const matchSearch = !q ? true : (
                       item.nomor_registrasi.toLowerCase().includes(q) ||
                       item.nama_pemohon.toLowerCase().includes(q) ||
                       (item.email && item.email.toLowerCase().includes(q)) ||
+                      (item.nik_atau_no_badan_hukum && item.nik_atau_no_badan_hukum.toLowerCase().includes(q)) ||
                       (item.rincian_informasi && item.rincian_informasi.toLowerCase().includes(q)) ||
                       (item.kategori_pemohon && item.kategori_pemohon.toLowerCase().includes(q))
                   );
-                  return matchesStatus && matchesSearch;
+
+                  return matchStatus && matchKategori && matchCara && matchSearch;
               });
+
+              if (this.sortBy === 'latest') {
+                  result.sort((a, b) => b.created_timestamp - a.created_timestamp);
+              } else if (this.sortBy === 'oldest') {
+                  result.sort((a, b) => a.created_timestamp - b.created_timestamp);
+              } else if (this.sortBy === 'name_asc') {
+                  result.sort((a, b) => a.nama_pemohon.localeCompare(b.nama_pemohon));
+              }
+
+              return result;
           },
 
           get totalPages() {
@@ -118,47 +235,273 @@
               setTimeout(() => { this.copied = false; }, 2000);
           }
       }"
-      @keydown.escape.window="closeDetail()">
+      @keydown.escape.window="closeDetail(); openDropdown = null">
 
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-            <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-2xl text-blue-600">assignment</span>
-                <h1 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">
-                    Daftar Permohonan Informasi
-                </h1>
+            <div class="flex items-center gap-2.5 mb-1">
+                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-2xs">
+                    <span class="material-symbols-outlined text-[18px]">assignment</span>
+                </div>
+                <h1 class="text-xl md:text-2xl font-bold text-slate-900 m-0 tracking-tight">Permohonan Informasi</h1>
             </div>
-            <p class="text-xs md:text-sm text-slate-500 mt-1">Kelola, verifikasi, dan pantau seluruh permohonan informasi publik secara terintegrasi.</p>
+            <p class="text-xs text-slate-500 ml-10">Kelola, verifikasi berkas, disposisi unit, pengesahan TTE, dan selesaikan permohonan informasi publik.</p>
         </div>
         
-        <!-- Actions & Live Filters -->
-        <div class="flex items-center gap-2.5 flex-wrap">
-            <a href="{{ route('admin.permohonan.create') }}" class="inline-flex items-center gap-1.5 bg-[#03224d] text-white px-3.5 py-2 rounded-xl shadow-xs text-xs font-semibold hover:bg-[#0B1B3D] transition-all">
+        <div class="flex items-center gap-2.5 self-stretch md:self-auto justify-end">
+            <a href="{{ route('admin.permohonan.create') }}" class="inline-flex items-center gap-1.5 bg-[#03224d] text-white px-3.5 py-2 rounded-xl shadow-xs text-xs font-bold hover:bg-[#0B1B3D] transition-all">
                 <span class="material-symbols-outlined text-[16px]">add</span> 
                 <span>Tambah Permohonan</span>
             </a>
+        </div>
+    </div>
 
-            <!-- Status Filter Dropdown -->
+    <!-- Bento Metric Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-5 mb-6">
+        <!-- Card 1: Total Permohonan -->
+        <div @click="statusFilter = 'all'; onFilterChange()" 
+             class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:border-blue-300 transition-all cursor-pointer group">
+            <div class="flex justify-between items-start">
+                <div>
+                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Total Permohonan</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-slate-900 m-0 tracking-tight">{{ $totalSemua }}</h2>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <span class="material-symbols-outlined text-[22px]">folder_copy</span>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span>Registrasi Masuk:</span>
+                <span class="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">Semua Data</span>
+            </div>
+        </div>
+
+        <!-- Card 2: Dalam Proses -->
+        <div @click="statusFilter = 'diajukan'; onFilterChange()" 
+             class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:border-amber-300 transition-all cursor-pointer group">
+            <div class="flex justify-between items-start">
+                <div>
+                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Sedang Diproses</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-amber-600 m-0 tracking-tight">{{ $totalProses }}</h2>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <span class="material-symbols-outlined text-[22px]">pending_actions</span>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span>Permohonan Baru:</span>
+                <span class="inline-flex items-center gap-1 font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> {{ $totalMasuk }} Baru Masuk
+                </span>
+            </div>
+        </div>
+
+        <!-- Card 3: Selesai -->
+        <div @click="statusFilter = 'selesai'; onFilterChange()" 
+             class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:border-emerald-300 transition-all cursor-pointer group">
+            <div class="flex justify-between items-start">
+                <div>
+                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Permohonan Selesai</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-emerald-600 m-0 tracking-tight">{{ $totalSelesai }}</h2>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <span class="material-symbols-outlined text-[22px]">task_alt</span>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span>Jawaban Terkirim:</span>
+                <span class="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">Tuntas</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTER TOOLBAR CONTAINER (CUSTOM MODERN DROPDOWNS) -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 mb-6 space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-slate-400 text-[18px]">tune</span>
+                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider m-0">Filter &amp; Pencarian Permohonan</h3>
+            </div>
+            <button type="button" 
+                    x-show="hasActiveFilters" 
+                    x-cloak
+                    @click="resetFilters()"
+                    class="text-[11px] font-semibold text-rose-600 hover:text-rose-800 flex items-center gap-1 hover:underline cursor-pointer">
+                <span class="material-symbols-outlined text-[14px]">refresh</span>
+                <span>Reset Semua Filter</span>
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <!-- 1. Search Box -->
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Pencarian Kata Kunci:</label>
+                <div class="relative">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
+                    <input type="text" 
+                           x-model="search" 
+                           @input="onFilterChange()"
+                           placeholder="No. reg, nama, NIK, rincian..." 
+                           class="w-full h-10 pl-9 pr-3 bg-white border border-slate-200/90 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all placeholder-slate-400 shadow-2xs">
+                    <button type="button" x-show="search" x-cloak @click="search = ''; onFilterChange()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        <span class="material-symbols-outlined text-[16px]">close</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. Status Workflow Filter (Custom Modern Select) -->
             <div class="relative">
-                <select x-model="statusFilter" 
-                        @change="onFilterChange()"
-                        class="bg-white border border-slate-200 text-slate-700 rounded-xl shadow-xs text-xs py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium appearance-none cursor-pointer">
-                    <option value="all">Semua Status</option>
-                    <option value="diajukan">Permohonan Masuk (Diajukan)</option>
-                    <option value="menunggu_kelengkapan">Menunggu Kelengkapan</option>
-                    <option value="diverifikasi">Diverifikasi</option>
-                    <option value="ditugaskan">Ditugaskan</option>
-                    <option value="menunggu_data">Menunggu Data</option>
-                    <option value="data_diuji">Data Diuji</option>
-                    <option value="menunggu_tanda_tangan">Menunggu Tanda Tangan</option>
-                    <option value="ditandatangani">Ditandatangani</option>
-                    <option value="selesai">Selesai</option>
-                    <option value="ditolak">Ditolak</option>
-                    <option value="ditutup_tidak_lengkap">Ditutup Tidak Lengkap</option>
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
-                    <span class="material-symbols-outlined text-[16px]">expand_more</span>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Status Alur Layanan:</label>
+                <!-- Trigger Button -->
+                <button type="button" 
+                        @click="openDropdown = (openDropdown === 'status' ? null : 'status')" 
+                        class="w-full h-10 px-3 bg-white border border-slate-200/90 hover:border-slate-300 rounded-xl text-xs font-semibold text-slate-800 shadow-2xs flex items-center justify-between transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500">
+                    <div class="flex items-center gap-2 truncate min-w-0">
+                        <span class="w-5 h-5 rounded-md flex items-center justify-center shrink-0 text-[12px]" :class="selectedStatusObj.iconBg">
+                            <span class="material-symbols-outlined text-[14px]" x-text="selectedStatusObj.icon"></span>
+                        </span>
+                        <span class="truncate text-xs font-semibold text-slate-800" x-text="selectedStatusObj.label"></span>
+                    </div>
+                    <span class="material-symbols-outlined text-[16px] text-slate-400 transition-transform duration-200 ml-1 shrink-0" :class="openDropdown === 'status' ? 'rotate-180 text-blue-600' : ''">expand_more</span>
+                </button>
+
+                <!-- Custom Dropdown Menu -->
+                <div x-show="openDropdown === 'status'" 
+                     x-cloak
+                     @click.outside="if (openDropdown === 'status') openDropdown = null"
+                     x-transition:enter="transition ease-out duration-100" 
+                     x-transition:enter-start="transform opacity-0 scale-95 -translate-y-1" 
+                     x-transition:enter-end="transform opacity-100 scale-100 translate-y-0" 
+                     x-transition:leave="transition ease-in duration-75" 
+                     x-transition:leave-start="transform opacity-100 scale-100 translate-y-0" 
+                     x-transition:leave-end="transform opacity-0 scale-95 -translate-y-1" 
+                     class="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 max-h-72 overflow-y-auto space-y-0.5">
+                    <template x-for="opt in statusOptions" :key="opt.value">
+                        <div @click="statusFilter = opt.value; onFilterChange(); openDropdown = null"
+                             class="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs cursor-pointer transition-colors"
+                             :class="statusFilter === opt.value ? 'bg-blue-50 text-blue-900 font-bold' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium'">
+                            <div class="flex items-center gap-2 truncate min-w-0">
+                                <span class="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border border-current/10" :class="opt.iconBg">
+                                    <span class="material-symbols-outlined text-[15px]" x-text="opt.icon"></span>
+                                </span>
+                                <span class="truncate" x-text="opt.label"></span>
+                            </div>
+                            <span class="material-symbols-outlined text-[16px] text-blue-600 shrink-0 ml-1" x-show="statusFilter === opt.value">check</span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- 3. Kategori Pemohon Filter (Custom Modern Select) -->
+            <div class="relative">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Kategori Pemohon:</label>
+                <!-- Trigger Button -->
+                <button type="button" 
+                        @click="openDropdown = (openDropdown === 'kategori' ? null : 'kategori')" 
+                        class="w-full h-10 px-3 bg-white border border-slate-200/90 hover:border-slate-300 rounded-xl text-xs font-semibold text-slate-800 shadow-2xs flex items-center justify-between transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500">
+                    <div class="flex items-center gap-2 truncate min-w-0">
+                        <span class="w-5 h-5 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-[14px]" x-text="selectedKategoriObj.icon"></span>
+                        </span>
+                        <span class="truncate text-xs font-semibold text-slate-800" x-text="selectedKategoriObj.label"></span>
+                    </div>
+                    <span class="material-symbols-outlined text-[16px] text-slate-400 transition-transform duration-200 ml-1 shrink-0" :class="openDropdown === 'kategori' ? 'rotate-180 text-blue-600' : ''">expand_more</span>
+                </button>
+
+                <!-- Custom Dropdown Menu -->
+                <div x-show="openDropdown === 'kategori'" 
+                     x-cloak
+                     @click.outside="if (openDropdown === 'kategori') openDropdown = null"
+                     x-transition:enter="transition ease-out duration-100" 
+                     x-transition:enter-start="transform opacity-0 scale-95 -translate-y-1" 
+                     x-transition:enter-end="transform opacity-100 scale-100 translate-y-0" 
+                     x-transition:leave="transition ease-in duration-75" 
+                     x-transition:leave-start="transform opacity-100 scale-100 translate-y-0" 
+                     x-transition:leave-end="transform opacity-0 scale-95 -translate-y-1" 
+                     class="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 max-h-64 overflow-y-auto space-y-0.5">
+                    <template x-for="opt in kategoriOptions" :key="opt.value">
+                        <div @click="kategoriFilter = opt.value; onFilterChange(); openDropdown = null"
+                             class="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs cursor-pointer transition-colors"
+                             :class="String(kategoriFilter) === String(opt.value) ? 'bg-blue-50 text-blue-900 font-bold' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium'">
+                            <div class="flex items-center gap-2 truncate min-w-0">
+                                <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+                                    <span class="material-symbols-outlined text-[15px]" x-text="opt.icon"></span>
+                                </span>
+                                <span class="truncate" x-text="opt.label"></span>
+                            </div>
+                            <span class="material-symbols-outlined text-[16px] text-blue-600 shrink-0 ml-1" x-show="String(kategoriFilter) === String(opt.value)">check</span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- 4. Cara Memperoleh & Sort (Custom Modern Select) -->
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Urutan &amp; Metode:</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <!-- Metode Dropdown -->
+                    <div class="relative">
+                        <button type="button" 
+                                @click="openDropdown = (openDropdown === 'cara' ? null : 'cara')" 
+                                class="w-full h-10 px-2.5 bg-white border border-slate-200/90 hover:border-slate-300 rounded-xl text-xs font-semibold text-slate-800 shadow-2xs flex items-center justify-between transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500">
+                            <span class="truncate text-xs font-semibold text-slate-800" x-text="selectedCaraObj.label"></span>
+                            <span class="material-symbols-outlined text-[14px] text-slate-400 transition-transform duration-200 shrink-0" :class="openDropdown === 'cara' ? 'rotate-180 text-blue-600' : ''">expand_more</span>
+                        </button>
+
+                        <div x-show="openDropdown === 'cara'" 
+                             x-cloak
+                             @click.outside="if (openDropdown === 'cara') openDropdown = null"
+                             x-transition:enter="transition ease-out duration-100" 
+                             x-transition:enter-start="transform opacity-0 scale-95 -translate-y-1" 
+                             x-transition:enter-end="transform opacity-100 scale-100 translate-y-0" 
+                             x-transition:leave="transition ease-in duration-75" 
+                             x-transition:leave-start="transform opacity-100 scale-100 translate-y-0" 
+                             x-transition:leave-end="transform opacity-0 scale-95 -translate-y-1" 
+                             class="absolute left-0 right-0 sm:right-auto sm:w-60 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 max-h-60 overflow-y-auto space-y-0.5">
+                            <template x-for="opt in caraOptions" :key="opt.value">
+                                <div @click="caraFilter = opt.value; onFilterChange(); openDropdown = null"
+                                     class="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs cursor-pointer transition-colors"
+                                     :class="String(caraFilter) === String(opt.value) ? 'bg-blue-50 text-blue-900 font-bold' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium'">
+                                    <span class="truncate" x-text="opt.label"></span>
+                                    <span class="material-symbols-outlined text-[14px] text-blue-600 shrink-0 ml-1" x-show="String(caraFilter) === String(opt.value)">check</span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Sort Dropdown -->
+                    <div class="relative">
+                        <button type="button" 
+                                @click="openDropdown = (openDropdown === 'sort' ? null : 'sort')" 
+                                class="w-full h-10 px-2.5 bg-white border border-slate-200/90 hover:border-slate-300 rounded-xl text-xs font-semibold text-slate-800 shadow-2xs flex items-center justify-between transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500">
+                            <span class="truncate text-xs font-semibold text-slate-800" x-text="selectedSortObj.label"></span>
+                            <span class="material-symbols-outlined text-[14px] text-slate-400 transition-transform duration-200 shrink-0" :class="openDropdown === 'sort' ? 'rotate-180 text-blue-600' : ''">expand_more</span>
+                        </button>
+
+                        <div x-show="openDropdown === 'sort'" 
+                             x-cloak
+                             @click.outside="if (openDropdown === 'sort') openDropdown = null"
+                             x-transition:enter="transition ease-out duration-100" 
+                             x-transition:enter-start="transform opacity-0 scale-95 -translate-y-1" 
+                             x-transition:enter-end="transform opacity-100 scale-100 translate-y-0" 
+                             x-transition:leave="transition ease-in duration-75" 
+                             x-transition:leave-start="transform opacity-100 scale-100 translate-y-0" 
+                             x-transition:leave-end="transform opacity-0 scale-95 -translate-y-1" 
+                             class="absolute right-0 w-44 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 space-y-0.5">
+                            <template x-for="opt in sortOptions" :key="opt.value">
+                                <div @click="sortBy = opt.value; onFilterChange(); openDropdown = null"
+                                     class="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs cursor-pointer transition-colors"
+                                     :class="sortBy === opt.value ? 'bg-blue-50 text-blue-900 font-bold' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium'">
+                                    <div class="flex items-center gap-1.5 truncate">
+                                        <span class="material-symbols-outlined text-[14px] text-slate-400" x-text="opt.icon"></span>
+                                        <span class="truncate" x-text="opt.label"></span>
+                                    </div>
+                                    <span class="material-symbols-outlined text-[14px] text-blue-600 shrink-0" x-show="sortBy === opt.value">check</span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -166,48 +509,50 @@
 
     <!-- Data Table Container -->
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-        <!-- Live Search Toolbar -->
-        <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 bg-slate-50/50">
-            <div class="relative flex-1 max-w-md">
-                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
-                <input type="text" 
-                       x-model="search" 
-                       @input="onFilterChange()"
-                       placeholder="Cari nomor registrasi, nama pemohon, atau rincian..." 
-                       class="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder-slate-400">
+        <div class="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-slate-400 text-[18px]">table_rows</span>
+                <h2 class="text-sm font-bold text-slate-800 m-0">Katalog Permohonan Terdaftar</h2>
             </div>
-            <div class="text-xs text-slate-500 font-medium self-center">
-                Menampilkan <span class="font-bold text-slate-800" x-text="filteredItems.length"></span> permohonan
-            </div>
+            <span class="text-xs text-slate-500 font-medium">
+                Menampilkan <span class="font-bold text-slate-800" x-text="filteredItems.length"></span> dari {{ $totalSemua }} permohonan
+            </span>
         </div>
 
         <div class="w-full overflow-x-auto">
             <table class="w-full table-fixed text-left border-collapse text-sm text-slate-600">
                 <thead>
                     <tr class="bg-slate-50/80 text-slate-500 uppercase tracking-wider text-[11px] font-bold border-b border-slate-200">
-                        <th class="w-[22%] px-4 py-3.5">No. Registrasi</th>
-                        <th class="w-[26%] px-4 py-3.5">Pemohon</th>
-                        <th class="w-[18%] px-4 py-3.5">Tanggal Masuk</th>
-                        <th class="w-[22%] px-4 py-3.5">Status</th>
+                        <th class="w-[20%] px-4 py-3.5">No. Registrasi</th>
+                        <th class="w-[24%] px-4 py-3.5">Pemohon</th>
+                        <th class="w-[18%] px-4 py-3.5">Kategori &amp; Tanggal</th>
+                        <th class="w-[26%] px-4 py-3.5">Status Alur Layanan</th>
                         <th class="w-[12%] px-4 py-3.5 text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-sm">
                     <template x-for="item in paginatedItems" :key="item.id">
                         <tr class="hover:bg-blue-50/30 transition-colors">
+                            <!-- Nomor Registrasi -->
                             <td class="px-4 py-3.5 whitespace-nowrap">
                                 <span class="bg-slate-100 text-slate-700 font-mono px-2.5 py-1 rounded-lg text-xs font-semibold border border-slate-200/80 shadow-2xs"
                                       x-text="item.nomor_registrasi">
                                 </span>
                             </td>
+
+                            <!-- Pemohon & Kontak -->
                             <td class="px-4 py-3.5">
                                 <div class="font-semibold text-slate-800 truncate" :title="item.nama_pemohon" x-text="item.nama_pemohon"></div>
                                 <div class="text-xs text-slate-400 truncate" x-text="item.email"></div>
                             </td>
+
+                            <!-- Kategori & Tanggal Masuk -->
                             <td class="px-4 py-3.5 text-slate-500 whitespace-nowrap text-xs">
-                                <div class="font-medium text-slate-700" x-text="item.tanggal_masuk_date"></div>
-                                <div class="text-[11px] text-slate-400" x-text="item.tanggal_masuk_time"></div>
+                                <div class="font-semibold text-slate-700 truncate" x-text="item.kategori_pemohon"></div>
+                                <div class="text-[11px] text-slate-400 mt-0.5" x-text="item.tanggal_masuk_date"></div>
                             </td>
+
+                            <!-- Status Terkini -->
                             <td class="px-4 py-3.5 whitespace-nowrap">
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border border-current/20 max-w-full" 
                                       :class="item.status_badge_class"
@@ -216,8 +561,9 @@
                                     <span class="truncate" x-text="item.status_label"></span>
                                 </span>
                             </td>
+
+                            <!-- Aksi (3-dot Dropdown / Modal) -->
                             <td class="px-4 py-3.5 text-center whitespace-nowrap">
-                                <!-- Tombol Aksi Popup (Modal) -->
                                 <button type="button" 
                                         @click="openDetail(item)"
                                         class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-600 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 transition-all shadow-2xs cursor-pointer"
@@ -233,8 +579,11 @@
                             <td colspan="5" class="px-4 py-12 text-center text-slate-400 text-sm">
                                 <div class="flex flex-col items-center justify-center">
                                     <span class="material-symbols-outlined text-4xl text-slate-300 mb-2">folder_off</span>
-                                    <p class="font-medium text-slate-600">Belum ada data permohonan yang sesuai</p>
-                                    <p class="text-xs text-slate-400 mt-0.5">Coba ubah kata kunci pencarian atau filter status permohonan.</p>
+                                    <p class="font-medium text-slate-600">Tidak ada permohonan yang sesuai filter</p>
+                                    <p class="text-xs text-slate-400 mt-0.5">Silakan sesuaikan kata kunci pencarian atau reset filter di atas.</p>
+                                    <button type="button" @click="resetFilters()" class="mt-3 text-xs bg-blue-50 text-blue-600 font-bold px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors">
+                                        Reset Filter
+                                    </button>
                                 </div>
                             </td>
                         </tr>

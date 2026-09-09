@@ -29,8 +29,10 @@ class PermohonanController extends Controller
             ->get();
 
         $currentStatus = $request->status ?? 'all';
+        $kategoriPemohons = \App\Models\KategoriPemohon::all();
+        $caraMemperoleh = \App\Models\CaraMemperolehInformasi::all();
 
-        return view('admin.permohonan.index', compact('permohonan', 'currentStatus'));
+        return view('admin.permohonan.index', compact('permohonan', 'currentStatus', 'kategoriPemohons', 'caraMemperoleh'));
     }
 
     /**

@@ -371,54 +371,11 @@
             <!-- SECTION: LAYANAN INFORMASI -->
             <div class="px-3 pt-4 pb-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Layanan Informasi</div>
             
-            <!-- Permohonan Group -->
-            @php $isPermohonanActive = request()->routeIs('admin.permohonan.*'); @endphp
-            <div x-data="{ open: {{ $isPermohonanActive ? 'true' : 'false' }} }">
-                <button @click="open = !open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.permohonan.*') ? 'bg-slate-800/90 text-white font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}">
-                    <div class="flex items-center gap-3 min-w-0">
-                        <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.permohonan.*') ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-200' }}">folder_open</span>
-                        <span class="truncate">Permohonan Informasi</span>
-                    </div>
-                    <span class="material-symbols-outlined text-[16px] transition-transform duration-200 text-slate-500 group-hover:text-slate-300" :class="open ? 'rotate-180' : ''">expand_more</span>
-                </button>
-                <div x-show="open" x-collapse class="pl-4 ml-5 my-1 space-y-1 border-l border-slate-800/80">
-                    @php
-                        $isMasuk = (request()->routeIs('admin.permohonan.index') && request('status') == 'diajukan') || (request()->routeIs('admin.permohonan.show') && isset($permohonan) && $permohonan->status->value == 'diajukan');
-                        $isKoordinasi = (request()->routeIs('admin.permohonan.index') && request('status') == 'menunggu_data') || (request()->routeIs('admin.permohonan.show') && isset($permohonan) && $permohonan->status->value == 'menunggu_data');
-                        $isUji = (request()->routeIs('admin.permohonan.index') && request('status') == 'data_diuji') || (request()->routeIs('admin.permohonan.show') && isset($permohonan) && $permohonan->status->value == 'data_diuji');
-                        $isKonsep = (request()->routeIs('admin.permohonan.index') && request('status') == 'menunggu_tanda_tangan') || (request()->routeIs('admin.permohonan.show') && isset($permohonan) && $permohonan->status->value == 'menunggu_tanda_tangan');
-                        $isSemua = request()->routeIs('admin.permohonan.index') && empty(request()->except('page'));
-                    @endphp
-                    @if(auth()->user()->hasRole('Desk Layanan') || auth()->user()->hasRole('Super Admin'))
-                    <a class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-150 group {{ $isMasuk ? 'text-blue-400 font-bold bg-blue-500/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40' }}" href="{{ route('admin.permohonan.index', ['status' => 'diajukan']) }}">
-                        <span class="w-1.5 h-1.5 rounded-full {{ $isMasuk ? 'bg-blue-400 shadow-xs shadow-blue-400/50' : 'bg-slate-600 group-hover:bg-slate-400' }}"></span>
-                        <span>Permohonan Masuk</span>
-                    </a>
-                    @endif
-                    @if(auth()->user()->hasRole('Petugas Penghubung') || auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
-                    <a class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-150 group {{ $isKoordinasi ? 'text-blue-400 font-bold bg-blue-500/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40' }}" href="{{ route('admin.permohonan.index', ['status' => 'menunggu_data']) }}">
-                        <span class="w-1.5 h-1.5 rounded-full {{ $isKoordinasi ? 'bg-blue-400 shadow-xs shadow-blue-400/50' : 'bg-slate-600 group-hover:bg-slate-400' }}"></span>
-                        <span>Koordinasi Data</span>
-                    </a>
-                    @endif
-                    @if(auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
-                    <a class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-150 group {{ $isUji ? 'text-blue-400 font-bold bg-blue-500/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40' }}" href="{{ route('admin.permohonan.index', ['status' => 'data_diuji']) }}">
-                        <span class="w-1.5 h-1.5 rounded-full {{ $isUji ? 'bg-blue-400 shadow-xs shadow-blue-400/50' : 'bg-slate-600 group-hover:bg-slate-400' }}"></span>
-                        <span>Uji & Validasi</span>
-                    </a>
-                    @endif
-                    @if(auth()->user()->hasRole('Atasan PPID Pelaksana') || auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
-                    <a class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-150 group {{ $isKonsep ? 'text-blue-400 font-bold bg-blue-500/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40' }}" href="{{ route('admin.permohonan.index', ['status' => 'menunggu_tanda_tangan']) }}">
-                        <span class="w-1.5 h-1.5 rounded-full {{ $isKonsep ? 'bg-blue-400 shadow-xs shadow-blue-400/50' : 'bg-slate-600 group-hover:bg-slate-400' }}"></span>
-                        <span>Konsep Jawaban</span>
-                    </a>
-                    @endif
-                    <a class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-all duration-150 group {{ $isSemua ? 'text-blue-400 font-bold bg-blue-500/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40' }}" href="{{ route('admin.permohonan.index') }}">
-                        <span class="w-1.5 h-1.5 rounded-full {{ $isSemua ? 'bg-blue-400 shadow-xs shadow-blue-400/50' : 'bg-slate-600 group-hover:bg-slate-400' }}"></span>
-                        <span>Semua Permohonan</span>
-                    </a>
-                </div>
-            </div>
+            <!-- Permohonan Informasi Menu (Single Unified Link) -->
+            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.permohonan.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.permohonan.index') }}">
+                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.permohonan.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">assignment</span>
+                <span>Permohonan Informasi</span>
+            </a>
             
             <!-- Daftar Informasi Publik (DIP) -->
             <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.informasi-publik.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.informasi-publik.index') }}">

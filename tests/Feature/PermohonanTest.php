@@ -50,7 +50,7 @@ class PermohonanTest extends TestCase
 
         $response = $this->actingAs($this->adminUser)->get(route('admin.permohonan.index'));
         $response->assertStatus(200);
-        $response->assertSee('Daftar Permohonan Informasi');
+        $response->assertSee('Permohonan Informasi');
         $response->assertSee('REG-2026-TEST001');
         $response->assertSee('Budi Santoso');
     }
