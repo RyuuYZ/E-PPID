@@ -3,19 +3,115 @@
 @section('title', 'Daftar Permohonan Informasi - Admin E-PPID')
 
 @section('content')
+@php
+    $itemsPayload = $permohonan->map(function($p) {
+        return [
+            'id' => $p->id,
+            'nomor_registrasi' => $p->nomor_registrasi,
+            'nama_pemohon' => $p->nama_pemohon,
+            'nik_atau_no_badan_hukum' => $p->nik_atau_no_badan_hukum ?? '-',
+            'email' => $p->email ?? '-',
+            'no_telp' => $p->no_telp ?? '-',
+            'pekerjaan' => $p->pekerjaan ?? '-',
+            'alamat' => $p->alamat ?? '-',
+            'kategori_pemohon' => $p->kategori_pemohon?->nama_kategori_pemohon ?? '-',
+            'rincian_informasi' => $p->rincian_informasi ?? '-',
+            'tujuan_penggunaan' => $p->tujuan_penggunaan ?? '-',
+            'cara_memperoleh' => $p->cara_memperoleh_informasi?->nama_cara_memperoleh_informasi ?? '-',
+            'cara_salinan' => $p->cara_mendapatkan_salinan ?? '-',
+            'status_value' => $p->status->value,
+            'status_label' => $p->status->label(),
+            'status_badge_class' => $p->status->badgeClass(),
+            'tanggal_masuk_date' => $p->created_at->format('d M Y'),
+            'tanggal_masuk_time' => $p->created_at->format('H:i') . ' WIB',
+            'tanggal_masuk' => $p->created_at->format('d M Y, H:i') . ' WIB',
+            'file_identitas' => $p->file_identitas ? asset('storage/' . $p->file_identitas) : null,
+            'url_show' => route('admin.permohonan.show', $p->id),
+            'url_tanda_terima' => route('permohonan.tanda_terima', $p->nomor_registrasi),
+        ];
+    });
+@endphp
+
 <main class="flex-1 p-5 md:p-8 bg-[#f8fafc] overflow-y-auto min-h-screen"
       x-data="{
+          items: {{ Js::from($itemsPayload) }},
+          search: '',
+          statusFilter: '{{ $currentStatus }}',
+          perPage: 10,
+          currentPage: 1,
+          targetPageInput: 1,
           selectedItem: null,
           modalOpen: false,
           copied: false,
-          openDetail(data) {
-              this.selectedItem = data;
+
+          init() {
+              // Ensure URL stays clean at /admin/permohonan without query strings
+              if (window.location.search) {
+                  window.history.replaceState({}, document.title, window.location.pathname);
+              }
+              this.targetPageInput = this.currentPage;
+          },
+
+          get filteredItems() {
+              const q = this.search.toLowerCase().trim();
+              return this.items.filter(item => {
+                  const matchesStatus = (this.statusFilter === 'all' || !this.statusFilter) ? true : (item.status_value === this.statusFilter);
+                  const matchesSearch = !q ? true : (
+                      item.nomor_registrasi.toLowerCase().includes(q) ||
+                      item.nama_pemohon.toLowerCase().includes(q) ||
+                      (item.email && item.email.toLowerCase().includes(q)) ||
+                      (item.rincian_informasi && item.rincian_informasi.toLowerCase().includes(q)) ||
+                      (item.kategori_pemohon && item.kategori_pemohon.toLowerCase().includes(q))
+                  );
+                  return matchesStatus && matchesSearch;
+              });
+          },
+
+          get totalPages() {
+              return Math.max(1, Math.ceil(this.filteredItems.length / this.perPage));
+          },
+
+          get paginatedItems() {
+              const start = (this.currentPage - 1) * this.perPage;
+              return this.filteredItems.slice(start, start + this.perPage);
+          },
+
+          onFilterChange() {
+              this.currentPage = 1;
+              this.targetPageInput = 1;
+          },
+
+          setPage(p) {
+              let page = parseInt(p);
+              if (isNaN(page)) page = 1;
+              if (page < 1) page = 1;
+              if (page > this.totalPages) page = this.totalPages;
+              this.currentPage = page;
+              this.targetPageInput = page;
+          },
+
+          prevPage() {
+              if (this.currentPage > 1) {
+                  this.setPage(this.currentPage - 1);
+              }
+          },
+
+          nextPage() {
+              if (this.currentPage < this.totalPages) {
+                  this.setPage(this.currentPage + 1);
+              }
+          },
+
+          openDetail(item) {
+              this.selectedItem = item;
               this.modalOpen = true;
           },
+
           closeDetail() {
               this.modalOpen = false;
               setTimeout(() => { this.selectedItem = null; }, 200);
           },
+
           copyNomorRegistrasi(no) {
               navigator.clipboard.writeText(no);
               this.copied = true;
@@ -30,34 +126,36 @@
             <div class="flex items-center gap-2">
                 <span class="material-symbols-outlined text-2xl text-blue-600">assignment</span>
                 <h1 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">
-                    @if($currentStatus)
-                        Permohonan: {{ ucwords(str_replace('_', ' ', $currentStatus)) }}
-                    @else
-                        Daftar Semua Permohonan
-                    @endif
+                    Daftar Permohonan Informasi
                 </h1>
             </div>
             <p class="text-xs md:text-sm text-slate-500 mt-1">Kelola, verifikasi, dan pantau seluruh permohonan informasi publik secara terintegrasi.</p>
         </div>
         
-        <!-- Actions / Filter -->
+        <!-- Actions & Live Filters -->
         <div class="flex items-center gap-2.5 flex-wrap">
             <a href="{{ route('admin.permohonan.create') }}" class="inline-flex items-center gap-1.5 bg-[#03224d] text-white px-3.5 py-2 rounded-xl shadow-xs text-xs font-semibold hover:bg-[#0B1B3D] transition-all">
                 <span class="material-symbols-outlined text-[16px]">add</span> 
                 <span>Tambah Permohonan</span>
             </a>
 
+            <!-- Status Filter Dropdown -->
             <div class="relative">
-                <select class="bg-white border border-slate-200 text-slate-700 rounded-xl shadow-xs text-xs py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium appearance-none cursor-pointer" 
-                        onchange="window.location.href=this.value">
-                    <option value="{{ route('admin.permohonan.index') }}">Semua Status</option>
-                    <option value="{{ route('admin.permohonan.index', ['status' => 'diajukan']) }}" {{ $currentStatus == 'diajukan' ? 'selected' : '' }}>Permohonan Masuk (Diajukan)</option>
-                    <option value="{{ route('admin.permohonan.index', ['status' => 'diverifikasi']) }}" {{ $currentStatus == 'diverifikasi' ? 'selected' : '' }}>Diverifikasi</option>
-                    <option value="{{ route('admin.permohonan.index', ['status' => 'ditugaskan']) }}" {{ $currentStatus == 'ditugaskan' ? 'selected' : '' }}>Ditugaskan</option>
-                    <option value="{{ route('admin.permohonan.index', ['status' => 'menunggu_data']) }}" {{ $currentStatus == 'menunggu_data' ? 'selected' : '' }}>Menunggu Data</option>
-                    <option value="{{ route('admin.permohonan.index', ['status' => 'data_diuji']) }}" {{ $currentStatus == 'data_diuji' ? 'selected' : '' }}>Data Diuji</option>
-                    <option value="{{ route('admin.permohonan.index', ['status' => 'menunggu_tanda_tangan']) }}" {{ $currentStatus == 'menunggu_tanda_tangan' ? 'selected' : '' }}>Menunggu Tanda Tangan</option>
-                    <option value="{{ route('admin.permohonan.index', ['status' => 'selesai']) }}" {{ $currentStatus == 'selesai' ? 'selected' : '' }}>Selesai</option>
+                <select x-model="statusFilter" 
+                        @change="onFilterChange()"
+                        class="bg-white border border-slate-200 text-slate-700 rounded-xl shadow-xs text-xs py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium appearance-none cursor-pointer">
+                    <option value="all">Semua Status</option>
+                    <option value="diajukan">Permohonan Masuk (Diajukan)</option>
+                    <option value="menunggu_kelengkapan">Menunggu Kelengkapan</option>
+                    <option value="diverifikasi">Diverifikasi</option>
+                    <option value="ditugaskan">Ditugaskan</option>
+                    <option value="menunggu_data">Menunggu Data</option>
+                    <option value="data_diuji">Data Diuji</option>
+                    <option value="menunggu_tanda_tangan">Menunggu Tanda Tangan</option>
+                    <option value="ditandatangani">Ditandatangani</option>
+                    <option value="selesai">Selesai</option>
+                    <option value="ditolak">Ditolak</option>
+                    <option value="ditutup_tidak_lengkap">Ditutup Tidak Lengkap</option>
                 </select>
                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
                     <span class="material-symbols-outlined text-[16px]">expand_more</span>
@@ -67,7 +165,22 @@
     </div>
 
     <!-- Data Table Container -->
-    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <!-- Live Search Toolbar -->
+        <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 bg-slate-50/50">
+            <div class="relative flex-1 max-w-md">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
+                <input type="text" 
+                       x-model="search" 
+                       @input="onFilterChange()"
+                       placeholder="Cari nomor registrasi, nama pemohon, atau rincian..." 
+                       class="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder-slate-400">
+            </div>
+            <div class="text-xs text-slate-500 font-medium self-center">
+                Menampilkan <span class="font-bold text-slate-800" x-text="filteredItems.length"></span> permohonan
+            </div>
+        </div>
+
         <div class="w-full overflow-x-auto">
             <table class="w-full table-fixed text-left border-collapse text-sm text-slate-600">
                 <thead>
@@ -80,78 +193,110 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-sm">
-                    @forelse($permohonan as $p)
-                    @php
-                        $modalPayload = [
-                            'id' => $p->id,
-                            'nomor_registrasi' => $p->nomor_registrasi,
-                            'nama_pemohon' => $p->nama_pemohon,
-                            'nik_atau_no_badan_hukum' => $p->nik_atau_no_badan_hukum ?? '-',
-                            'email' => $p->email ?? '-',
-                            'no_telp' => $p->no_telp ?? '-',
-                            'pekerjaan' => $p->pekerjaan ?? '-',
-                            'alamat' => $p->alamat ?? '-',
-                            'kategori_pemohon' => $p->kategori_pemohon?->nama_kategori_pemohon ?? '-',
-                            'rincian_informasi' => $p->rincian_informasi ?? '-',
-                            'tujuan_penggunaan' => $p->tujuan_penggunaan ?? '-',
-                            'cara_memperoleh' => $p->cara_memperoleh_informasi?->nama_cara_memperoleh_informasi ?? '-',
-                            'cara_salinan' => $p->cara_mendapatkan_salinan ?? '-',
-                            'status_label' => $p->status->label(),
-                            'status_badge_class' => $p->status->badgeClass(),
-                            'tanggal_masuk' => $p->created_at->format('d M Y, H:i') . ' WIB',
-                            'file_identitas' => $p->file_identitas ? asset('storage/' . $p->file_identitas) : null,
-                            'url_show' => route('admin.permohonan.show', $p->id),
-                            'url_tanda_terima' => route('permohonan.tanda_terima', $p->nomor_registrasi),
-                        ];
-                    @endphp
-                    <tr class="hover:bg-blue-50/30 transition-colors">
-                        <td class="px-4 py-3.5 whitespace-nowrap">
-                            <span class="bg-slate-100 text-slate-700 font-mono px-2.5 py-1 rounded-lg text-xs font-semibold border border-slate-200/80 shadow-2xs">
-                                {{ $p->nomor_registrasi }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-3.5">
-                            <div class="font-semibold text-slate-800 truncate" title="{{ $p->nama_pemohon }}">{{ $p->nama_pemohon }}</div>
-                            <div class="text-xs text-slate-400 truncate">{{ $p->email ?? '-' }}</div>
-                        </td>
-                        <td class="px-4 py-3.5 text-slate-500 whitespace-nowrap text-xs">
-                            <div class="font-medium text-slate-700">{{ $p->created_at->format('d M Y') }}</div>
-                            <div class="text-[11px] text-slate-400">{{ $p->created_at->format('H:i') }} WIB</div>
-                        </td>
-                        <td class="px-4 py-3.5 whitespace-nowrap">
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border border-current/20 {{ $p->status->badgeClass() }} max-w-full" title="{{ $p->status->label() }}">
-                                <span class="w-1.5 h-1.5 rounded-full bg-current opacity-75 shrink-0"></span>
-                                <span class="truncate">{{ $p->status->label() }}</span>
-                            </span>
-                        </td>
-                        <td class="px-4 py-3.5 text-center whitespace-nowrap">
-                            <!-- Tombol Aksi Popup (Modal) -->
-                            <button type="button" 
-                                    @click="openDetail({{ json_encode($modalPayload) }})"
-                                    class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-600 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 transition-all shadow-2xs cursor-pointer"
-                                    title="Lihat Rincian & Aksi (Popup)">
-                                <span class="material-symbols-outlined text-[18px]">more_vert</span>
-                            </button>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="5" class="px-4 py-12 text-center text-slate-400 text-sm">
-                            <div class="flex flex-col items-center justify-center">
-                                <span class="material-symbols-outlined text-4xl text-slate-300 mb-2">folder_off</span>
-                                <p class="font-medium text-slate-600">Belum ada data permohonan</p>
-                                <p class="text-xs text-slate-400 mt-0.5">Permohonan yang masuk akan tercatat secara otomatis di sini.</p>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
+                    <template x-for="item in paginatedItems" :key="item.id">
+                        <tr class="hover:bg-blue-50/30 transition-colors">
+                            <td class="px-4 py-3.5 whitespace-nowrap">
+                                <span class="bg-slate-100 text-slate-700 font-mono px-2.5 py-1 rounded-lg text-xs font-semibold border border-slate-200/80 shadow-2xs"
+                                      x-text="item.nomor_registrasi">
+                                </span>
+                            </td>
+                            <td class="px-4 py-3.5">
+                                <div class="font-semibold text-slate-800 truncate" :title="item.nama_pemohon" x-text="item.nama_pemohon"></div>
+                                <div class="text-xs text-slate-400 truncate" x-text="item.email"></div>
+                            </td>
+                            <td class="px-4 py-3.5 text-slate-500 whitespace-nowrap text-xs">
+                                <div class="font-medium text-slate-700" x-text="item.tanggal_masuk_date"></div>
+                                <div class="text-[11px] text-slate-400" x-text="item.tanggal_masuk_time"></div>
+                            </td>
+                            <td class="px-4 py-3.5 whitespace-nowrap">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border border-current/20 max-w-full" 
+                                      :class="item.status_badge_class"
+                                      :title="item.status_label">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-current opacity-75 shrink-0"></span>
+                                    <span class="truncate" x-text="item.status_label"></span>
+                                </span>
+                            </td>
+                            <td class="px-4 py-3.5 text-center whitespace-nowrap">
+                                <!-- Tombol Aksi Popup (Modal) -->
+                                <button type="button" 
+                                        @click="openDetail(item)"
+                                        class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-600 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 transition-all shadow-2xs cursor-pointer"
+                                        title="Lihat Rincian & Aksi (Popup)">
+                                    <span class="material-symbols-outlined text-[18px]">more_vert</span>
+                                </button>
+                            </td>
+                        </tr>
+                    </template>
+
+                    <template x-if="filteredItems.length === 0">
+                        <tr>
+                            <td colspan="5" class="px-4 py-12 text-center text-slate-400 text-sm">
+                                <div class="flex flex-col items-center justify-center">
+                                    <span class="material-symbols-outlined text-4xl text-slate-300 mb-2">folder_off</span>
+                                    <p class="font-medium text-slate-600">Belum ada data permohonan yang sesuai</p>
+                                    <p class="text-xs text-slate-400 mt-0.5">Coba ubah kata kunci pencarian atau filter status permohonan.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
                 </tbody>
             </table>
         </div>
         
-        <!-- Pagination Bottom Bar -->
+        <!-- Pagination Bottom Bar (Client-Side & URL-Preserving) -->
         <div class="px-6 py-4 border-t border-slate-200/80 bg-slate-50/50 rounded-b-2xl">
-            {{ $permohonan->links('vendor.pagination.custom', ['resourceName' => 'PERMOHONAN']) }}
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
+                <!-- Total Pill Badge (Left) -->
+                <div class="flex items-center">
+                    <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-100/90 border border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider shadow-2xs">
+                        <span>TOTAL:</span>
+                        <span class="font-extrabold text-slate-800 text-xs" x-text="filteredItems.length"></span>
+                        <span>PERMOHONAN</span>
+                    </span>
+                </div>
+
+                <!-- Navigation Controls (Right) -->
+                <div class="flex items-center gap-2.5 flex-wrap justify-center sm:justify-end">
+                    <!-- Prev Button -->
+                    <button type="button"
+                            @click="prevPage()"
+                            :disabled="currentPage === 1"
+                            :class="currentPage === 1 ? 'bg-slate-50 border-slate-200/60 text-slate-400 cursor-not-allowed opacity-60' : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 shadow-2xs cursor-pointer'"
+                            class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full border text-xs font-semibold transition-colors select-none">
+                        <span class="material-symbols-outlined text-[16px]">chevron_left</span>
+                        <span>Prev</span>
+                    </button>
+
+                    <!-- Jump to Page Box (KE HAL: [ 1 ] / X Go ->) -->
+                    <div class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3.5 py-1 shadow-2xs">
+                        <form @submit.prevent="setPage(targetPageInput)" class="flex items-center gap-2 m-0">
+                            <span class="text-slate-500 text-[11px] font-bold uppercase tracking-wider">KE HAL:</span>
+                            <input type="number" 
+                                   min="1" 
+                                   :max="totalPages" 
+                                   x-model="targetPageInput" 
+                                   class="w-12 text-center py-0.5 px-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs">
+                            <span class="text-slate-400 font-medium text-xs">/ <span x-text="totalPages"></span></span>
+
+                            <button type="submit" 
+                                    class="inline-flex items-center gap-1 bg-[#00875a] hover:bg-[#00714c] text-white px-2.5 py-1 rounded-full text-xs font-bold transition-all shadow-2xs cursor-pointer ml-1">
+                                <span>Go</span>
+                                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Next Button -->
+                    <button type="button"
+                            @click="nextPage()"
+                            :disabled="currentPage === totalPages"
+                            :class="currentPage === totalPages ? 'bg-slate-50 border-slate-200/60 text-slate-400 cursor-not-allowed opacity-60' : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 shadow-2xs cursor-pointer'"
+                            class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full border text-xs font-semibold transition-colors select-none">
+                        <span>Next</span>
+                        <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -215,7 +360,7 @@
                                 <span class="font-mono text-sm font-bold text-slate-800" x-text="selectedItem?.nomor_registrasi"></span>
                                 <button type="button" 
                                         @click="copyNomorRegistrasi(selectedItem?.nomor_registrasi)" 
-                                        class="text-slate-400 hover:text-blue-600 transition-colors p-1 rounded hover:bg-white"
+                                        class="text-slate-400 hover:text-blue-600 transition-colors p-1 rounded hover:bg-white cursor-pointer"
                                         title="Salin Nomor Registrasi">
                                     <span class="material-symbols-outlined text-[16px]" x-show="!copied">content_copy</span>
                                     <span class="material-symbols-outlined text-[16px] text-emerald-600" x-show="copied" style="display: none;">check</span>

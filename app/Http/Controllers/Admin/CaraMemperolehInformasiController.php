@@ -18,9 +18,7 @@ class CaraMemperolehInformasiController extends Controller
 
     public function index()
     {
-        $this->checkAccess();
-        $cara = \App\Models\CaraMemperolehInformasi::orderBy('nama_cara', 'asc')->paginate(10);
-        return view('admin.cara_memperoleh_informasi.index', compact('cara'));
+        return redirect()->route('admin.master-data.index')->with('tab', 'cara-memperoleh');
     }
 
     public function create()
@@ -40,7 +38,7 @@ class CaraMemperolehInformasiController extends Controller
 
         \App\Models\CaraMemperolehInformasi::create($validated);
 
-        return redirect()->route('admin.cara-memperoleh-informasi.index')->with('success', 'Cara Memperoleh Informasi berhasil ditambahkan.');
+        return redirect()->route('admin.master-data.index')->with('tab', 'cara-memperoleh')->with('success', 'Cara Memperoleh Informasi berhasil ditambahkan.');
     }
 
     public function edit(string $id)
@@ -62,7 +60,7 @@ class CaraMemperolehInformasiController extends Controller
 
         $cara->update($validated);
 
-        return redirect()->route('admin.cara-memperoleh-informasi.index')->with('success', 'Cara Memperoleh Informasi berhasil diperbarui.');
+        return redirect()->route('admin.master-data.index')->with('tab', 'cara-memperoleh')->with('success', 'Cara Memperoleh Informasi berhasil diperbarui.');
     }
 
     public function destroy(string $id)
@@ -71,11 +69,11 @@ class CaraMemperolehInformasiController extends Controller
         $cara = \App\Models\CaraMemperolehInformasi::findOrFail($id);
         
         if ($cara->permohonan_informasis()->exists()) {
-            return back()->with('error', 'Gagal menghapus data karena sedang digunakan oleh data permohonan.');
+            return redirect()->route('admin.master-data.index')->with('tab', 'cara-memperoleh')->with('error', 'Gagal menghapus data karena sedang digunakan oleh data permohonan.');
         }
         
         $cara->delete();
 
-        return redirect()->route('admin.cara-memperoleh-informasi.index')->with('success', 'Cara Memperoleh Informasi berhasil dihapus.');
+        return redirect()->route('admin.master-data.index')->with('tab', 'cara-memperoleh')->with('success', 'Cara Memperoleh Informasi berhasil dihapus.');
     }
 }

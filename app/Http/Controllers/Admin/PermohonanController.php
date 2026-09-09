@@ -24,14 +24,11 @@ class PermohonanController extends Controller
      */
     public function index(Request $request)
     {
-        $query = PermohonanInformasi::with(['kategori_pemohon', 'cara_memperoleh_informasi']);
+        $permohonan = PermohonanInformasi::with(['kategori_pemohon', 'cara_memperoleh_informasi'])
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        if ($request->has('status') && $request->status != '') {
-            $query->where('status', $request->status);
-        }
-
-        $permohonan = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
-        $currentStatus = $request->status;
+        $currentStatus = $request->status ?? 'all';
 
         return view('admin.permohonan.index', compact('permohonan', 'currentStatus'));
     }

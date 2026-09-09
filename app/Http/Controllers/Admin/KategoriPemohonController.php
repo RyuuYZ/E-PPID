@@ -18,9 +18,7 @@ class KategoriPemohonController extends Controller
 
     public function index()
     {
-        $this->checkAccess();
-        $kategori = \App\Models\KategoriPemohon::orderBy('nama_kategori', 'asc')->paginate(10);
-        return view('admin.kategori_pemohon.index', compact('kategori'));
+        return redirect()->route('admin.master-data.index')->with('tab', 'kategori-pemohon');
     }
 
     public function create()
@@ -39,7 +37,7 @@ class KategoriPemohonController extends Controller
 
         \App\Models\KategoriPemohon::create($validated);
 
-        return redirect()->route('admin.kategori-pemohon.index')->with('success', 'Kategori Pemohon berhasil ditambahkan.');
+        return redirect()->route('admin.master-data.index')->with('tab', 'kategori-pemohon')->with('success', 'Kategori Pemohon berhasil ditambahkan.');
     }
 
     public function edit(string $id)
@@ -60,7 +58,7 @@ class KategoriPemohonController extends Controller
 
         $kategori->update($validated);
 
-        return redirect()->route('admin.kategori-pemohon.index')->with('success', 'Kategori Pemohon berhasil diperbarui.');
+        return redirect()->route('admin.master-data.index')->with('tab', 'kategori-pemohon')->with('success', 'Kategori Pemohon berhasil diperbarui.');
     }
 
     public function destroy(string $id)
@@ -69,11 +67,11 @@ class KategoriPemohonController extends Controller
         $kategori = \App\Models\KategoriPemohon::findOrFail($id);
         
         if ($kategori->permohonan_informasis()->exists()) {
-            return back()->with('error', 'Gagal menghapus kategori karena sedang digunakan oleh data permohonan.');
+            return redirect()->route('admin.master-data.index')->with('tab', 'kategori-pemohon')->with('error', 'Gagal menghapus kategori karena sedang digunakan oleh data permohonan.');
         }
         
         $kategori->delete();
 
-        return redirect()->route('admin.kategori-pemohon.index')->with('success', 'Kategori Pemohon berhasil dihapus.');
+        return redirect()->route('admin.master-data.index')->with('tab', 'kategori-pemohon')->with('success', 'Kategori Pemohon berhasil dihapus.');
     }
 }

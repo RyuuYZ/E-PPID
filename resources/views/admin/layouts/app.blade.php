@@ -3,8 +3,11 @@
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta name="view-transition" content="same-origin">
     <title>Dashboard - Sistem E-PPID Bappeda</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Instant.page for instant zero-latency link prefetching on hover -->
+    <script src="https://cdn.jsdelivr.net/npm/instant.page@5.2.0/instantpage.js" type="module"></script>
     <!-- Alpine.js with Plugins -->
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/persist@3.x.x/dist/cdn.min.js"></script>
@@ -99,7 +102,30 @@
         }
     </script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f4f6f9; }
+        [x-cloak] { display: none !important; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f4f6f9; 
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Smooth View Transitions for seamless page changes */
+        @view-transition { navigation: auto; }
+        ::view-transition-old(root) {
+            animation: 75ms cubic-bezier(0.4, 0, 1, 1) both fade-out;
+        }
+        ::view-transition-new(root) {
+            animation: 120ms cubic-bezier(0, 0, 0.2, 1) both fade-in;
+        }
+        @keyframes fade-out {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
         
         /* Custom Scrollbar for Sidebar */
         .sidebar-scroll::-webkit-scrollbar {
@@ -346,7 +372,8 @@
             <div class="px-3 pt-4 pb-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Layanan Informasi</div>
             
             <!-- Permohonan Group -->
-            <div x-data="{ open: $persist(true).as('sidebar-permohonan-menu') }">
+            @php $isPermohonanActive = request()->routeIs('admin.permohonan.*'); @endphp
+            <div x-data="{ open: {{ $isPermohonanActive ? 'true' : 'false' }} }">
                 <button @click="open = !open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.permohonan.*') ? 'bg-slate-800/90 text-white font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}">
                     <div class="flex items-center gap-3 min-w-0">
                         <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.permohonan.*') ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-200' }}">folder_open</span>
@@ -406,42 +433,14 @@
                 <span>Sengketa & Keberatan</span>
             </a>
             @endif
-            
-            <!-- SECTION: PERSURATAN / E-OFFICE -->
-            @if(auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
-            <div class="px-3 pt-4 pb-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Persuratan (E-Office)</div>
-            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.surat-masuk.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.surat-masuk.index') }}">
-                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.surat-masuk.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">mark_email_unread</span>
-                <span>Surat Masuk</span>
-            </a>
-            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.surat-keluar.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.surat-keluar.index') }}">
-                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.surat-keluar.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">forward_to_inbox</span>
-                <span>Surat Keluar</span>
-            </a>
-            @endif
+
             
             <!-- SECTION: MASTER DATA -->
-            @if(auth()->user()->hasRole('Super Admin'))
+            @if(auth()->user()->hasRole('Super Admin') || auth()->user()->hasRole('Atasan PPID Pelaksana') || auth()->user()->hasRole('PPID Pelaksana'))
             <div class="px-3 pt-4 pb-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Master Data</div>
-            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.unit-pengolah.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.unit-pengolah.index') }}">
-                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.unit-pengolah.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">corporate_fare</span>
-                <span>Master Bidang</span>
-            </a>
-            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.klasifikasi-arsip.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.klasifikasi-arsip.index') }}">
-                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.klasifikasi-arsip.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">folder_special</span>
-                <span>Klasifikasi Arsip</span>
-            </a>
-            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.kategori-pemohon.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.kategori-pemohon.index') }}">
-                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.kategori-pemohon.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">groups</span>
-                <span>Kategori Pemohon</span>
-            </a>
-            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.cara-memperoleh-informasi.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.cara-memperoleh-informasi.index') }}">
-                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.cara-memperoleh-informasi.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">receipt_long</span>
-                <span>Cara Perolehan Info</span>
-            </a>
-            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.kategori-informasi-publik.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.kategori-informasi-publik.index') }}">
-                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.kategori-informasi-publik.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">category</span>
-                <span>Kategori Info Publik</span>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.master-data.*') || request()->routeIs('admin.unit-pengolah.*') || request()->routeIs('admin.kategori-pemohon.*') || request()->routeIs('admin.cara-memperoleh-informasi.*') || request()->routeIs('admin.kategori-informasi-publik.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.master-data.index') }}">
+                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.master-data.*') || request()->routeIs('admin.unit-pengolah.*') || request()->routeIs('admin.kategori-pemohon.*') || request()->routeIs('admin.cara-memperoleh-informasi.*') || request()->routeIs('admin.kategori-informasi-publik.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">dataset</span>
+                <span>Master Data</span>
             </a>
             @endif
 
@@ -610,7 +609,7 @@
                 }
 
                 try {
-                    const ts = new TomSelect(el, {
+                    const tsOptions = {
                         plugins: plugins,
                         create: false,
                         allowEmptyOption: true,
@@ -630,7 +629,13 @@
                             el.value = value;
                             el.dispatchEvent(new Event('change', { bubbles: true }));
                         }
-                    });
+                    };
+
+                    if (noSearch) {
+                        tsOptions.controlInput = null;
+                    }
+
+                    const ts = new TomSelect(el, tsOptions);
                 } catch (err) {
                     console.error('Error initializing TomSelect on', el, err);
                 }

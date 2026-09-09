@@ -164,7 +164,48 @@
     }
 @endphp
 
-<main class="flex-1 p-5 md:p-8 bg-[#f8fafc] overflow-y-auto min-h-screen">
+<main class="flex-1 p-5 md:p-8 bg-[#f8fafc] overflow-y-auto min-h-screen"
+      x-data="{
+          confirmOpen: false,
+          confirmTitle: '',
+          confirmMessage: '',
+          confirmBadge: '',
+          confirmBtnText: 'Ya, Lanjutkan',
+          confirmBtnColor: 'bg-blue-600 hover:bg-blue-700 text-white',
+          confirmIcon: 'help',
+          confirmIconBg: 'bg-blue-50 text-blue-600 border-blue-100',
+          targetFormId: null,
+          customCallback: null,
+
+          openConfirm({ title, message, badge, btnText, btnColor, icon, iconBg, formId, onConfirm }) {
+              this.confirmTitle = title || 'Konfirmasi Tindakan';
+              this.confirmMessage = message || 'Apakah Anda yakin ingin melanjutkan proses ini?';
+              this.confirmBadge = badge || 'Alur Proses Permohonan';
+              this.confirmBtnText = btnText || 'Ya, Lanjutkan';
+              this.confirmBtnColor = btnColor || 'bg-blue-600 hover:bg-blue-700 text-white';
+              this.confirmIcon = icon || 'help';
+              this.confirmIconBg = iconBg || 'bg-blue-50 text-blue-600 border-blue-100';
+              this.targetFormId = formId || null;
+              this.customCallback = onConfirm || null;
+              this.confirmOpen = true;
+          },
+
+          closeConfirm() {
+              this.confirmOpen = false;
+              this.targetFormId = null;
+              this.customCallback = null;
+          },
+
+          proceed() {
+              this.confirmOpen = false;
+              if (typeof this.customCallback === 'function') {
+                  this.customCallback();
+              } else if (this.targetFormId) {
+                  const form = document.getElementById(this.targetFormId);
+                  if (form) form.submit();
+              }
+          }
+      }">
     <!-- Header Halaman -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
@@ -486,12 +527,26 @@
                         <div class="pt-2 border-t border-slate-200/60">
                             <!-- Petugas Penghubung mengunggah data -->
                             @if((auth()->user()->id === $tugas->petugas_penghubung_id || auth()->user()->hasRole('Super Admin')) && $tugas->status === \App\Enums\PenugasanStatus::Ditugaskan)
-                            <form action="{{ route('admin.penugasan.submit-data', $tugas->id) }}" method="POST" enctype="multipart/form-data" class="space-y-2">
+                            <form id="submitDataForm_{{ $tugas->id }}" action="{{ route('admin.penugasan.submit-data', $tugas->id) }}" method="POST" enctype="multipart/form-data" class="space-y-2">
                                 @csrf
                                 <label class="block text-[10px] font-bold text-slate-600 uppercase tracking-wider">Unggah Berkas Informasi:</label>
                                 <input type="file" name="data_file" class="block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" required>
                                 <textarea name="catatan" rows="1" class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500" placeholder="Catatan berkas (opsional)..."></textarea>
-                                <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 bg-blue-600 text-white text-[11px] font-bold px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors uppercase tracking-wider shadow-xs">
+                                <button type="button" 
+                                        @click="
+                                            const f = document.getElementById('submitDataForm_{{ $tugas->id }}');
+                                            if (!f.checkValidity()) { f.reportValidity(); return; }
+                                            openConfirm({
+                                                title: 'Konfirmasi Pengiriman Berkas Data',
+                                                message: 'Berkas data akan dikirimkan ke PPID Pelaksana untuk diverifikasi dan diuji kesesuaiannya. Lanjutkan?',
+                                                badge: 'Pengumpulan Data Unit',
+                                                btnText: 'Ya, Kirim ke PPID',
+                                                btnColor: 'bg-blue-600 hover:bg-blue-700 text-white',
+                                                icon: 'cloud_upload',
+                                                iconBg: 'bg-blue-50 text-blue-600 border-blue-100',
+                                                formId: 'submitDataForm_{{ $tugas->id }}'
+                                            })"
+                                        class="w-full inline-flex items-center justify-center gap-1.5 bg-blue-600 text-white text-[11px] font-bold px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors uppercase tracking-wider shadow-xs cursor-pointer">
                                     <span class="material-symbols-outlined text-[15px]">cloud_upload</span> Kirim Data ke PPID
                                 </button>
                             </form>
@@ -515,12 +570,39 @@
                                 @if((auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin')) && $permohonan->status === \App\Enums\PermohonanStatus::DataDiuji && $tugas->hasil_uji === \App\Enums\HasilUji::Pending)
                                 <div class="pt-2 border-t border-slate-200/70">
                                     <span class="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-2">Uji Kelayakan Data:</span>
-                                    <form action="{{ route('admin.penugasan.review', $tugas->id) }}" method="POST" class="grid grid-cols-2 gap-2">
+                                    <form id="reviewForm_{{ $tugas->id }}" action="{{ route('admin.penugasan.review', $tugas->id) }}" method="POST" class="grid grid-cols-2 gap-2">
                                         @csrf
-                                        <button type="submit" name="hasil_uji" value="sesuai" class="inline-flex items-center justify-center gap-1 bg-emerald-600 text-white text-[11px] py-1.5 px-3 rounded-lg font-bold uppercase tracking-wider hover:bg-emerald-700 transition-colors shadow-xs">
+                                        <input type="hidden" name="hasil_uji" id="hasil_uji_{{ $tugas->id }}" value="sesuai">
+                                        <button type="button" 
+                                                @click="
+                                                    document.getElementById('hasil_uji_{{ $tugas->id }}').value = 'sesuai';
+                                                    openConfirm({
+                                                        title: 'Konfirmasi Validasi Data Sesuai',
+                                                        message: 'Tandai berkas data dari {{ $tugas->unitPengolah->nama_bidang }} sebagai SESUAI dan siap diproses ke draf jawaban?',
+                                                        badge: 'Uji Kelayakan Data',
+                                                        btnText: 'Ya, Tandai Sesuai',
+                                                        btnColor: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+                                                        icon: 'check_circle',
+                                                        iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+                                                        formId: 'reviewForm_{{ $tugas->id }}'
+                                                    })"
+                                                class="inline-flex items-center justify-center gap-1 bg-emerald-600 text-white text-[11px] py-1.5 px-3 rounded-lg font-bold uppercase tracking-wider hover:bg-emerald-700 transition-colors shadow-xs cursor-pointer">
                                             <span class="material-symbols-outlined text-[14px]">check_circle</span> Sesuai
                                         </button>
-                                        <button type="submit" name="hasil_uji" value="perlu_revisi" class="inline-flex items-center justify-center gap-1 bg-amber-600 text-white text-[11px] py-1.5 px-3 rounded-lg font-bold uppercase tracking-wider hover:bg-amber-700 transition-colors shadow-xs">
+                                        <button type="button" 
+                                                @click="
+                                                    document.getElementById('hasil_uji_{{ $tugas->id }}').value = 'perlu_revisi';
+                                                    openConfirm({
+                                                        title: 'Konfirmasi Permintaan Revisi Data',
+                                                        message: 'Minta petugas penghubung {{ $tugas->unitPengolah->nama_bidang }} untuk merevisi atau mengunggah ulang data?',
+                                                        badge: 'Uji Kelayakan Data',
+                                                        btnText: 'Ya, Minta Revisi',
+                                                        btnColor: 'bg-amber-600 hover:bg-amber-700 text-white',
+                                                        icon: 'replay',
+                                                        iconBg: 'bg-amber-50 text-amber-600 border-amber-100',
+                                                        formId: 'reviewForm_{{ $tugas->id }}'
+                                                    })"
+                                                class="inline-flex items-center justify-center gap-1 bg-amber-600 text-white text-[11px] py-1.5 px-3 rounded-lg font-bold uppercase tracking-wider hover:bg-amber-700 transition-colors shadow-xs cursor-pointer">
                                             <span class="material-symbols-outlined text-[14px]">replay</span> Revisi
                                         </button>
                                     </form>
@@ -541,16 +623,27 @@
             @endif
 
             <!-- 2. PANEL TINDAK LANJUT (Aksi Sesuai Status Workflow) -->
-            <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
-                <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/80 flex justify-between items-center">
+            <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xs relative">
+                <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/80 flex justify-between items-center rounded-t-2xl">
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-[18px] text-blue-600">play_circle</span>
                         <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider m-0">Tindak Lanjut</h3>
                     </div>
                     @if($permohonan->status === \App\Enums\PermohonanStatus::DataDiuji && (auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin')) && !$permohonan->diperpanjang)
-                    <form action="{{ route('admin.permohonan.extend-deadline', $permohonan->id) }}" method="POST">
+                    <form id="extendDeadlineForm" action="{{ route('admin.permohonan.extend-deadline', $permohonan->id) }}" method="POST">
                         @csrf
-                        <button type="submit" onclick="return confirm('Perpanjang waktu jawaban 7 hari kerja?')" class="text-[10px] bg-white border border-slate-300 text-slate-700 px-2.5 py-1 rounded-lg hover:bg-slate-50 font-bold uppercase tracking-wider shadow-2xs">
+                        <button type="button" 
+                                @click="openConfirm({
+                                    title: 'Konfirmasi Perpanjangan Waktu',
+                                    message: 'Batas waktu respon dan jawaban permohonan akan diperpanjang selama 7 hari kerja sesuai ketentuan UU KIP. Lanjutkan?',
+                                    badge: 'Perpanjangan Waktu Layanan',
+                                    btnText: 'Ya, Perpanjang Waktu',
+                                    btnColor: 'bg-blue-600 hover:bg-blue-700 text-white',
+                                    icon: 'update',
+                                    iconBg: 'bg-blue-50 text-blue-600 border-blue-100',
+                                    formId: 'extendDeadlineForm'
+                                })"
+                                class="text-[10px] bg-white border border-slate-300 text-slate-700 px-2.5 py-1 rounded-lg hover:bg-slate-50 font-bold uppercase tracking-wider shadow-2xs cursor-pointer">
                             +7 Hari Perpanjangan
                         </button>
                     </form>
@@ -561,11 +654,11 @@
                     <!-- Desk Layanan: Verifikasi Permohonan Masuk -->
                     @if($permohonan->status === \App\Enums\PermohonanStatus::Diajukan || $permohonan->status === \App\Enums\PermohonanStatus::MenungguKelengkapan)
                         @if(auth()->user()->hasRole('Desk Layanan') || auth()->user()->hasRole('Super Admin'))
-                            <form action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST" class="space-y-4">
+                            <form id="verifikasiForm" action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST" class="space-y-4">
                                 @csrf
                                 <div>
                                     <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">Hasil Verifikasi Berkas:</label>
-                                    <select name="target_status" id="verifikasi_action" data-no-search="true" class="custom-select w-full text-xs font-medium text-slate-800" onchange="document.getElementById('catatan_tak_lengkap').style.display = this.value === 'menunggu_kelengkapan' ? 'block' : 'none'">
+                                    <select name="target_status" id="verifikasi_action" class="w-full h-10 px-3.5 text-xs font-semibold text-slate-800 bg-slate-50/60 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 shadow-2xs transition-all cursor-pointer" onchange="document.getElementById('catatan_tak_lengkap').style.display = this.value === 'menunggu_kelengkapan' ? 'block' : 'none'">
                                         <option value="diverifikasi">Berkas Lengkap & Terverifikasi</option>
                                         <option value="menunggu_kelengkapan">Berkas Belum Lengkap (Perlu Dilengkapi)</option>
                                     </select>
@@ -574,7 +667,21 @@
                                     <label class="block text-[11px] font-bold text-rose-700 uppercase tracking-wider mb-2">Rincian Kekurangan Berkas:</label>
                                     <textarea name="alasan_tidak_lengkap" rows="3" class="w-full text-xs px-3 py-2.5 border border-rose-300 rounded-xl bg-rose-50/50 text-slate-800 focus:ring-2 focus:ring-rose-200" placeholder="Jelaskan berkas atau persyaratan apa yang kurang..."></textarea>
                                 </div>
-                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-bold rounded-xl py-2.5 px-4 hover:bg-blue-700 text-xs uppercase tracking-wider shadow-sm transition-colors">
+                                <button type="button" 
+                                        @click="
+                                            const action = document.getElementById('verifikasi_action').value;
+                                            const isLengkap = action === 'diverifikasi';
+                                            openConfirm({
+                                                title: isLengkap ? 'Konfirmasi Verifikasi Berkas' : 'Konfirmasi Berkas Belum Lengkap',
+                                                message: isLengkap ? 'Apakah Anda yakin seluruh berkas permohonan ini SUDAH LENGKAP dan siap diproses ke tahap disposisi PPID Pelaksana?' : 'Apakah Anda yakin ingin meminta pemohon melengkapi kekurangan berkas sesuai catatan?',
+                                                badge: 'Verifikasi Berkas Permohonan',
+                                                btnText: isLengkap ? 'Ya, Verifikasi Berkas' : 'Ya, Minta Kelengkapan',
+                                                btnColor: isLengkap ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-amber-600 hover:bg-amber-700 text-white',
+                                                icon: isLengkap ? 'verified' : 'warning',
+                                                iconBg: isLengkap ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-amber-50 text-amber-600 border-amber-100',
+                                                formId: 'verifikasiForm'
+                                            })"
+                                        class="w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-bold rounded-xl py-2.5 px-4 hover:bg-blue-700 text-xs uppercase tracking-wider shadow-sm transition-colors cursor-pointer">
                                     <span class="material-symbols-outlined text-[16px]">verified</span>
                                     Simpan & Proses Verifikasi
                                 </button>
@@ -596,7 +703,7 @@
                                         <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider m-0">Tugaskan ke Unit Pengolah</h4>
                                         <p class="text-[11px] text-slate-500 m-0">Pilih unit kerja dan petugas untuk pencarian data</p>
                                     </div>
-                                    <button type="button" onclick="addAssignRow()" class="inline-flex items-center gap-1 text-[11px] bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg uppercase font-bold tracking-wider transition-colors">
+                                    <button type="button" onclick="addAssignRow()" class="inline-flex items-center gap-1 text-[11px] bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg uppercase font-bold tracking-wider transition-colors cursor-pointer">
                                         <span class="material-symbols-outlined text-[14px]">add</span> Tambah Unit
                                     </button>
                                 </div>
@@ -628,7 +735,21 @@
                                     </div>
                                 </div>
                                 
-                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-bold rounded-xl py-2.5 px-4 hover:bg-blue-700 text-xs uppercase tracking-wider shadow-sm transition-colors">
+                                <button type="button" 
+                                        @click="
+                                            const form = document.getElementById('assignForm');
+                                            if (!form.checkValidity()) { form.reportValidity(); return; }
+                                            openConfirm({
+                                                title: 'Konfirmasi Disposisi Penugasan',
+                                                message: 'Tugas pencarian data akan didelegasikan ke Unit Pengolah yang dipilih. Lanjutkan?',
+                                                badge: 'Disposisi Unit Pengolah',
+                                                btnText: 'Ya, Disposisikan & Minta Data',
+                                                btnColor: 'bg-blue-600 hover:bg-blue-700 text-white',
+                                                icon: 'send',
+                                                iconBg: 'bg-blue-50 text-blue-600 border-blue-100',
+                                                formId: 'assignForm'
+                                            })"
+                                        class="w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-bold rounded-xl py-2.5 px-4 hover:bg-blue-700 text-xs uppercase tracking-wider shadow-sm transition-colors cursor-pointer">
                                     <span class="material-symbols-outlined text-[16px]">send</span>
                                     Disposisikan & Minta Data
                                 </button>
@@ -685,7 +806,7 @@
                     @elseif($permohonan->status === \App\Enums\PermohonanStatus::DataDiuji)
                         @if(auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
                             @if($permohonan->allPenugasanSesuai())
-                            <form action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST" class="space-y-4">
+                            <form id="ajukanTteForm" action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST" class="space-y-4">
                                 @csrf
                                 <input type="hidden" name="target_status" value="menunggu_tanda_tangan">
                                 <div>
@@ -696,7 +817,19 @@
                                         Semua berkas data telah sesuai. Siap diajukan ke Atasan PPID untuk disahkan.
                                     </p>
                                 </div>
-                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold rounded-xl py-2.5 px-4 hover:bg-indigo-700 text-xs uppercase tracking-wider shadow-sm transition-colors">
+                                <button type="button" 
+                                        @click="
+                                            openConfirm({
+                                                title: 'Konfirmasi Pengajuan Konsep Jawaban',
+                                                message: 'Konsep surat jawaban akan diajukan ke Atasan PPID untuk diverifikasi dan disahkan dengan TTE. Lanjutkan?',
+                                                badge: 'Pengajuan TTE ke Atasan',
+                                                btnText: 'Ya, Ajukan ke Atasan',
+                                                btnColor: 'bg-indigo-600 hover:bg-indigo-700 text-white',
+                                                icon: 'draw',
+                                                iconBg: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+                                                formId: 'ajukanTteForm'
+                                            })"
+                                        class="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold rounded-xl py-2.5 px-4 hover:bg-indigo-700 text-xs uppercase tracking-wider shadow-sm transition-colors cursor-pointer">
                                     <span class="material-symbols-outlined text-[16px]">draw</span>
                                     Ajukan ke Atasan untuk TTE
                                 </button>
@@ -748,7 +881,7 @@
                                     <div id="new_signature_container" class="border border-slate-300 rounded-xl overflow-hidden bg-white shadow-2xs">
                                         <div class="bg-slate-50 border-b border-slate-200 px-3 py-2 flex justify-between items-center">
                                             <span class="text-[10px] text-slate-600 font-bold uppercase tracking-wider">Gambar Tanda Tangan:</span>
-                                            <button type="button" id="clear_signature" class="text-[10px] text-rose-600 hover:text-rose-800 font-bold uppercase tracking-wider flex items-center gap-0.5">
+                                            <button type="button" id="clear_signature" class="text-[10px] text-rose-600 hover:text-rose-800 font-bold uppercase tracking-wider flex items-center gap-0.5 cursor-pointer">
                                                 <span class="material-symbols-outlined text-[13px]">refresh</span> Bersihkan
                                             </button>
                                         </div>
@@ -763,7 +896,37 @@
                                     </div>
                                 </div>
                                 
-                                <button type="submit" id="btnSubmitTTE" class="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 text-white font-bold rounded-xl py-2.5 px-4 hover:bg-emerald-700 text-xs uppercase tracking-wider shadow-sm transition-colors">
+                                <button type="button" id="btnSubmitTTE" 
+                                        @click="
+                                            const useSaved = document.getElementById('use_saved_signature');
+                                            if (useSaved && useSaved.value === '1') {
+                                                openConfirm({
+                                                    title: 'Konfirmasi Pengesahan TTE',
+                                                    message: 'Surat jawaban akan disahkan secara resmi menggunakan tanda tangan tersimpan profil Anda. Lanjutkan?',
+                                                    badge: 'Pengesahan TTE Atasan PPID',
+                                                    btnText: 'Ya, Sahkan & TTD',
+                                                    btnColor: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+                                                    icon: 'verified_user',
+                                                    iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+                                                    onConfirm: () => { document.getElementById('tteForm').submit(); }
+                                                });
+                                            } else if (window.currentSignaturePad && window.currentSignaturePad.isEmpty()) {
+                                                alert('Mohon gambar tanda tangan Anda terlebih dahulu, atau centang tanda tangan tersimpan.');
+                                            } else if (window.currentSignaturePad) {
+                                                document.getElementById('signature_data').value = window.currentSignaturePad.toDataURL('image/png');
+                                                openConfirm({
+                                                    title: 'Konfirmasi Pengesahan TTE',
+                                                    message: 'Surat jawaban akan disahkan secara resmi dengan tanda tangan yang Anda gambar. Lanjutkan?',
+                                                    badge: 'Pengesahan TTE Atasan PPID',
+                                                    btnText: 'Ya, Sahkan & TTD',
+                                                    btnColor: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+                                                    icon: 'verified_user',
+                                                    iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+                                                    onConfirm: () => { document.getElementById('tteForm').submit(); }
+                                                });
+                                            }
+                                        }"
+                                        class="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 text-white font-bold rounded-xl py-2.5 px-4 hover:bg-emerald-700 text-xs uppercase tracking-wider shadow-sm transition-colors cursor-pointer">
                                     <span class="material-symbols-outlined text-[16px]">verified_user</span>
                                     Sahkan & Tandatangani Surat Jawaban
                                 </button>
@@ -773,10 +936,9 @@
                             <script>
                                 document.addEventListener('DOMContentLoaded', function() {
                                     const canvas = document.getElementById('signature-pad');
-                                    let signaturePad;
                                     
                                     if(canvas) {
-                                        signaturePad = new SignaturePad(canvas, {
+                                        window.currentSignaturePad = new SignaturePad(canvas, {
                                             backgroundColor: 'rgb(255, 255, 255)',
                                             penColor: 'rgb(3, 34, 77)'
                                         });
@@ -786,13 +948,13 @@
                                             canvas.width = canvas.offsetWidth * ratio;
                                             canvas.height = canvas.offsetHeight * ratio;
                                             canvas.getContext("2d").scale(ratio, ratio);
-                                            signaturePad.clear();
+                                            window.currentSignaturePad.clear();
                                         }
                                         window.addEventListener("resize", resizeCanvas);
                                         resizeCanvas();
 
                                         document.getElementById('clear_signature').addEventListener('click', function () {
-                                            signaturePad.clear();
+                                            window.currentSignaturePad.clear();
                                         });
                                     }
 
@@ -814,23 +976,10 @@
                                                 saveSigOption.style.display = 'block';
                                                 savedPreview.style.display = 'none';
                                                 useSavedInput.value = '0';
-                                                if(signaturePad) signaturePad.clear();
+                                                if(window.currentSignaturePad) window.currentSignaturePad.clear();
                                             }
                                         });
                                     }
-
-                                    document.getElementById('tteForm').addEventListener('submit', function(e) {
-                                        if (useSavedInput && useSavedInput.value === '1') {
-                                            return true;
-                                        }
-                                        
-                                        if (signaturePad && signaturePad.isEmpty()) {
-                                            e.preventDefault();
-                                            alert("Mohon gambar tanda tangan Anda terlebih dahulu, atau centang tanda tangan tersimpan.");
-                                        } else if(signaturePad) {
-                                            document.getElementById('signature_data').value = signaturePad.toDataURL('image/png');
-                                        }
-                                    });
                                 });
                             </script>
                         @else
@@ -843,7 +992,7 @@
                     <!-- Desk Layanan: Kirim Surat Jawaban Final ke Pemohon -->
                     @elseif($permohonan->status === \App\Enums\PermohonanStatus::Ditandatangani)
                         @if(auth()->user()->hasRole('Desk Layanan') || auth()->user()->hasRole('Super Admin'))
-                            <form action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST" class="space-y-4">
+                            <form id="kirimJawabanForm" action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST" class="space-y-4">
                                 @csrf
                                 <input type="hidden" name="target_status" value="selesai">
                                 <div class="text-center p-3 bg-emerald-50 border border-emerald-200/80 rounded-xl">
@@ -851,7 +1000,19 @@
                                     <p class="text-xs font-bold text-emerald-900">Surat Jawaban Telah Ditandatangani</p>
                                     <p class="text-[11px] text-emerald-700 mt-1">Kirimkan notifikasi dan surat jawaban resmi ke pemohon untuk menyelesaikan permohonan.</p>
                                 </div>
-                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-bold rounded-xl py-2.5 px-4 hover:bg-blue-700 text-xs uppercase tracking-wider shadow-sm transition-colors">
+                                <button type="button" 
+                                        @click="
+                                            openConfirm({
+                                                title: 'Konfirmasi Penyelesaian Permohonan',
+                                                message: 'Surat jawaban resmi akan dikirimkan kepada pemohon dan status permohonan akan ditutup (SELESAI). Lanjutkan?',
+                                                badge: 'Penyelesaian Layanan Informasi',
+                                                btnText: 'Ya, Kirim & Selesaikan',
+                                                btnColor: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+                                                icon: 'send_and_archive',
+                                                iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+                                                formId: 'kirimJawabanForm'
+                                            })"
+                                        class="w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-bold rounded-xl py-2.5 px-4 hover:bg-blue-700 text-xs uppercase tracking-wider shadow-sm transition-colors cursor-pointer">
                                     <span class="material-symbols-outlined text-[16px]">send_and_archive</span>
                                     Kirim Jawaban ke Pemohon & Selesaikan
                                 </button>
@@ -893,11 +1054,25 @@
                             @if(!\App\Models\PengajuanKeberatan::where('permohonan_informasi_id', $permohonan->id)->exists())
                             <div class="mt-4 pt-4 border-t border-slate-100">
                                 <h4 class="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">Registrasi Sengketa / Keberatan</h4>
-                                <form action="{{ route('admin.keberatan.store', $permohonan->id) }}" method="POST" class="space-y-3">
+                                <form id="keberatanForm" action="{{ route('admin.keberatan.store', $permohonan->id) }}" method="POST" class="space-y-3">
                                     @csrf
                                     <textarea name="alasan_keberatan" rows="2" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-xl focus:ring-1 focus:ring-rose-500" placeholder="Alasan utama keberatan pemohon..." required></textarea>
                                     <textarea name="keterangan_tambahan" rows="2" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-xl focus:ring-1 focus:ring-rose-500" placeholder="Keterangan tambahan (opsional)..."></textarea>
-                                    <button type="submit" onclick="return confirm('Ajukan Sengketa/Keberatan untuk permohonan ini?')" class="w-full inline-flex items-center justify-center gap-1.5 bg-rose-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-rose-700 text-[11px] uppercase tracking-wider transition-colors shadow-xs">
+                                    <button type="button" 
+                                            @click="
+                                                const f = document.getElementById('keberatanForm');
+                                                if (!f.checkValidity()) { f.reportValidity(); return; }
+                                                openConfirm({
+                                                    title: 'Konfirmasi Pengajuan Sengketa / Keberatan',
+                                                    message: 'Apakah Anda yakin ingin mendaftarkan permohonan keberatan untuk pemohon ini?',
+                                                    badge: 'Sengketa & Keberatan',
+                                                    btnText: 'Ya, Ajukan Keberatan',
+                                                    btnColor: 'bg-rose-600 hover:bg-rose-700 text-white',
+                                                    icon: 'gavel',
+                                                    iconBg: 'bg-rose-50 text-rose-600 border-rose-100',
+                                                    formId: 'keberatanForm'
+                                                })"
+                                            class="w-full inline-flex items-center justify-center gap-1.5 bg-rose-600 text-white font-bold rounded-xl py-2 px-4 hover:bg-rose-700 text-[11px] uppercase tracking-wider transition-colors shadow-xs cursor-pointer">
                                         <span class="material-symbols-outlined text-[14px]">gavel</span>
                                         Ajukan Sengketa Keberatan
                                     </button>
@@ -957,5 +1132,44 @@
 
         </div>
     </div>
+
+    <!-- ========================================================================= -->
+    <!-- CONFIRMATION POPUP MODAL (FOR ALL WORKFLOW ACTIONS)                       -->
+    <!-- ========================================================================= -->
+    <div x-show="confirmOpen" class="fixed inset-0 z-[100] overflow-y-auto" style="display: none;">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div @click="closeConfirm()" class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+            
+            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
+                <div class="p-6">
+                    <div class="flex items-center gap-3.5 mb-4">
+                        <div class="w-11 h-11 rounded-2xl border flex items-center justify-center shrink-0" :class="confirmIconBg">
+                            <span class="material-symbols-outlined text-[24px]" x-text="confirmIcon">help</span>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900 leading-tight" x-text="confirmTitle">Konfirmasi Tindakan</h3>
+                            <p class="text-xs text-slate-400 mt-0.5" x-text="confirmBadge">Alur Proses Permohonan</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 border border-slate-100 rounded-xl p-3.5 mb-2">
+                        <p class="text-xs text-slate-700 leading-relaxed" x-text="confirmMessage"></p>
+                    </div>
+                </div>
+
+                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                    <button type="button" @click="closeConfirm()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200/60 transition-colors cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="button" @click="proceed()" :class="confirmBtnColor" class="px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[16px]">check_circle</span>
+                        <span x-text="confirmBtnText">Ya, Lanjutkan</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </main>
 @endsection

@@ -12,4 +12,9 @@ class KategoriInformasiPublik extends Model
     {
         return $this->hasMany(InformasiPublik::class, 'kategori_informasi_publik_id');
     }
+
+    public function informasi_publiks()
+    {
+        return $this->hasMany(InformasiPublik::class, 'kategori_informasi_publik_id');
+    }
 }

@@ -124,11 +124,9 @@ Route::prefix('admin')->group(function () {
             
             Route::get('/logs', [\App\Http\Controllers\Admin\LogController::class, 'index'])->name('admin.logs.index');
 
-            // Master Data routes
+            // Master Data Unified Route & Resource Endpoints
+            Route::get('/master-data', [\App\Http\Controllers\Admin\MasterDataController::class, 'index'])->name('admin.master-data.index');
             Route::resource('unit-pengolah', \App\Http\Controllers\Admin\UnitPengolahController::class, [
-                'as' => 'admin'
-            ]);
-            Route::resource('klasifikasi-arsip', \App\Http\Controllers\Admin\KlasifikasiArsipController::class, [
                 'as' => 'admin'
             ]);
             Route::resource('kategori-pemohon', \App\Http\Controllers\Admin\KategoriPemohonController::class, [
@@ -143,17 +141,6 @@ Route::prefix('admin')->group(function () {
             Route::resource('informasi-publik', \App\Http\Controllers\Admin\InformasiPublikController::class, [
                 'as' => 'admin'
             ]);
-
-            // E-Office Persuratan routes
-            Route::resource('surat-masuk', \App\Http\Controllers\Admin\SuratMasukController::class, [
-                'as' => 'admin'
-            ]);
-            Route::post('/surat-masuk/{surat_masuk}/disposisi', [\App\Http\Controllers\Admin\SuratMasukController::class, 'disposisi'])->name('admin.surat-masuk.disposisi');
-
-            Route::resource('surat-keluar', \App\Http\Controllers\Admin\SuratKeluarController::class, [
-                'as' => 'admin'
-            ]);
-            Route::post('/surat-keluar/{surat_keluar}/approve-tte', [\App\Http\Controllers\Admin\SuratKeluarController::class, 'approveTte'])->name('admin.surat-keluar.approve-tte');
         });
     });
 });

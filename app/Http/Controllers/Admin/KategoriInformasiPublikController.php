@@ -18,9 +18,7 @@ class KategoriInformasiPublikController extends Controller
 
     public function index()
     {
-        $this->checkAccess();
-        $kategori = \App\Models\KategoriInformasiPublik::orderBy('nama_kategori', 'asc')->paginate(10);
-        return view('admin.kategori_informasi_publik.index', compact('kategori'));
+        return redirect()->route('admin.master-data.index')->with('tab', 'kategori-informasi');
     }
 
     public function create()
@@ -43,7 +41,7 @@ class KategoriInformasiPublikController extends Controller
 
         \App\Models\KategoriInformasiPublik::create($validated);
 
-        return redirect()->route('admin.kategori-informasi-publik.index')->with('success', 'Kategori Informasi Publik berhasil ditambahkan.');
+        return redirect()->route('admin.master-data.index')->with('tab', 'kategori-informasi')->with('success', 'Kategori Informasi Publik berhasil ditambahkan.');
     }
 
     public function edit(string $id)
@@ -68,7 +66,7 @@ class KategoriInformasiPublikController extends Controller
 
         $kategori->update($validated);
 
-        return redirect()->route('admin.kategori-informasi-publik.index')->with('success', 'Kategori Informasi Publik berhasil diperbarui.');
+        return redirect()->route('admin.master-data.index')->with('tab', 'kategori-informasi')->with('success', 'Kategori Informasi Publik berhasil diperbarui.');
     }
 
     public function destroy(string $id)
@@ -76,8 +74,12 @@ class KategoriInformasiPublikController extends Controller
         $this->checkAccess();
         $kategori = \App\Models\KategoriInformasiPublik::findOrFail($id);
         
+        if ($kategori->informasi_publiks()->exists()) {
+            return redirect()->route('admin.master-data.index')->with('tab', 'kategori-informasi')->with('error', 'Gagal menghapus kategori karena sedang digunakan oleh data informasi publik.');
+        }
+
         $kategori->delete();
 
-        return redirect()->route('admin.kategori-informasi-publik.index')->with('success', 'Kategori Informasi Publik berhasil dihapus.');
+        return redirect()->route('admin.master-data.index')->with('tab', 'kategori-informasi')->with('success', 'Kategori Informasi Publik berhasil dihapus.');
     }
 }

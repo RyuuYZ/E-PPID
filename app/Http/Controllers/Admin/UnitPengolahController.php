@@ -20,9 +20,7 @@ class UnitPengolahController extends Controller
 
     public function index()
     {
-        $this->checkAccess();
-        $unitPengolah = UnitPengolah::orderBy('created_at', 'desc')->paginate(10);
-        return view('admin.unit_pengolah.index', compact('unitPengolah'));
+        return redirect()->route('admin.master-data.index')->with('tab', 'bidang');
     }
 
     public function create()
@@ -42,7 +40,7 @@ class UnitPengolahController extends Controller
 
         UnitPengolah::create($request->all());
 
-        return redirect()->route('admin.unit-pengolah.index')->with('success', 'Data Bidang berhasil ditambahkan.');
+        return redirect()->route('admin.master-data.index')->with('tab', 'bidang')->with('success', 'Data Bidang berhasil ditambahkan.');
     }
 
     public function edit(UnitPengolah $unitPengolah)
@@ -62,20 +60,20 @@ class UnitPengolahController extends Controller
 
         $unitPengolah->update($request->all());
 
-        return redirect()->route('admin.unit-pengolah.index')->with('success', 'Data Bidang berhasil diperbarui.');
+        return redirect()->route('admin.master-data.index')->with('tab', 'bidang')->with('success', 'Data Bidang berhasil diperbarui.');
     }
 
     public function destroy(UnitPengolah $unitPengolah)
     {
         $this->checkAccess();
         
-        // Prevent deletion if it's already used in permohonan or users (Optional but good practice)
+        // Prevent deletion if it's already used in permohonan or users
         if ($unitPengolah->users()->count() > 0 || $unitPengolah->permohonan_informasis()->count() > 0) {
-            return redirect()->route('admin.unit-pengolah.index')->with('error', 'Bidang tidak dapat dihapus karena sedang digunakan oleh Pengguna atau Permohonan.');
+            return redirect()->route('admin.master-data.index')->with('tab', 'bidang')->with('error', 'Bidang tidak dapat dihapus karena sedang digunakan oleh Pengguna atau Permohonan.');
         }
 
         $unitPengolah->delete();
 
-        return redirect()->route('admin.unit-pengolah.index')->with('success', 'Data Bidang berhasil dihapus.');
+        return redirect()->route('admin.master-data.index')->with('tab', 'bidang')->with('success', 'Data Bidang berhasil dihapus.');
     }
 }
