@@ -72,6 +72,11 @@ class InformasiPublikPublicController extends Controller
 
         if ($dokumen->file_path && Storage::disk('public')->exists($dokumen->file_path)) {
             $filename = \Illuminate\Support\Str::slug($dokumen->judul) . '.' . ($dokumen->tipe_media ? strtolower($dokumen->tipe_media) : 'pdf');
+            if (request()->query('inline')) {
+                return Storage::disk('public')->response($dokumen->file_path, $filename, [
+                    'Content-Disposition' => "inline; filename=\"{$filename}\""
+                ]);
+            }
             return Storage::disk('public')->download($dokumen->file_path, $filename);
         }
 
@@ -79,9 +84,11 @@ class InformasiPublikPublicController extends Controller
         $filename = \Illuminate\Support\Str::slug($dokumen->judul) . '.pdf';
         $content = "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/MediaBox[0 0 595 842]/Parent 2 0 R/Resources<<>>>>endobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000052 00000 n \n0000000101 00000 n \ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n178\n%%EOF";
         
+        $disposition = request()->query('inline') ? 'inline' : 'attachment';
+
         return response($content, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Content-Disposition' => "{$disposition}; filename=\"{$filename}\"",
         ]);
     }
 }

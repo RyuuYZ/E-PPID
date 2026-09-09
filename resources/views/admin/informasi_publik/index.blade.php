@@ -90,6 +90,18 @@
         kategori: '',
         jenis: 'all',
         tahun: 'all',
+        previewOpen: false,
+        previewUrl: '',
+        previewTitle: '',
+        openPreview(url, title) {
+            this.previewUrl = url;
+            this.previewTitle = title;
+            this.previewOpen = true;
+        },
+        closePreview() {
+            this.previewOpen = false;
+            setTimeout(() => { this.previewUrl = ''; }, 300);
+        },
         applyFilters() {
             const rows = document.querySelectorAll('#dokumenTable tr.doc-row');
             const q = this.search.toLowerCase().trim();
@@ -324,6 +336,11 @@
                                      x-transition:leave-start="transform opacity-100 scale-100" 
                                      x-transition:leave-end="transform opacity-0 scale-95" 
                                      class="origin-top-right absolute right-0 mt-1.5 w-44 rounded-xl shadow-lg bg-white ring-1 ring-slate-200 z-50 py-1.5 border border-slate-100">
+                                    <button type="button" @click="openPreview('{{ route('informasi-publik.download', $item->id) }}?inline=1', '{{ addslashes($item->judul) }}')" 
+                                       class="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors font-medium cursor-pointer text-left">
+                                        <span class="material-symbols-outlined text-[16px]">visibility</span>
+                                        Preview Dokumen
+                                    </button>
                                     <a href="{{ route('informasi-publik.download', $item->id) }}" target="_blank" 
                                        class="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors font-medium">
                                         <span class="material-symbols-outlined text-[16px]">download</span>
@@ -365,6 +382,70 @@
         <!-- Footer info -->
         <div class="px-6 py-3 border-t border-slate-100 bg-slate-50/40 text-xs text-slate-500 font-medium">
             Total {{ $dokumen->count() }} dokumen terdaftar
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div x-show="previewOpen" style="display: none;" class="fixed inset-0 z-[100] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <!-- Background overlay -->
+        <div x-show="previewOpen" 
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" 
+             @click="closePreview()"></div>
+
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <!-- Modal panel -->
+                <div x-show="previewOpen" 
+                     x-transition:enter="ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave="ease-in duration-200"
+                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-5xl flex flex-col h-[85vh]">
+                    
+                    <!-- Header -->
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100 shadow-2xs">
+                                <span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold leading-6 text-slate-900" id="modal-title" x-text="previewTitle"></h3>
+                                <p class="text-xs text-slate-500">Preview Dokumen PDF</p>
+                            </div>
+                        </div>
+                        <button type="button" @click="closePreview()" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer">
+                            <span class="material-symbols-outlined text-[20px]">close</span>
+                        </button>
+                    </div>
+
+                    <!-- Body (Iframe) -->
+                    <div class="flex-1 bg-slate-100 p-2 overflow-hidden relative">
+                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none" x-show="!previewUrl">
+                            <div class="w-8 h-8 border-4 border-slate-300 border-t-blue-600 rounded-full animate-spin"></div>
+                        </div>
+                        <iframe :src="previewUrl" class="w-full h-full rounded-xl border border-slate-200 bg-white shadow-2xs relative z-10" title="Preview Dokumen" x-show="previewUrl" x-cloak></iframe>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="bg-slate-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 border-t border-slate-100 shrink-0">
+                        <a :href="previewUrl" target="_blank" class="inline-flex w-full justify-center rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-blue-500 sm:ml-3 sm:w-auto transition-colors items-center gap-2 cursor-pointer">
+                            <span class="material-symbols-outlined text-[18px]">download</span>
+                            Unduh Dokumen
+                        </a>
+                        <button type="button" @click="closePreview()" class="mt-3 inline-flex w-full justify-center rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-xs ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:mt-0 sm:w-auto transition-colors cursor-pointer">
+                            Tutup
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

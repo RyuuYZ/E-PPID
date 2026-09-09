@@ -74,7 +74,7 @@
     </div>
     
     <div class="mt-4">
-        {{ $unitPengolah->links() }}
+        {{ $unitPengolah->links('vendor.pagination.custom', ['resourceName' => 'BIDANG / UNIT']) }}
     </div>
 </main>
 @endsection

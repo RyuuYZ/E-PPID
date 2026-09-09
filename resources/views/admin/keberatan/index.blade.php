@@ -82,11 +82,9 @@
                 </tbody>
             </table>
         </div>
-        @if($keberatan->hasPages())
         <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
-            {{ $keberatan->links() }}
+            {{ $keberatan->links('vendor.pagination.custom', ['resourceName' => 'KEBERATAN']) }}
         </div>
-        @endif
     </div>
 </main>
 @endsection

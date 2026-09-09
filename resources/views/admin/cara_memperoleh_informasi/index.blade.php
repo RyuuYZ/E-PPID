@@ -76,7 +76,7 @@
     </div>
     
     <div class="mt-4">
-        {{ $cara->links('pagination::tailwind') }}
+        {{ $cara->links('vendor.pagination.custom', ['resourceName' => 'METODE']) }}
     </div>
 </main>
 @endsection

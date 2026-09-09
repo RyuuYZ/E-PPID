@@ -19,7 +19,7 @@ class KategoriPemohonController extends Controller
     public function index()
     {
         $this->checkAccess();
-        $kategori = \App\Models\KategoriPemohon::orderBy('nama_kategori', 'asc')->paginate(15);
+        $kategori = \App\Models\KategoriPemohon::orderBy('nama_kategori', 'asc')->paginate(10);
         return view('admin.kategori_pemohon.index', compact('kategori'));
     }
 

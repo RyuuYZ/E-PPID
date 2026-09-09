@@ -173,11 +173,9 @@
             @endif
         </div>
 
-        @if($logs->hasPages())
         <div class="p-4 border-t border-slate-100 bg-slate-50/50">
-            {{ $logs->links() }}
+            {{ $logs->links('vendor.pagination.custom', ['resourceName' => 'LOG AKTIVITAS']) }}
         </div>
-        @endif
     </div>
 </main>
 @endsection

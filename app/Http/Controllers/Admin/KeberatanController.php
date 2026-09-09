@@ -22,7 +22,7 @@ class KeberatanController extends Controller
             $query->where('status', $request->status);
         }
 
-        $keberatan = $query->orderBy('created_at', 'desc')->paginate(10);
+        $keberatan = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
         $currentStatus = $request->status;
 
         return view('admin.keberatan.index', compact('keberatan', 'currentStatus'));

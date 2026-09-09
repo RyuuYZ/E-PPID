@@ -19,7 +19,7 @@ class CaraMemperolehInformasiController extends Controller
     public function index()
     {
         $this->checkAccess();
-        $cara = \App\Models\CaraMemperolehInformasi::orderBy('nama_cara', 'asc')->paginate(15);
+        $cara = \App\Models\CaraMemperolehInformasi::orderBy('nama_cara', 'asc')->paginate(10);
         return view('admin.cara_memperoleh_informasi.index', compact('cara'));
     }
 

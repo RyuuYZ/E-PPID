@@ -85,7 +85,7 @@
     </div>
     
     <div class="mt-4">
-        {{ $kategori->links('pagination::tailwind') }}
+        {{ $kategori->links('vendor.pagination.custom', ['resourceName' => 'KATEGORI INFORMASI']) }}
     </div>
 </main>
 @endsection

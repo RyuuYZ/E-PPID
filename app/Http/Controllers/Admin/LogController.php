@@ -27,7 +27,7 @@ class LogController extends Controller
                       });
                 });
             }
-            $logs = $query->paginate(15)->withQueryString();
+            $logs = $query->paginate(10)->withQueryString();
         } else {
             $query = PermohonanLog::with(['user', 'permohonan_informasi'])->orderBy('created_at', 'desc');
             if (!empty($search)) {
@@ -44,7 +44,7 @@ class LogController extends Controller
                       });
                 });
             }
-            $logs = $query->paginate(15)->withQueryString();
+            $logs = $query->paginate(10)->withQueryString();
         }
 
         $countPermohonan = PermohonanLog::count();

@@ -19,7 +19,7 @@ class KategoriInformasiPublikController extends Controller
     public function index()
     {
         $this->checkAccess();
-        $kategori = \App\Models\KategoriInformasiPublik::orderBy('nama_kategori', 'asc')->paginate(15);
+        $kategori = \App\Models\KategoriInformasiPublik::orderBy('nama_kategori', 'asc')->paginate(10);
         return view('admin.kategori_informasi_publik.index', compact('kategori'));
     }
 

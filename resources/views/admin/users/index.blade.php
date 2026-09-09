@@ -24,7 +24,7 @@
         </div>
     @endif
 
-    <div class="bg-white border border-gray-200 rounded shadow-sm overflow-hidden mt-2">
+    <div class="bg-white border border-gray-200 rounded-xl shadow-xs mt-2">
         <table class="w-full table-fixed text-left border-collapse">
             <thead>
                 <tr class="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px]">
@@ -100,7 +100,7 @@
     </div>
     
     <div class="mt-4">
-        {{ $users->links() }}
+        {{ $users->links('vendor.pagination.custom', ['resourceName' => 'PENGGUNA']) }}
     </div>
 </main>
 @endsection
