@@ -22,14 +22,9 @@ class RoleController extends Controller
 
     public function index()
     {
-        $roles = Role::orderBy('name')->get();
-        return view('admin.roles.index', compact('roles'));
-    }
-
-    public function create()
-    {
+        $roles = Role::withCount('users')->orderBy('name')->get();
         $availablePermissions = $this->availablePermissions;
-        return view('admin.roles.create', compact('availablePermissions'));
+        return view('admin.roles.index', compact('roles', 'availablePermissions'));
     }
 
     public function store(Request $request)
@@ -50,12 +45,6 @@ class RoleController extends Controller
         ]);
 
         return redirect()->route('admin.roles.index')->with('success', 'Role berhasil ditambahkan.');
-    }
-
-    public function edit(Role $role)
-    {
-        $availablePermissions = $this->availablePermissions;
-        return view('admin.roles.edit', compact('role', 'availablePermissions'));
     }
 
     public function update(Request $request, Role $role)

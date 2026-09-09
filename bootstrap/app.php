@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             '2fa' => \App\Http\Middleware\TwoFactorMiddleware::class,
+            'force_password_change' => \App\Http\Middleware\ForcePasswordChangeMiddleware::class,
         ]);
 
         $middleware->redirectGuestsTo(function (Request $request) {

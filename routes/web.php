@@ -26,6 +26,10 @@ Route::post('/permohonan/simpan', function (\Illuminate\Http\Request $request) {
         'tujuan_penggunaan' => 'required|string',
         'cara_memperoleh_informasi_id' => 'required|exists:cara_memperoleh_informasis,id',
         'file_identitas' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+    ], [
+        'file_identitas.mimes' => 'Format file identitas harus berupa gambar (JPG, JPEG, PNG) atau dokumen (PDF). Anda mencoba mengunggah format yang tidak diizinkan.',
+        'file_identitas.max' => 'Ukuran file identitas maksimal adalah 5MB.',
+        'file_identitas.file' => 'File identitas harus berupa file yang valid.'
     ]);
 
     if ($request->hasFile('file_identitas')) {
@@ -88,7 +92,10 @@ Route::prefix('admin')->group(function () {
         Route::post('/profile/2fa/disable', [\App\Http\Controllers\Admin\TwoFactorController::class, 'disable'])->name('admin.2fa.disable');
 
         // Protected by 2FA (Temporarily disabled)
-        Route::middleware([])->group(function () {
+        Route::get('/change-password', [\App\Http\Controllers\Admin\AuthController::class, 'showForceChangePassword'])->name('admin.force-change-password');
+        Route::post('/change-password', [\App\Http\Controllers\Admin\AuthController::class, 'processForceChangePassword'])->name('admin.process-force-change-password');
+
+        Route::middleware(['force_password_change'])->group(function () {
             Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('admin.dashboard');
             
             // Permohonan routes
@@ -114,10 +121,17 @@ Route::prefix('admin')->group(function () {
             Route::post('/profile/signature', [\App\Http\Controllers\Admin\ProfileController::class, 'updateSignature'])->name('admin.profile.signature');
 
             // Super Admin Modules
-            Route::resource('users', \App\Http\Controllers\Admin\UserController::class, ['as' => 'admin']);
+            Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('admin.users.index');
+            Route::post('/users', [\App\Http\Controllers\Admin\UserController::class, 'store'])->name('admin.users.store');
+            Route::put('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'update'])->name('admin.users.update');
+            Route::delete('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('admin.users.destroy');
             Route::post('/users/{user}/reset-2fa', [\App\Http\Controllers\Admin\UserController::class, 'reset2fa'])->name('admin.users.reset-2fa');
+            Route::post('/users/{user}/toggle-active', [\App\Http\Controllers\Admin\UserController::class, 'toggleActive'])->name('admin.users.toggle-active');
             
-            Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class, ['as' => 'admin']);
+            Route::get('/roles', [\App\Http\Controllers\Admin\RoleController::class, 'index'])->name('admin.roles.index');
+            Route::post('/roles', [\App\Http\Controllers\Admin\RoleController::class, 'store'])->name('admin.roles.store');
+            Route::put('/roles/{role}', [\App\Http\Controllers\Admin\RoleController::class, 'update'])->name('admin.roles.update');
+            Route::delete('/roles/{role}', [\App\Http\Controllers\Admin\RoleController::class, 'destroy'])->name('admin.roles.destroy');
             
             Route::get('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('admin.settings.index');
             Route::post('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('admin.settings.update');

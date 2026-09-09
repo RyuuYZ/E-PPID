@@ -13,23 +13,20 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with(['role', 'unit_pengolah'])->orderBy('name')->paginate(10);
-        return view('admin.users.index', compact('users'));
-    }
-
-    public function create()
-    {
+        $users = User::with(['role', 'unit_pengolah'])->orderBy('name')->get();
         $roles = Role::orderBy('name')->get();
         $unitPengolahs = \App\Models\UnitPengolah::orderBy('nama_bidang')->get();
         $superAdminRole = Role::where('name', 'Super Admin')->first();
         $hasSuperAdmin = $superAdminRole ? User::where('role_id', $superAdminRole->id)->exists() : false;
-        return view('admin.users.create', compact('roles', 'unitPengolahs', 'hasSuperAdmin', 'superAdminRole'));
+        
+        return view('admin.users.index', compact('users', 'roles', 'unitPengolahs', 'hasSuperAdmin', 'superAdminRole'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'username' => 'required|string|alpha_dash|max:255|unique:users',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => ['required', 'string', \Illuminate\Validation\Rules\Password::defaults(), 'confirmed'],
             'role_id' => 'required|exists:roles,id',
@@ -46,32 +43,25 @@ class UserController extends Controller
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['is_active'] = $request->has('is_active');
+        $validated['must_change_password'] = true;
 
         $user = User::create($validated);
 
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'Create User',
-            'description' => "Dibuat pengguna baru: {$user->email}",
+            'description' => "Dibuat pengguna baru: {$user->username}",
             'ip_address' => request()->ip()
         ]);
 
         return redirect()->route('admin.users.index')->with('success', 'Pengguna berhasil ditambahkan.');
     }
 
-    public function edit(User $user)
-    {
-        $roles = Role::orderBy('name')->get();
-        $unitPengolahs = \App\Models\UnitPengolah::orderBy('nama_bidang')->get();
-        $superAdminRole = Role::where('name', 'Super Admin')->first();
-        $hasSuperAdmin = $superAdminRole ? User::where('role_id', $superAdminRole->id)->where('id', '!=', $user->id)->exists() : false;
-        return view('admin.users.edit', compact('user', 'roles', 'unitPengolahs', 'hasSuperAdmin', 'superAdminRole'));
-    }
-
     public function update(Request $request, User $user)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'username' => 'required|string|alpha_dash|max:255|unique:users,username,'.$user->id,
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
             'password' => ['nullable', 'string', \Illuminate\Validation\Rules\Password::defaults(), 'confirmed'],
             'role_id' => 'required|exists:roles,id',
@@ -88,6 +78,7 @@ class UserController extends Controller
 
         if (!empty($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
+            $validated['must_change_password'] = true; // reset so they have to change if admin resets it
         } else {
             unset($validated['password']);
         }
@@ -99,7 +90,7 @@ class UserController extends Controller
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'Update User',
-            'description' => "Diperbarui pengguna: {$user->email}",
+            'description' => "Diperbarui pengguna: {$user->username}",
             'ip_address' => request()->ip()
         ]);
 
@@ -112,13 +103,13 @@ class UserController extends Controller
             return back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
         }
 
-        $email = $user->email;
+        $username = $user->username;
         $user->delete();
 
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'Delete User',
-            'description' => "Dihapus pengguna: {$email}",
+            'description' => "Dihapus pengguna: {$username}",
             'ip_address' => request()->ip()
         ]);
 
@@ -132,10 +123,30 @@ class UserController extends Controller
         ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'Reset 2FA',
-            'description' => "2FA direset untuk: {$user->email}",
+            'description' => "2FA direset untuk: {$user->username}",
             'ip_address' => request()->ip()
         ]);
 
         return back()->with('success', '2FA untuk pengguna ini berhasil direset.');
+    }
+
+    public function toggleActive(User $user)
+    {
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'Anda tidak dapat mengubah status akun Anda sendiri.');
+        }
+
+        $user->update(['is_active' => !$user->is_active]);
+
+        $status = $user->is_active ? 'diaktifkan' : 'diblokir';
+        
+        ActivityLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Toggle User Status',
+            'description' => "Pengguna {$user->username} " . $status,
+            'ip_address' => request()->ip()
+        ]);
+
+        return back()->with('success', "Pengguna berhasil {$status}.");
     }
 }
