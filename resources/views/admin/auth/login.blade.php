@@ -139,16 +139,16 @@
             <form action="{{ route('admin.authenticate') }}" method="POST" class="space-y-4 animate-fade-in-up delay-200">
                 @csrf
 
-                <!-- Username -->
+                <!-- Username / Email -->
                 <div>
-                    <label for="username" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Username</label>
+                    <label for="username" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Username atau Email</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                             <span class="material-symbols-outlined text-[18px]">person</span>
                         </div>
                         <input type="text" id="username" name="username" value="{{ old('username') }}" required autofocus autocomplete="username"
                             class="block w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
-                            placeholder="Masukkan username Anda">
+                            placeholder="Masukkan username atau email Anda">
                     </div>
                 </div>
 

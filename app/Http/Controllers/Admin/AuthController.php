@@ -30,7 +30,13 @@ class AuthController extends Controller
             'cf-turnstile-response' => ['required', new \App\Rules\TurnstileRule()],
         ]);
 
-        $credentials = $request->only('username', 'password');
+        $loginInput = $request->input('username');
+        $fieldType = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        $credentials = [
+            $fieldType => $loginInput,
+            'password' => $request->input('password'),
+        ];
 
         $throttleKey = Str::transliterate(Str::lower($request->input('username')).'|'.$request->ip());
 

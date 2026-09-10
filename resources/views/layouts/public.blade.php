@@ -192,11 +192,11 @@
 </head>
 <body class="bg-[#f8fafc] text-gray-800 antialiased min-h-screen flex flex-col">
 <!-- TopNavBar -->
-<header class="bg-white/80 backdrop-blur-md border-b border-gray-200/80 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] w-full sticky top-0 z-50 transition-all duration-300">
-    <div class="w-full flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto">
+<header x-data="{ mobileMenuOpen: false }" class="bg-white/95 backdrop-blur-md border-b border-gray-200/80 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] w-full sticky top-0 z-50 transition-all duration-300">
+    <div class="w-full flex justify-between items-center px-4 sm:px-6 md:px-margin-desktop py-3.5 sm:py-4 max-w-container-max mx-auto">
         <div class="flex items-center gap-2">
             <a href="{{ route('home') }}" class="flex items-center">
-                <img src="{{ asset('ppid_logo.png') }}" alt="Logo Bappeda PPID" class="h-10 w-auto">
+                <img src="{{ asset('ppid_logo.png') }}" alt="Logo Bappeda PPID" class="h-9 sm:h-10 w-auto">
             </a>
         </div>
         <nav class="hidden md:flex items-center gap-6">
@@ -205,14 +205,65 @@
             <a class="{{ request()->routeIs('permohonan.lacak') ? 'text-blue-700 font-bold border-b-2 border-blue-700 pb-1' : 'text-gray-600 hover:text-blue-700 font-medium' }} text-sm transition-colors duration-200" href="{{ route('permohonan.lacak') }}">Lacak Status</a>
             <a class="{{ request()->routeIs('permohonan.create') ? 'text-blue-700 font-bold border-b-2 border-blue-700 pb-1' : 'text-gray-600 hover:text-blue-700 font-medium' }} text-sm transition-colors duration-200" href="{{ route('permohonan.create') }}">Permohonan Baru</a>
         </nav>
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3">
             <a href="{{ route('informasi-publik.index') }}" class="hidden md:flex items-center gap-1.5 bg-[#03224d] text-white font-semibold text-xs px-5 py-2.5 rounded-full hover:bg-[#0B1B3D] transition-all shadow-sm">
                 <span class="material-symbols-outlined text-[16px]">search</span>
                 Cari Dokumen
             </a>
-            <button class="md:hidden text-primary">
-                <span class="material-symbols-outlined">menu</span>
+            <!-- Mobile Menu Toggle Button -->
+            <button @click="mobileMenuOpen = !mobileMenuOpen" 
+                    type="button"
+                    class="md:hidden w-10 h-10 rounded-xl flex items-center justify-center text-gray-700 hover:text-blue-700 hover:bg-blue-50 transition-colors focus:outline-none"
+                    :aria-expanded="mobileMenuOpen"
+                    aria-label="Menu Utama">
+                <span class="material-symbols-outlined text-[26px]" x-show="!mobileMenuOpen">menu</span>
+                <span class="material-symbols-outlined text-[26px]" x-show="mobileMenuOpen" style="display: none;">close</span>
             </button>
+        </div>
+    </div>
+
+    <!-- Mobile Navigation Drawer -->
+    <div x-show="mobileMenuOpen" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 -translate-y-2"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 -translate-y-2"
+         class="md:hidden border-t border-gray-100 bg-white px-4 py-4 space-y-1 shadow-xl"
+         style="display: none;"
+         @click.away="mobileMenuOpen = false">
+        
+        <a href="{{ route('home') }}" 
+           class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors {{ request()->routeIs('home') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+            <span class="material-symbols-outlined text-[20px] text-blue-600">home</span>
+            <span>Beranda</span>
+        </a>
+
+        <a href="{{ route('informasi-publik.index') }}" 
+           class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors {{ request()->routeIs('informasi-publik.*') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+            <span class="material-symbols-outlined text-[20px] text-blue-600">folder_open</span>
+            <span>Daftar Informasi Publik</span>
+        </a>
+
+        <a href="{{ route('permohonan.lacak') }}" 
+           class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors {{ request()->routeIs('permohonan.lacak') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+            <span class="material-symbols-outlined text-[20px] text-blue-600">travel_explore</span>
+            <span>Lacak Status Permohonan</span>
+        </a>
+
+        <a href="{{ route('permohonan.create') }}" 
+           class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors {{ request()->routeIs('permohonan.create') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+            <span class="material-symbols-outlined text-[20px] text-blue-600">add_circle</span>
+            <span>Ajukan Permohonan Baru</span>
+        </a>
+
+        <div class="pt-3 mt-2 border-t border-gray-100">
+            <a href="{{ route('informasi-publik.index') }}" 
+               class="w-full flex items-center justify-center gap-2 bg-[#03224d] text-white font-semibold text-sm px-5 py-3 rounded-xl shadow-md hover:bg-[#0B1B3D] transition-all">
+                <span class="material-symbols-outlined text-[18px]">search</span>
+                <span>Cari Dokumen PPID</span>
+            </a>
         </div>
     </div>
 </header>
