@@ -56,8 +56,7 @@ class InformasiPublikController extends Controller
             'tahun' => 'required|integer|min:2000|max:' . (date('Y') + 1),
             'ringkasan' => 'nullable|string',
             'penanggung_jawab' => 'nullable|string|max:255',
-            'unit_pengolah_id' => 'nullable|exists:unit_pengolahs,id',
-            'file_dokumen' => 'nullable|file|mimes:pdf|max:30720', // Max 30MB
+            'file_dokumen' => ['nullable', 'file', \App\Rules\SecureFile::dokumen()],
             'is_active' => 'nullable|boolean',
         ]);
 
@@ -111,8 +110,7 @@ class InformasiPublikController extends Controller
             'tahun' => 'required|integer|min:2000|max:' . (date('Y') + 1),
             'ringkasan' => 'nullable|string',
             'penanggung_jawab' => 'nullable|string|max:255',
-            'unit_pengolah_id' => 'nullable|exists:unit_pengolahs,id',
-            'file_dokumen' => 'nullable|file|mimes:pdf|max:30720',
+            'file_dokumen' => ['nullable', 'file', \App\Rules\SecureFile::dokumen()],
             'is_active' => 'nullable|boolean',
         ]);
 

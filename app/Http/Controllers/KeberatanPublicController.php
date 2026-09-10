@@ -22,7 +22,7 @@ class KeberatanPublicController extends Controller
         $request->validate([
             'alasan_keberatan' => 'required|string|max:255',
             'keterangan_tambahan' => 'nullable|string|max:2000',
-            'file_pendukung' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'file_pendukung' => ['nullable', 'file', \App\Rules\SecureFile::keberatan()],
         ]);
 
         $permohonan = PermohonanInformasi::where('nomor_registrasi', $nomor_registrasi)->firstOrFail();

@@ -58,10 +58,9 @@ class PermohonanController extends Controller
             'rincian_informasi' => 'required|string',
             'tujuan_penggunaan' => 'required|string',
             'cara_memperoleh_informasi_id' => 'required|exists:cara_memperoleh_informasis,id',
-            'file_identitas' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'file_identitas' => ['required', 'file', \App\Rules\SecureFile::identitas()],
         ], [
-            'file_identitas.mimes' => 'Format file identitas harus berupa gambar (JPG, JPEG, PNG) atau dokumen (PDF). Anda mencoba mengunggah format yang tidak diizinkan.',
-            'file_identitas.max' => 'Ukuran file identitas maksimal adalah 5MB.',
+            'file_identitas.required' => 'File identitas wajib diunggah.',
             'file_identitas.file' => 'File identitas harus berupa file yang valid.'
         ]);
 
@@ -265,8 +264,11 @@ class PermohonanController extends Controller
     public function submitData(Request $request, $penugasanId)
     {
         $request->validate([
-            'data_file' => 'required|file|max:10240',
+            'data_file' => ['required', 'file', \App\Rules\SecureFile::penugasan()],
             'catatan' => 'nullable|string',
+        ], [
+            'data_file.required' => 'Berkas data hasil penugasan wajib dilampirkan.',
+            'data_file.file' => 'Berkas data harus berupa file yang valid.',
         ]);
 
         $user = auth()->user();

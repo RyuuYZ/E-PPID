@@ -52,7 +52,7 @@ Route::post('/permohonan/simpan', function (\Illuminate\Http\Request $request) {
         'rincian_informasi' => 'required|string',
         'tujuan_penggunaan' => 'required|string',
         'cara_memperoleh_informasi_id' => 'required|exists:cara_memperoleh_informasis,id',
-        'file_identitas' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        'file_identitas' => ['required', 'file', new \App\Rules\SecureFile(['jpg', 'jpeg', 'png', 'pdf'], 5120)],
     ], [
         'nik_atau_no_badan_hukum.required' => 'NIK / No. Identitas wajib diisi.',
         'nik_atau_no_badan_hukum.regex' => 'NIK harus berupa angka dan tidak boleh lebih dari 16 angka.',
@@ -60,8 +60,7 @@ Route::post('/permohonan/simpan', function (\Illuminate\Http\Request $request) {
         'no_telp.regex' => 'Nomor telepon harus diawali dengan +62 dan hanya berisi angka yang valid.',
         'subjek_informasi.required' => 'Judul / Subjek informasi wajib diisi.',
         'rincian_informasi.required' => 'Rincian / Isi informasi wajib diisi.',
-        'file_identitas.mimes' => 'Format file identitas harus berupa gambar (JPG, JPEG, PNG) atau dokumen (PDF). Anda mencoba mengunggah format yang tidak diizinkan.',
-        'file_identitas.max' => 'Ukuran file identitas maksimal adalah 5MB.',
+        'file_identitas.required' => 'File identitas (KTP/Akta) wajib diunggah.',
         'file_identitas.file' => 'File identitas harus berupa file yang valid.'
     ]);
 

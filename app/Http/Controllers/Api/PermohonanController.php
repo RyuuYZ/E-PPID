@@ -61,14 +61,13 @@ class PermohonanController extends Controller
             'rincian_informasi' => 'required|string',
             'tujuan_penggunaan' => 'required|string',
             'cara_memperoleh_informasi_id' => 'required|exists:cara_memperoleh_informasis,id',
-            'file_identitas' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'file_identitas' => ['required', 'file', \App\Rules\SecureFile::identitas()],
         ], [
             'nik_atau_no_badan_hukum.required' => 'NIK / No. Identitas wajib diisi.',
             'nik_atau_no_badan_hukum.regex' => 'NIK harus berupa angka dan tidak boleh lebih dari 16 angka.',
             'no_telp.required' => 'Nomor telepon wajib diisi.',
             'no_telp.regex' => 'Nomor telepon harus diawali dengan +62 dan hanya berisi angka yang valid.',
-            'file_identitas.mimes' => 'Format file identitas harus berupa gambar (JPG, JPEG, PNG) atau dokumen (PDF). Anda mencoba mengunggah format yang tidak diizinkan.',
-            'file_identitas.max' => 'Ukuran file identitas maksimal adalah 5MB.',
+            'file_identitas.required' => 'File identitas wajib diunggah.',
             'file_identitas.file' => 'File identitas harus berupa file yang valid.'
         ]);
 

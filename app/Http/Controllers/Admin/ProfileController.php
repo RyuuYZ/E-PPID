@@ -24,7 +24,7 @@ class ProfileController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'current_password' => 'nullable|required_with:password',
             'password' => ['nullable', 'string', \Illuminate\Validation\Rules\Password::defaults(), 'confirmed'],
-            'profile_photo' => 'nullable|image|max:2048',
+            'profile_photo' => ['nullable', 'file', \App\Rules\SecureFile::profilePhoto()],
         ]);
 
         if ($request->hasFile('profile_photo')) {
@@ -73,9 +73,24 @@ class ProfileController extends Controller
         }
         
         $image_type_aux = explode("image/", $image_parts[0]);
-        $image_type = $image_type_aux[1];
-        $image_base64 = base64_decode($image_parts[1]);
-        $filename = 'signature_' . time() . '_' . uniqid() . '.' . $image_type;
+        $raw_type = strtolower($image_type_aux[1] ?? 'png');
+        $image_type = in_array($raw_type, ['png', 'jpg', 'jpeg']) ? $raw_type : 'png';
+        $image_base64 = base64_decode($image_parts[1], true);
+
+        if ($image_base64 === false || strlen($image_base64) < 10) {
+            return back()->with('error', 'Data tanda tangan tidak valid.');
+        }
+
+        // Verify GD image decode
+        if (function_exists('imagecreatefromstring')) {
+            $gdImg = @imagecreatefromstring($image_base64);
+            if ($gdImg === false) {
+                return back()->with('error', 'Struktur data gambar tanda tangan rusak atau tidak valid.');
+            }
+            imagedestroy($gdImg);
+        }
+
+        $filename = 'signature_' . time() . '_' . bin2hex(random_bytes(8)) . '.' . ($image_type === 'jpeg' ? 'jpg' : $image_type);
         $ttdPath = 'signatures/' . $filename;
         
         \Illuminate\Support\Facades\Storage::disk('public')->put($ttdPath, $image_base64);

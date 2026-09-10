@@ -28,6 +28,27 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised();
         });
 
+        // Register custom secure_file validator
+        \Illuminate\Support\Facades\Validator::extend('secure_file', function ($attribute, $value, $parameters, $validator) {
+            if (!$value instanceof \Illuminate\Http\UploadedFile) {
+                return false;
+            }
+
+            $allowed = !empty($parameters) ? $parameters : ['jpg', 'jpeg', 'png', 'pdf'];
+            $maxKb = 5120;
+            if (count($allowed) > 1 && is_numeric(end($allowed))) {
+                $maxKb = (int) array_pop($allowed);
+            }
+
+            $error = app(\App\Services\FileSecurityService::class)->validateSecureFile($value, $allowed, $maxKb);
+            if ($error !== null) {
+                $validator->customMessages["{$attribute}.secure_file"] = $error;
+                return false;
+            }
+
+            return true;
+        });
+
         // View Composer for Admin Notification Center
         \Illuminate\Support\Facades\View::composer('admin.layouts.app', function ($view) {
             try {
