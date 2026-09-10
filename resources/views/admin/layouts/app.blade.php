@@ -477,15 +477,153 @@
             </div>
             
             <div class="flex items-center gap-4">
-                <!-- Clock / Date -->
-                <div class="hidden lg:flex items-center gap-1.5 text-gray-400 text-xs mr-2">
-                    <span class="material-symbols-outlined text-[14px]">schedule</span>
-                    <span>{{ \Carbon\Carbon::now()->isoFormat('dddd, D MMMM Y') }}</span>
+                <!-- Live Laptop Clock & Date -->
+                <div x-data="{
+                    dateStr: '{{ \Carbon\Carbon::now()->isoFormat('dddd, D MMMM Y') }}',
+                    timeStr: '{{ \Carbon\Carbon::now()->format('H:i:s') }}',
+                    init() {
+                        const tick = () => {
+                            const now = new Date();
+                            const userLocale = navigator.language || 'id-ID';
+                            this.dateStr = now.toLocaleDateString(userLocale, { 
+                                weekday: 'long', 
+                                day: 'numeric', 
+                                month: 'long', 
+                                year: 'numeric' 
+                            });
+                            this.timeStr = now.toLocaleTimeString(userLocale, { 
+                                hour: '2-digit', 
+                                minute: '2-digit', 
+                                second: '2-digit', 
+                                hour12: false 
+                            });
+                        };
+                        tick();
+                        setInterval(tick, 1000);
+                    }
+                }" class="hidden lg:flex items-center gap-2 text-xs mr-2">
+                    <span class="material-symbols-outlined text-[15px] text-gray-400">schedule</span>
+                    <span x-text="dateStr" class="text-gray-600 font-medium">{{ \Carbon\Carbon::now()->isoFormat('dddd, D MMMM Y') }}</span>
+                    <span class="text-gray-300">•</span>
+                    <span class="font-mono text-gray-700 bg-gray-100 border border-gray-200/80 px-2 py-0.5 rounded-md text-[11px] font-bold tracking-wider flex items-center gap-1.5 shadow-2xs">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span x-text="timeStr">{{ \Carbon\Carbon::now()->format('H:i:s') }}</span>
+                    </span>
                 </div>
-                <button class="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors relative">
-                    <span class="material-symbols-outlined text-[16px]">notifications</span>
-                    <span class="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
-                </button>
+
+                <!-- Functional Notification Dropdown -->
+                <div x-data="{ openNotif: false }" @click.away="openNotif = false" class="relative">
+                    <button @click="openNotif = !openNotif" 
+                            type="button"
+                            title="Pemberitahuan Sistem"
+                            class="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:text-blue-900 hover:bg-gray-50 transition-colors relative focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                        <span class="material-symbols-outlined text-[18px]">notifications</span>
+                        @if(($headerTotalNotif ?? 0) > 0)
+                            <span class="absolute -top-1 -right-1 min-w-[17px] h-[17px] bg-rose-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 shadow-sm ring-2 ring-white animate-pulse">
+                                {{ ($headerTotalNotif ?? 0) > 99 ? '99+' : $headerTotalNotif }}
+                            </span>
+                        @endif
+                    </button>
+
+                    <!-- Dropdown Panel -->
+                    <div x-show="openNotif" 
+                         x-transition:enter="transition ease-out duration-150" 
+                         x-transition:enter-start="transform opacity-0 scale-95 -translate-y-1" 
+                         x-transition:enter-end="transform opacity-100 scale-100 translate-y-0" 
+                         x-transition:leave="transition ease-in duration-100" 
+                         x-transition:leave-start="transform opacity-100 scale-100 translate-y-0" 
+                         x-transition:leave-end="transform opacity-0 scale-95 -translate-y-1" 
+                         class="absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-gray-200/90 rounded-2xl shadow-xl z-50 overflow-hidden" 
+                         style="display: none;">
+                        
+                        <!-- Header -->
+                        <div class="px-4 py-3 bg-[#1a2b42] text-white flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[18px] text-amber-400">notifications_active</span>
+                                <span class="text-xs font-bold tracking-wide uppercase">Notifikasi Sistem</span>
+                            </div>
+                            @if(($headerTotalNotif ?? 0) > 0)
+                                <span class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                    {{ $headerTotalNotif }} Perlu Tindakan
+                                </span>
+                            @else
+                                <span class="bg-emerald-500/20 text-emerald-300 text-[10px] font-medium px-2 py-0.5 rounded-full border border-emerald-400/30">
+                                    Semua Beres
+                                </span>
+                            @endif
+                        </div>
+
+                        <!-- Notification List -->
+                        <div class="max-h-[360px] overflow-y-auto divide-y divide-gray-100">
+                            @if(($headerTotalNotif ?? 0) > 0)
+                                {{-- Permohonan Baru --}}
+                                @foreach($headerNotifPermohonan ?? [] as $item)
+                                    <a href="{{ route('admin.permohonan.show', $item->id) }}" 
+                                       class="flex items-start gap-3 p-3.5 hover:bg-blue-50/50 transition-colors group">
+                                        <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform mt-0.5">
+                                            <span class="material-symbols-outlined text-[17px]">mark_email_unread</span>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center justify-between gap-1 mb-0.5">
+                                                <span class="text-[11px] font-mono font-bold text-blue-950 truncate">{{ $item->nomor_registrasi }}</span>
+                                                <span class="text-[10px] text-gray-400 shrink-0">{{ $item->created_at ? $item->created_at->diffForHumans() : '' }}</span>
+                                            </div>
+                                            <p class="text-xs font-semibold text-gray-800 truncate mb-0.5">{{ $item->nama_pemohon }}</p>
+                                            <p class="text-[11px] text-gray-500 line-clamp-1 leading-snug">{{ $item->subjek_informasi ?: $item->rincian_informasi }}</p>
+                                            <span class="inline-flex items-center gap-1 text-[9px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded mt-1">
+                                                <span class="w-1 h-1 rounded-full bg-blue-500"></span> Permohonan Masuk
+                                            </span>
+                                        </div>
+                                    </a>
+                                @endforeach
+
+                                {{-- Keberatan Baru --}}
+                                @foreach($headerNotifKeberatan ?? [] as $keb)
+                                    <a href="{{ route('admin.keberatan.show', $keb->id) }}" 
+                                       class="flex items-start gap-3 p-3.5 hover:bg-amber-50/50 transition-colors group">
+                                        <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform mt-0.5">
+                                            <span class="material-symbols-outlined text-[17px]">report_problem</span>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center justify-between gap-1 mb-0.5">
+                                                <span class="text-[11px] font-mono font-bold text-amber-900 truncate">
+                                                    {{ $keb->permohonan_informasi->nomor_registrasi ?? 'Keberatan Baru' }}
+                                                </span>
+                                                <span class="text-[10px] text-gray-400 shrink-0">{{ $keb->created_at ? $keb->created_at->diffForHumans() : '' }}</span>
+                                            </div>
+                                            <p class="text-xs font-semibold text-gray-800 truncate mb-0.5">
+                                                {{ $keb->permohonan_informasi->nama_pemohon ?? 'Pemohon' }}
+                                            </p>
+                                            <p class="text-[11px] text-amber-800 line-clamp-1 leading-snug">{{ $keb->alasan_keberatan }}</p>
+                                            <span class="inline-flex items-center gap-1 text-[9px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded mt-1">
+                                                <span class="w-1 h-1 rounded-full bg-amber-500"></span> Keberatan Masuk
+                                            </span>
+                                        </div>
+                                    </a>
+                                @endforeach
+                            @else
+                                <div class="py-8 px-4 text-center">
+                                    <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-2.5">
+                                        <span class="material-symbols-outlined text-[24px]">verified</span>
+                                    </div>
+                                    <p class="text-xs font-bold text-gray-800">Tidak ada notifikasi baru</p>
+                                    <p class="text-[11px] text-gray-400 mt-1 max-w-[220px] mx-auto">Semua permohonan informasi dan keberatan telah ditindaklanjuti.</p>
+                                </div>
+                            @endif
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="p-2.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-xs">
+                            <a href="{{ route('admin.permohonan.index') }}" class="text-blue-900 hover:text-blue-950 font-semibold inline-flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-white transition-colors">
+                                <span>Daftar Permohonan</span>
+                                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                            </a>
+                            <a href="{{ route('admin.keberatan.index') }}" class="text-gray-600 hover:text-gray-900 font-medium inline-flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-white transition-colors">
+                                <span>Keberatan</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
                 
                 <div x-data="{ openProfile: false }" class="relative">
                     <div @click="openProfile = !openProfile" @click.away="openProfile = false" class="flex items-center gap-2 border border-gray-200 rounded-full px-3 py-1 bg-white cursor-pointer hover:bg-gray-50 transition-colors">
