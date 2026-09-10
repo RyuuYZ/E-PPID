@@ -38,11 +38,23 @@ class PermohonanController extends Controller
      */
     public function store(Request $request)
     {
+        if ($request->filled('no_telp')) {
+            $digits = preg_replace('/[^0-9]/', '', $request->input('no_telp'));
+            if (str_starts_with($digits, '62')) {
+                $formattedPhone = '+62' . substr($digits, 2);
+            } elseif (str_starts_with($digits, '0')) {
+                $formattedPhone = '+62' . substr($digits, 1);
+            } else {
+                $formattedPhone = '+62' . $digits;
+            }
+            $request->merge(['no_telp' => $formattedPhone]);
+        }
+
         $validator = Validator::make($request->all(), [
             'nama_pemohon' => 'required|string|max:255',
             'kategori_pemohon_id' => 'required|exists:kategori_pemohons,id',
             'nik_atau_no_badan_hukum' => ['required', 'regex:/^[0-9]{1,16}$/'],
-            'no_telp' => 'required|string|max:20',
+            'no_telp' => ['required', 'regex:/^\+62[0-9]{8,15}$/'],
             'email' => 'required|email|max:255',
             'alamat' => 'required|string',
             'subjek_informasi' => 'required|string',
@@ -53,6 +65,8 @@ class PermohonanController extends Controller
         ], [
             'nik_atau_no_badan_hukum.required' => 'NIK / No. Identitas wajib diisi.',
             'nik_atau_no_badan_hukum.regex' => 'NIK harus berupa angka dan tidak boleh lebih dari 16 angka.',
+            'no_telp.required' => 'Nomor telepon wajib diisi.',
+            'no_telp.regex' => 'Nomor telepon harus diawali dengan +62 dan hanya berisi angka yang valid.',
             'file_identitas.mimes' => 'Format file identitas harus berupa gambar (JPG, JPEG, PNG) atau dokumen (PDF). Anda mencoba mengunggah format yang tidak diizinkan.',
             'file_identitas.max' => 'Ukuran file identitas maksimal adalah 5MB.',
             'file_identitas.file' => 'File identitas harus berupa file yang valid.'

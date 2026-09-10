@@ -84,6 +84,7 @@ class PermohonanTest extends TestCase
         $this->assertDatabaseHas('permohonan_informasis', [
             'nama_pemohon' => 'Ahmad Subagja',
             'nik_atau_no_badan_hukum' => '3207011204950002',
+            'no_telp' => '+628123456789',
             'subjek_informasi' => 'Rencana Kerja Bappeda Ciamis 2025',
             'rincian_informasi' => 'Daftar rincian kegiatan perencanaan pembangunan wilayah perkotaan Ciamis.',
         ]);

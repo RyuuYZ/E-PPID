@@ -83,8 +83,22 @@
         </div>
         <!-- No. Telepon -->
         <div class="flex flex-col gap-2">
-            <label class="text-sm font-semibold text-gray-700" for="telepon">No. Telepon / WhatsApp <span class="text-red-500">*</span></label>
-            <input class="h-12 px-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-gray-800 placeholder:text-gray-400 text-sm" id="telepon" name="no_telp" placeholder="08xxxxxxxxxx" required="" type="tel">
+            <label class="text-sm font-semibold text-gray-700" for="telepon_display">No. Telepon / WhatsApp <span class="text-red-500">*</span></label>
+            <div class="flex rounded-xl border border-gray-200 overflow-hidden bg-gray-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all h-12">
+                <span class="inline-flex items-center px-4 bg-gray-100/90 border-r border-gray-200 text-gray-700 font-semibold text-sm select-none font-mono">
+                    +62
+                </span>
+                <input class="h-full px-4 flex-1 bg-transparent outline-none text-gray-800 placeholder:text-gray-400 text-sm font-mono tracking-wider" 
+                       id="telepon_display" 
+                       placeholder="81234567890" 
+                       required="" 
+                       type="text" 
+                       inputmode="numeric" 
+                       maxlength="13" 
+                       oninput="handlePhoneInput(this)">
+            </div>
+            <input type="hidden" name="no_telp" id="telepon" required>
+            <p class="text-[11px] text-gray-400">Wajib angka dengan awalan kode negara +62 (Cth: +62 812 3456 7890).</p>
         </div>
         <!-- Email -->
         <div class="flex flex-col gap-2">
@@ -424,6 +438,21 @@ function updateFullAlamat() {
     }
     result += 'Desa/Kel. ' + desa + ', Kec. ' + kec + ', Kab. Ciamis, Jawa Barat';
     alamatTextarea.value = result;
+}
+
+function handlePhoneInput(input) {
+    let val = input.value.replace(/[^0-9]/g, '');
+    if (val.startsWith('62')) {
+        val = val.substring(2);
+    }
+    if (val.startsWith('0')) {
+        val = val.replace(/^0+/, '');
+    }
+    input.value = val.slice(0, 13);
+    const hidden = document.getElementById('telepon');
+    if (hidden) {
+        hidden.value = val ? ('+62' + val) : '';
+    }
 }
 </script>
 
