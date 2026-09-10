@@ -93,14 +93,35 @@
         previewOpen: false,
         previewUrl: '',
         previewTitle: '',
-        openPreview(url, title) {
+        previewKategori: '',
+        previewJenis: '',
+        previewTahun: '',
+        previewPenanggungJawab: '',
+        previewFileSize: '',
+        previewIsActive: true,
+        previewDownloadUrl: '',
+        isLoading: true,
+        openPreview(url, title, kategori, jenis, tahun, penanggungJawab, fileSize, isActive, downloadUrl) {
             this.previewUrl = url;
             this.previewTitle = title;
+            this.previewKategori = kategori || '';
+            this.previewJenis = jenis || '';
+            this.previewTahun = tahun || '';
+            this.previewPenanggungJawab = penanggungJawab || 'Bapperida Ciamis';
+            this.previewFileSize = fileSize || 'PDF';
+            this.previewIsActive = isActive;
+            this.previewDownloadUrl = downloadUrl || url.replace('?inline=1', '');
+            this.isLoading = true;
             this.previewOpen = true;
+            document.body.classList.add('overflow-hidden');
         },
         closePreview() {
             this.previewOpen = false;
-            setTimeout(() => { this.previewUrl = ''; }, 300);
+            document.body.classList.remove('overflow-hidden');
+            setTimeout(() => { 
+                this.previewUrl = ''; 
+                this.isLoading = true;
+            }, 300);
         },
         applyFilters() {
             const rows = document.querySelectorAll('#dokumenTable tr.doc-row');
@@ -224,13 +245,13 @@
             <table class="w-full table-fixed text-left border-collapse">
                 <thead>
                     <tr class="border-b border-slate-200/80 bg-slate-50/60 text-[11px] text-slate-500 uppercase tracking-wider">
-                        <th class="w-[34%] px-4 py-3.5 font-bold">Judul Dokumen &amp; Klasifikasi</th>
+                        <th class="w-[32%] px-4 py-3.5 font-bold">Judul Dokumen &amp; Klasifikasi</th>
                         <th class="w-[16%] px-3 py-3.5 font-bold whitespace-nowrap">Kategori UU KIP</th>
                         <th class="w-[7%] px-2 py-3.5 font-bold text-center whitespace-nowrap">Tahun</th>
                         <th class="w-[19%] px-3 py-3.5 font-bold whitespace-nowrap">Penanggung Jawab</th>
                         <th class="w-[8%] px-2 py-3.5 font-bold text-center whitespace-nowrap">Unduhan</th>
                         <th class="w-[8%] px-2 py-3.5 font-bold text-center whitespace-nowrap">Status</th>
-                        <th class="w-[8%] px-3 py-3.5 font-bold text-center whitespace-nowrap">Aksi</th>
+                        <th class="w-[10%] px-3 py-3.5 font-bold text-center whitespace-nowrap">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="dokumenTable" class="divide-y divide-slate-100 text-slate-600 text-xs">
@@ -243,11 +264,17 @@
                         <!-- Judul & Klasifikasi -->
                         <td class="px-4 py-3">
                             <div class="flex items-start gap-2.5">
-                                <div class="w-7 h-7 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 border border-red-100 shadow-2xs mt-0.5">
+                                <button type="button" 
+                                        @click="openPreview('{{ route('informasi-publik.download', $item->id) }}?inline=1', '{{ addslashes($item->judul) }}', '{{ $item->kategori?->nama_kategori }}', '{{ $item->jenis_dokumen }}', '{{ $item->tahun }}', '{{ addslashes($item->penanggung_jawab) }}', '{{ $item->file_size ?? 'PDF' }}', {{ $item->is_active ? 'true' : 'false' }}, '{{ route('informasi-publik.download', $item->id) }}')"
+                                        class="w-7 h-7 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center shrink-0 border border-red-100 shadow-2xs mt-0.5 transition-colors cursor-pointer"
+                                        title="Preview Dokumen PDF">
                                     <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span>
-                                </div>
+                                </button>
                                 <div class="min-w-0 flex-1">
-                                    <a href="{{ route('informasi-publik.download', $item->id) }}" target="_blank" class="font-bold text-slate-900 hover:text-blue-600 transition-colors leading-snug line-clamp-1">
+                                    <a href="{{ route('informasi-publik.download', $item->id) }}?inline=1" 
+                                       @click.prevent="openPreview('{{ route('informasi-publik.download', $item->id) }}?inline=1', '{{ addslashes($item->judul) }}', '{{ $item->kategori?->nama_kategori }}', '{{ $item->jenis_dokumen }}', '{{ $item->tahun }}', '{{ addslashes($item->penanggung_jawab) }}', '{{ $item->file_size ?? 'PDF' }}', {{ $item->is_active ? 'true' : 'false' }}, '{{ route('informasi-publik.download', $item->id) }}')"
+                                       class="font-bold text-slate-900 hover:text-blue-600 transition-colors leading-snug line-clamp-1 cursor-pointer"
+                                       title="Klik untuk preview dokumen">
                                         {{ $item->judul }}
                                     </a>
                                     <div class="flex items-center gap-1.5 mt-1">
@@ -321,45 +348,55 @@
                             @endif
                         </td>
 
-                        <!-- Aksi (3-dot dropdown) -->
+                        <!-- Aksi (Direct Preview + 3-dot dropdown) -->
                         <td class="px-3 py-3 text-center whitespace-nowrap">
-                            <div x-data="{ open: false }" class="relative inline-block">
-                                <button @click="open = !open" @click.away="open = false" type="button" 
-                                        class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors shadow-2xs cursor-pointer">
-                                    <span class="material-symbols-outlined text-[18px]">more_vert</span>
+                            <div class="flex items-center justify-center gap-1.5">
+                                <!-- Direct Preview Button -->
+                                <button type="button" 
+                                        @click="openPreview('{{ route('informasi-publik.download', $item->id) }}?inline=1', '{{ addslashes($item->judul) }}', '{{ $item->kategori?->nama_kategori }}', '{{ $item->jenis_dokumen }}', '{{ $item->tahun }}', '{{ addslashes($item->penanggung_jawab) }}', '{{ $item->file_size ?? 'PDF' }}', {{ $item->is_active ? 'true' : 'false' }}, '{{ route('informasi-publik.download', $item->id) }}')"
+                                        class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-100 transition-all shadow-2xs cursor-pointer"
+                                        title="Preview Dokumen PDF">
+                                    <span class="material-symbols-outlined text-[16px]">visibility</span>
                                 </button>
-                                <div x-show="open" x-cloak
-                                     x-transition:enter="transition ease-out duration-100" 
-                                     x-transition:enter-start="transform opacity-0 scale-95" 
-                                     x-transition:enter-end="transform opacity-100 scale-100" 
-                                     x-transition:leave="transition ease-in duration-75" 
-                                     x-transition:leave-start="transform opacity-100 scale-100" 
-                                     x-transition:leave-end="transform opacity-0 scale-95" 
-                                     class="origin-top-right absolute right-0 mt-1.5 w-44 rounded-xl shadow-lg bg-white ring-1 ring-slate-200 z-50 py-1.5 border border-slate-100">
-                                    <button type="button" @click="openPreview('{{ route('informasi-publik.download', $item->id) }}?inline=1', '{{ addslashes($item->judul) }}')" 
-                                       class="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors font-medium cursor-pointer text-left">
-                                        <span class="material-symbols-outlined text-[16px]">visibility</span>
-                                        Preview Dokumen
+
+                                <div x-data="{ open: false }" class="relative inline-block">
+                                    <button @click="open = !open" @click.away="open = false" type="button" 
+                                            class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors shadow-2xs cursor-pointer">
+                                        <span class="material-symbols-outlined text-[18px]">more_vert</span>
                                     </button>
-                                    <a href="{{ route('informasi-publik.download', $item->id) }}" target="_blank" 
-                                       class="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors font-medium">
-                                        <span class="material-symbols-outlined text-[16px]">download</span>
-                                        Unduh Berkas
-                                    </a>
-                                    <a href="{{ route('admin.informasi-publik.edit', $item->id) }}" 
-                                       class="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-amber-600 transition-colors font-medium">
-                                        <span class="material-symbols-outlined text-[16px]">edit</span>
-                                        Edit Dokumen
-                                    </a>
-                                    <div class="border-t border-slate-100 my-1"></div>
-                                    <form action="{{ route('admin.informasi-publik.destroy', $item->id) }}" method="POST" class="m-0" onsubmit="return confirm('Apakah Anda yakin ingin menghapus dokumen ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors font-medium cursor-pointer">
-                                            <span class="material-symbols-outlined text-[16px]">delete</span>
-                                            Hapus Dokumen
+                                    <div x-show="open" x-cloak
+                                         x-transition:enter="transition ease-out duration-100" 
+                                         x-transition:enter-start="transform opacity-0 scale-95" 
+                                         x-transition:enter-end="transform opacity-100 scale-100" 
+                                         x-transition:leave="transition ease-in duration-75" 
+                                         x-transition:leave-start="transform opacity-100 scale-100" 
+                                         x-transition:leave-end="transform opacity-0 scale-95" 
+                                         class="origin-top-right absolute right-0 mt-1.5 w-44 rounded-xl shadow-lg bg-white ring-1 ring-slate-200 z-50 py-1.5 border border-slate-100">
+                                        <button type="button" @click="open = false; openPreview('{{ route('informasi-publik.download', $item->id) }}?inline=1', '{{ addslashes($item->judul) }}', '{{ $item->kategori?->nama_kategori }}', '{{ $item->jenis_dokumen }}', '{{ $item->tahun }}', '{{ addslashes($item->penanggung_jawab) }}', '{{ $item->file_size ?? 'PDF' }}', {{ $item->is_active ? 'true' : 'false' }}, '{{ route('informasi-publik.download', $item->id) }}')" 
+                                           class="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors font-medium cursor-pointer text-left">
+                                            <span class="material-symbols-outlined text-[16px]">visibility</span>
+                                            Preview Dokumen
                                         </button>
-                                    </form>
+                                        <a href="{{ route('informasi-publik.download', $item->id) }}" target="_blank" 
+                                           class="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors font-medium">
+                                            <span class="material-symbols-outlined text-[16px]">download</span>
+                                            Unduh Berkas
+                                        </a>
+                                        <a href="{{ route('admin.informasi-publik.edit', $item->id) }}" 
+                                           class="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-amber-600 transition-colors font-medium">
+                                            <span class="material-symbols-outlined text-[16px]">edit</span>
+                                            Edit Dokumen
+                                        </a>
+                                        <div class="border-t border-slate-100 my-1"></div>
+                                        <form action="{{ route('admin.informasi-publik.destroy', $item->id) }}" method="POST" class="m-0" onsubmit="return confirm('Apakah Anda yakin ingin menghapus dokumen ini?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors font-medium cursor-pointer">
+                                                <span class="material-symbols-outlined text-[16px]">delete</span>
+                                                Hapus Dokumen
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         </td>
@@ -386,7 +423,7 @@
     </div>
 
     <!-- Preview Modal -->
-    <div x-show="previewOpen" style="display: none;" class="fixed inset-0 z-[100] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div x-show="previewOpen" style="display: none;" class="fixed inset-0 z-[100] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" @keydown.escape.window="closePreview()">
         <!-- Background overlay -->
         <div x-show="previewOpen" 
              x-transition:enter="ease-out duration-300"
@@ -395,11 +432,11 @@
              x-transition:leave="ease-in duration-200"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" 
+             class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm transition-opacity" 
              @click="closePreview()"></div>
 
         <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="flex min-h-full items-center justify-center p-3 sm:p-6 text-center">
                 <!-- Modal panel -->
                 <div x-show="previewOpen" 
                      x-transition:enter="ease-out duration-300"
@@ -408,41 +445,69 @@
                      x-transition:leave="ease-in duration-200"
                      x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                      x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                     class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-5xl flex flex-col h-[85vh]">
+                     class="relative transform overflow-hidden rounded-2xl md:rounded-3xl bg-white text-left shadow-2xl transition-all w-full max-w-5xl flex flex-col h-[88vh] border border-slate-200">
                     
                     <!-- Header -->
-                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4 border-b border-slate-100 flex items-center justify-between shrink-0">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100 shadow-2xs">
-                                <span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
+                    <div class="bg-white px-5 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+                        <div class="flex items-center gap-3 min-w-0 pr-4">
+                            <div class="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0 border border-red-100 shadow-2xs">
+                                <span class="material-symbols-outlined text-[22px]">picture_as_pdf</span>
                             </div>
-                            <div>
-                                <h3 class="text-base font-bold leading-6 text-slate-900" id="modal-title" x-text="previewTitle"></h3>
-                                <p class="text-xs text-slate-500">Preview Dokumen PDF</p>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap mb-1">
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider" x-text="previewKategori"></span>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200" x-text="previewJenis"></span>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-50 text-slate-500 border border-slate-200" x-text="'Tahun ' + previewTahun"></span>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" 
+                                          :class="previewIsActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200'"
+                                          x-text="previewIsActive ? 'Live Publik' : 'Draft'"></span>
+                                </div>
+                                <h3 class="text-sm md:text-base font-bold leading-6 text-slate-900 truncate" id="modal-title" x-text="previewTitle"></h3>
                             </div>
                         </div>
-                        <button type="button" @click="closePreview()" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer">
-                            <span class="material-symbols-outlined text-[20px]">close</span>
-                        </button>
+                        
+                        <div class="flex items-center gap-2 shrink-0">
+                            <a :href="previewUrl" target="_blank" 
+                               class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 text-xs font-semibold transition-colors" title="Buka di tab baru">
+                                <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+                                <span>Tab Baru</span>
+                            </a>
+                            <button type="button" @click="closePreview()" class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer" title="Tutup (ESC)">
+                                <span class="material-symbols-outlined text-[22px]">close</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Body (Iframe) -->
-                    <div class="flex-1 bg-slate-100 p-2 overflow-hidden relative">
-                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none" x-show="!previewUrl">
-                            <div class="w-8 h-8 border-4 border-slate-300 border-t-blue-600 rounded-full animate-spin"></div>
+                    <div class="flex-1 bg-slate-100 p-2 md:p-3 overflow-hidden relative">
+                        <!-- Loading Spinner -->
+                        <div class="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/80 z-20 transition-opacity" x-show="isLoading">
+                            <div class="w-10 h-10 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+                            <p class="text-xs font-semibold text-slate-600">Memuat berkas dokumen PDF...</p>
                         </div>
-                        <iframe :src="previewUrl" class="w-full h-full rounded-xl border border-slate-200 bg-white shadow-2xs relative z-10" title="Preview Dokumen" x-show="previewUrl" x-cloak></iframe>
+                        
+                        <iframe :src="previewUrl" 
+                                @load="isLoading = false"
+                                class="w-full h-full rounded-xl border border-slate-200 bg-white shadow-xs relative z-10" 
+                                title="Preview Dokumen PDF"></iframe>
                     </div>
 
                     <!-- Footer -->
-                    <div class="bg-slate-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 border-t border-slate-100 shrink-0">
-                        <a :href="previewUrl" target="_blank" class="inline-flex w-full justify-center rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-blue-500 sm:ml-3 sm:w-auto transition-colors items-center gap-2 cursor-pointer">
-                            <span class="material-symbols-outlined text-[18px]">download</span>
-                            Unduh Dokumen
-                        </a>
-                        <button type="button" @click="closePreview()" class="mt-3 inline-flex w-full justify-center rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-xs ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:mt-0 sm:w-auto transition-colors cursor-pointer">
-                            Tutup
-                        </button>
+                    <div class="bg-slate-50 px-5 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 shrink-0">
+                        <div class="flex items-center gap-2 text-xs text-slate-500 w-full sm:w-auto truncate">
+                            <span class="material-symbols-outlined text-[16px] text-slate-400">domain</span>
+                            <span class="truncate font-medium" x-text="previewPenanggungJawab"></span>
+                        </div>
+
+                        <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                            <button type="button" @click="closePreview()" class="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-200 transition-colors cursor-pointer">
+                                Tutup
+                            </button>
+                            <a :href="previewDownloadUrl" target="_blank" class="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-sm hover:scale-[1.02] cursor-pointer">
+                                <span class="material-symbols-outlined text-[16px]">download</span>
+                                <span>Unduh Dokumen</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>

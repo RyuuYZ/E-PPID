@@ -4,7 +4,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     $kategoriInformasi = \App\Models\KategoriInformasiPublik::all();
-    return view('welcome', compact('kategoriInformasi'));
+    $dokumenDIP = \App\Models\InformasiPublik::with(['kategori', 'unitPengolah'])
+        ->active()
+        ->orderBy('download_count', 'desc')
+        ->take(6)
+        ->get();
+    return view('welcome', compact('kategoriInformasi', 'dokumenDIP'));
 })->name('home');
 
 Route::get('/permohonan/baru', function () {
