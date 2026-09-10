@@ -415,10 +415,24 @@
                     </div>
                 </div>
                 <div class="p-6 space-y-5">
+                    <!-- Judul / Pokok Informasi -->
+                    @if(!empty($permohonan->subjek_informasi))
                     <div>
                         <h4 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                            <span class="material-symbols-outlined text-[15px] text-slate-400">info</span>
-                            Informasi yang Diminta
+                            <span class="material-symbols-outlined text-[15px] text-blue-600">bookmark</span>
+                            Judul / Pokok Informasi
+                        </h4>
+                        <div class="p-3.5 bg-blue-50/60 border border-blue-200/70 rounded-xl text-sm font-bold text-slate-900 leading-relaxed">
+                            {{ $permohonan->subjek_informasi }}
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Isi / Uraian Rincian Informasi -->
+                    <div>
+                        <h4 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[15px] text-slate-400">notes</span>
+                            Isi / Uraian Rincian Informasi
                         </h4>
                         <div class="p-4 bg-slate-50/80 border border-slate-200/80 rounded-xl text-[13px] text-slate-800 whitespace-pre-line leading-relaxed">
                             {{ $permohonan->rincian_informasi }}

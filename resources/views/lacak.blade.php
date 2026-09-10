@@ -133,9 +133,15 @@
         <div class="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 p-8">
             <h3 class="text-lg font-bold text-[#0B1B3D] mb-5">Detail Permohonan Informasi</h3>
             <div class="space-y-6 border-t border-gray-100 pt-5">
+                @if(!empty($permohonan->subjek_informasi))
                 <div>
-                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Subjek Informasi</p>
-                    <p class="text-[15px] font-medium text-gray-800 leading-relaxed">{{ $permohonan->subjek ?? 'Permohonan Informasi' }}</p>
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Judul / Subjek Informasi</p>
+                    <p class="text-[15px] font-bold text-gray-900 leading-relaxed">{{ $permohonan->subjek_informasi }}</p>
+                </div>
+                @endif
+                <div>
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Isi / Uraian Rincian Informasi</p>
+                    <p class="text-[15px] font-medium text-gray-800 leading-relaxed whitespace-pre-line">{{ $permohonan->rincian_informasi ?? '-' }}</p>
                 </div>
                 <div>
                     <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Tujuan Penggunaan</p>

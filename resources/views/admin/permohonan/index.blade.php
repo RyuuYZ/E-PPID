@@ -19,6 +19,7 @@
             'cara_memperoleh_id' => $p->cara_memperoleh_informasi_id,
             'cara_memperoleh' => $p->cara_memperoleh_informasi?->nama_cara ?? '-',
             'cara_salinan' => $p->cara_mendapatkan_salinan ?? '-',
+            'subjek_informasi' => $p->subjek_informasi ?? '-',
             'rincian_informasi' => $p->rincian_informasi ?? '-',
             'tujuan_penggunaan' => $p->tujuan_penggunaan ?? '-',
             'status_value' => $p->status->value,
@@ -779,8 +780,16 @@
                                 <span class="font-medium text-slate-700" x-text="selectedItem?.tanggal_masuk"></span>
                             </div>
 
+                            <template x-if="selectedItem?.subjek_informasi && selectedItem?.subjek_informasi !== '-'">
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Judul / Subjek Informasi</span>
+                                    <p class="font-bold text-slate-900 bg-blue-50/60 p-2 rounded-lg border border-blue-100 text-xs leading-relaxed" 
+                                       x-text="selectedItem?.subjek_informasi"></p>
+                                </div>
+                            </template>
+
                             <div>
-                                <span class="text-slate-400 block text-[10px] uppercase font-semibold">Informasi yang Dimohon</span>
+                                <span class="text-slate-400 block text-[10px] uppercase font-semibold">Isi / Uraian Rincian Informasi</span>
                                 <p class="font-medium text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-100 max-h-24 overflow-y-auto leading-relaxed" 
                                    x-text="selectedItem?.rincian_informasi"></p>
                             </div>
