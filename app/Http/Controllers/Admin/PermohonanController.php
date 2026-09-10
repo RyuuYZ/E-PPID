@@ -109,18 +109,36 @@ class PermohonanController extends Controller
             abort(404, 'File identitas tidak ditemukan.');
         }
 
-        $path = storage_path('app/private/' . $permohonan->file_identitas);
-        
-        // Coba cek path lama jika file_identitas masih di public
-        if (!file_exists($path)) {
-            $path = storage_path('app/public/' . $permohonan->file_identitas);
+        if (\Illuminate\Support\Facades\Storage::disk('local')->exists($permohonan->file_identitas)) {
+            return \Illuminate\Support\Facades\Storage::disk('local')->response($permohonan->file_identitas, null, [
+                'Content-Disposition' => 'inline',
+            ]);
         }
 
-        if (!file_exists($path)) {
-            abort(404, 'File identitas tidak ditemukan di server.');
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($permohonan->file_identitas)) {
+            return \Illuminate\Support\Facades\Storage::disk('public')->response($permohonan->file_identitas, null, [
+                'Content-Disposition' => 'inline',
+            ]);
         }
 
-        return response()->file($path);
+        $paths = [
+            storage_path('app/private/' . $permohonan->file_identitas),
+            storage_path('app/' . $permohonan->file_identitas),
+            storage_path('app/public/' . $permohonan->file_identitas),
+            public_path('storage/' . $permohonan->file_identitas),
+        ];
+
+        foreach ($paths as $path) {
+            if (file_exists($path) && is_file($path)) {
+                $mime = mime_content_type($path) ?: 'application/octet-stream';
+                return response()->file($path, [
+                    'Content-Type' => $mime,
+                    'Content-Disposition' => 'inline',
+                ]);
+            }
+        }
+
+        abort(404, 'File identitas tidak ditemukan di server.');
     }
 
     /**

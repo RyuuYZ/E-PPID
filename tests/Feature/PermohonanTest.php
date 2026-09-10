@@ -144,4 +144,33 @@ class PermohonanTest extends TestCase
         ]);
         $responseAlpha->assertSessionHasErrors('nik_atau_no_badan_hukum');
     }
+
+    public function test_can_view_file_identitas_securely()
+    {
+        \Illuminate\Support\Facades\Storage::fake('local');
+        $file = \Illuminate\Http\UploadedFile::fake()->create('ktp_test.png', 50, 'image/png');
+        $path = $file->store('identitas', 'local');
+
+        $kategori = KategoriPemohon::create(['nama_kategori' => 'Perorangan']);
+        $cara = CaraMemperolehInformasi::create(['nama_cara' => 'Melihat / Membaca']);
+
+        $permohonan = PermohonanInformasi::create([
+            'nomor_registrasi' => 'REG-2026-VIEW01',
+            'nama_pemohon' => 'Rian Hidayat',
+            'nik_atau_no_badan_hukum' => '3207010101010002',
+            'no_telp' => '+6281234567890',
+            'email' => 'rian@example.com',
+            'alamat' => 'Kabupaten Ciamis',
+            'subjek_informasi' => 'Info Publik',
+            'rincian_informasi' => 'Rincian',
+            'tujuan_penggunaan' => 'Pribadi',
+            'kategori_pemohon_id' => $kategori->id,
+            'cara_memperoleh_informasi_id' => $cara->id,
+            'file_identitas' => $path,
+            'status' => 'diajukan',
+        ]);
+
+        $response = $this->actingAs($this->adminUser)->get(route('admin.permohonan.file-identitas', $permohonan->id));
+        $response->assertStatus(200);
+    }
 }

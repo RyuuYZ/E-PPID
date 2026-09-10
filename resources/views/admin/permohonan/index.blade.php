@@ -28,7 +28,7 @@
             'tanggal_masuk_date' => $p->created_at->format('d M Y'),
             'tanggal_masuk_time' => $p->created_at->format('H:i') . ' WIB',
             'tanggal_masuk' => $p->created_at->format('d M Y, H:i') . ' WIB',
-            'file_identitas' => $p->file_identitas ? asset('storage/' . $p->file_identitas) : null,
+            'file_identitas' => $p->file_identitas ? route('admin.permohonan.file-identitas', $p->id) : null,
             'url_show' => route('admin.permohonan.show', $p->id),
             'url_tanda_terima' => route('permohonan.tanda_terima', $p->nomor_registrasi),
         ];
