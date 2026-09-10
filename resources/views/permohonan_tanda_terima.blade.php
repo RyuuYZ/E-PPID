@@ -127,6 +127,13 @@
                     <td class="td-colon">:</td>
                     <td class="td-value">{{ $permohonan->email }}</td>
                 </tr>
+                @if(!empty($permohonan->subjek_informasi))
+                <tr>
+                    <td class="td-label">Judul Informasi</td>
+                    <td class="td-colon">:</td>
+                    <td class="td-value" style="font-weight: bold;">{{ $permohonan->subjek_informasi }}</td>
+                </tr>
+                @endif
                 <tr>
                     <td class="td-label">Rincian Informasi</td>
                     <td class="td-colon">:</td>

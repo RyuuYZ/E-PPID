@@ -14,19 +14,33 @@ Route::get('/permohonan/baru', function () {
 })->name('permohonan.create');
 
 Route::post('/permohonan/simpan', function (\Illuminate\Http\Request $request) {
+    if (!$request->has('subjek_informasi') && $request->has('subjek')) {
+        $request->merge(['subjek_informasi' => $request->input('subjek')]);
+    }
+
+    if ($request->filled('kecamatan') && $request->filled('desa')) {
+        $detail = trim($request->input('detail_alamat', ''));
+        $alamat = ($detail !== '' ? $detail . ', ' : '') . 'Desa/Kel. ' . $request->input('desa') . ', Kec. ' . $request->input('kecamatan') . ', Kab. Ciamis, Jawa Barat';
+        $request->merge(['alamat' => $alamat]);
+    }
+
     $validated = $request->validate([
         'nama_pemohon' => 'required|string|max:255',
         'kategori_pemohon_id' => 'required|exists:kategori_pemohons,id',
-        'nik_atau_no_badan_hukum' => 'required|string|max:50',
+        'nik_atau_no_badan_hukum' => ['required', 'regex:/^[0-9]{1,16}$/'],
         'no_telp' => 'required|string|max:20',
         'email' => 'required|email|max:255',
         'alamat' => 'required|string',
-        'subjek' => 'required|string',
+        'subjek_informasi' => 'required|string|max:255',
         'rincian_informasi' => 'required|string',
         'tujuan_penggunaan' => 'required|string',
         'cara_memperoleh_informasi_id' => 'required|exists:cara_memperoleh_informasis,id',
         'file_identitas' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
     ], [
+        'nik_atau_no_badan_hukum.required' => 'NIK / No. Identitas wajib diisi.',
+        'nik_atau_no_badan_hukum.regex' => 'NIK harus berupa angka dan tidak boleh lebih dari 16 angka.',
+        'subjek_informasi.required' => 'Judul / Subjek informasi wajib diisi.',
+        'rincian_informasi.required' => 'Rincian / Isi informasi wajib diisi.',
         'file_identitas.mimes' => 'Format file identitas harus berupa gambar (JPG, JPEG, PNG) atau dokumen (PDF). Anda mencoba mengunggah format yang tidak diizinkan.',
         'file_identitas.max' => 'Ukuran file identitas maksimal adalah 5MB.',
         'file_identitas.file' => 'File identitas harus berupa file yang valid.'
@@ -38,19 +52,31 @@ Route::post('/permohonan/simpan', function (\Illuminate\Http\Request $request) {
     }
 
     $validated['nomor_registrasi'] = 'REG-' . date('YmdHis') . '-' . rand(1000, 9999);
-    $validated['rincian_informasi'] = $validated['subjek'] . "\n\n" . $validated['rincian_informasi'];
     $validated['status'] = \App\Enums\PermohonanStatus::Diajukan->value;
 
-    \App\Models\PermohonanInformasi::create($validated);
+    $permohonan = \App\Models\PermohonanInformasi::create($validated);
 
-    return redirect()->route('permohonan.sukses')->with('nomor_registrasi', $validated['nomor_registrasi']);
+    // Kirim kode invoice / pendaftaran ke email pemohon
+    try {
+        \Illuminate\Support\Facades\Mail::to($permohonan->email)->send(new \App\Mail\PermohonanTerkirimMail($permohonan));
+    } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\Log::error('Gagal mengirim email permohonan: ' . $e->getMessage());
+    }
+
+    return redirect()->route('permohonan.sukses')->with([
+        'nomor_registrasi' => $permohonan->nomor_registrasi,
+        'email' => $permohonan->email,
+    ]);
 })->name('permohonan.store')->middleware('throttle:5,1');
 
 Route::get('/permohonan/berhasil', function () {
     if (!session('nomor_registrasi')) {
         return redirect()->route('permohonan.create');
     }
-    return view('permohonan_sukses', ['nomor_registrasi' => session('nomor_registrasi')]);
+    return view('permohonan_sukses', [
+        'nomor_registrasi' => session('nomor_registrasi'),
+        'email' => session('email'),
+    ]);
 })->name('permohonan.sukses');
 
 Route::get('/permohonan/tanda-terima/{nomor_registrasi}', function ($nomor_registrasi) {

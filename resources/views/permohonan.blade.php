@@ -55,8 +55,21 @@
         </div>
         <!-- NIK -->
         <div class="flex flex-col gap-2">
-            <label class="text-sm font-semibold text-gray-700" for="nik">NIK / No. Identitas <span class="text-red-500">*</span></label>
-            <input class="h-12 px-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-gray-800 placeholder:text-gray-400 text-sm" id="nik" name="nik_atau_no_badan_hukum" placeholder="16 digit NIK atau Nomor Badan Hukum" required="" type="text">
+            <div class="flex justify-between items-center">
+                <label class="text-sm font-semibold text-gray-700" for="nik">NIK / No. Identitas <span class="text-red-500">*</span></label>
+                <span id="nik-counter" class="text-xs text-gray-400 font-mono">0/16 digit</span>
+            </div>
+            <input class="h-12 px-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-gray-800 placeholder:text-gray-400 text-sm font-mono tracking-wider" 
+                   id="nik" 
+                   name="nik_atau_no_badan_hukum" 
+                   placeholder="Masukkan 16 digit angka NIK" 
+                   required="" 
+                   type="text" 
+                   inputmode="numeric" 
+                   maxlength="16" 
+                   pattern="[0-9]{1,16}" 
+                   oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 16); document.getElementById('nik-counter').innerText = this.value.length + '/16 digit';">
+            <p class="text-[11px] text-gray-400">Wajib angka (0-9) dan tidak lebih dari 16 angka.</p>
         </div>
         <!-- Kategori Pemohon -->
         <div class="flex flex-col gap-2 md:col-span-2">
@@ -78,10 +91,54 @@
             <label class="text-sm font-semibold text-gray-700" for="email">Alamat Email <span class="text-red-500">*</span></label>
             <input class="h-12 px-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-gray-800 placeholder:text-gray-400 text-sm" id="email" name="email" placeholder="email@contoh.com" required="" type="email">
         </div>
-        <!-- Alamat Lengkap -->
+        
+        <!-- Wilayah & Alamat Lengkap -->
+        <!-- Kabupaten (Terkunci di Ciamis) -->
+        <div class="flex flex-col gap-2">
+            <label class="text-sm font-semibold text-gray-700">Kabupaten / Kota</label>
+            <div class="relative">
+                <input type="text" value="Kabupaten Ciamis" readonly 
+                       class="h-12 px-4 pr-10 w-full border border-gray-200 rounded-xl bg-gray-100 text-gray-700 font-semibold cursor-not-allowed select-none outline-none text-sm">
+                <input type="hidden" name="kabupaten" value="Kabupaten Ciamis">
+                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">lock</span>
+            </div>
+            <span class="text-[11px] text-blue-700 font-medium flex items-center gap-1">
+                <span class="material-symbols-outlined text-[14px]">lock</span> Terkunci: Layanan PPID Kabupaten Ciamis
+            </span>
+        </div>
+
+        <!-- Kecamatan (Select) -->
+        <div class="flex flex-col gap-2">
+            <label class="text-sm font-semibold text-gray-700" for="select_kecamatan">Kecamatan <span class="text-red-500">*</span></label>
+            <select id="select_kecamatan" name="kecamatan" required onchange="handleKecamatanChange()"
+                    class="h-12 px-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-gray-800 text-sm">
+                <option value="">-- Pilih Kecamatan --</option>
+            </select>
+        </div>
+
+        <!-- Desa / Kelurahan (Select) -->
+        <div class="flex flex-col gap-2">
+            <label class="text-sm font-semibold text-gray-700" for="select_desa">Desa / Kelurahan <span class="text-red-500">*</span></label>
+            <select id="select_desa" name="desa" required onchange="updateFullAlamat()" disabled
+                    class="h-12 px-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-gray-800 text-sm disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
+                <option value="">-- Pilih Kecamatan Dahulu --</option>
+            </select>
+        </div>
+
+        <!-- Detail Alamat (Jalan / RT / RW) -->
+        <div class="flex flex-col gap-2">
+            <label class="text-sm font-semibold text-gray-700" for="detail_alamat">Nama Jalan / Dusun / RT / RW</label>
+            <input type="text" id="detail_alamat" name="detail_alamat" oninput="updateFullAlamat()"
+                   placeholder="Cth: Jl. Jend. Sudirman No. 16, RT 01 / RW 02" 
+                   class="h-12 px-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-gray-800 placeholder:text-gray-400 text-sm">
+        </div>
+
+        <!-- Alamat Lengkap Hasil Gabungan -->
         <div class="flex flex-col gap-2 md:col-span-2">
-            <label class="text-sm font-semibold text-gray-700" for="alamat">Alamat Lengkap <span class="text-red-500">*</span></label>
-            <textarea class="p-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-gray-800 placeholder:text-gray-400 text-sm resize-none" id="alamat" name="alamat" placeholder="Masukkan alamat lengkap (Jalan, RT/RW, Desa/Kelurahan, Kecamatan)" required="" rows="3"></textarea>
+            <label class="text-sm font-semibold text-gray-700" for="alamat">Pratinjau Alamat Lengkap <span class="text-red-500">*</span></label>
+            <textarea class="p-3 border border-gray-200 rounded-xl bg-blue-50/40 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-gray-800 placeholder:text-gray-400 text-sm resize-none font-medium" 
+                      id="alamat" name="alamat" placeholder="Pilih Kecamatan dan Desa di atas untuk menghasilkan alamat lengkap..." required="" rows="2" readonly></textarea>
+            <p class="text-[11px] text-gray-400">Alamat lengkap otomatis terkomposisi dari pilihan wilayah Kabupaten Ciamis dan rincian jalan di atas.</p>
         </div>
     </div>
 </section>
@@ -95,20 +152,28 @@
         <h2 class="text-xl font-bold text-[#0B1B3D]">Rincian Informasi yang Dibutuhkan</h2>
     </div>
     <div class="flex flex-col gap-6">
-        <!-- Subjek Informasi -->
+        <!-- Judul Informasi -->
         <div class="flex flex-col gap-2">
-            <label class="text-sm font-semibold text-gray-700" for="subjek">Subjek Informasi <span class="text-red-500">*</span></label>
-            <input class="h-12 px-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-gray-800 placeholder:text-gray-400 text-sm" id="subjek" name="subjek" placeholder="Garis besar informasi yang diminta (Cth: Dokumen APBD 2023)" required="" type="text">
+            <div class="flex items-center justify-between">
+                <label class="text-sm font-semibold text-gray-700" for="subjek">Judul / Pokok Informasi <span class="text-red-500">*</span></label>
+                <span class="text-[11px] text-gray-400">Judul Dokumen / Subjek</span>
+            </div>
+            <input class="h-12 px-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-gray-800 placeholder:text-gray-400 text-sm" 
+                   id="subjek" name="subjek_informasi" placeholder="Masukkan judul informasi (Cth: Dokumen RPJMD Kabupaten Ciamis 2021-2026)" required="" type="text">
         </div>
-        <!-- Deskripsi Detail -->
+        <!-- Isi Rincian Informasi -->
         <div class="flex flex-col gap-2">
-            <label class="text-sm font-semibold text-gray-700" for="deskripsi">Deskripsi Detail Informasi <span class="text-red-500">*</span></label>
-            <textarea class="p-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-gray-800 placeholder:text-gray-400 text-sm resize-none" id="deskripsi" name="rincian_informasi" placeholder="Jelaskan secara rinci dokumen atau informasi yang Anda butuhkan..." required="" rows="4"></textarea>
+            <div class="flex items-center justify-between">
+                <label class="text-sm font-semibold text-gray-700" for="deskripsi">Isi / Uraian Rincian Informasi <span class="text-red-500">*</span></label>
+                <span class="text-[11px] text-gray-400">Deskripsi Lengkap</span>
+            </div>
+            <textarea class="p-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-gray-800 placeholder:text-gray-400 text-sm resize-none" 
+                      id="deskripsi" name="rincian_informasi" placeholder="Jelaskan secara rinci bab, tabel, data statistik, atau informasi spesifik yang Anda butuhkan..." required="" rows="4"></textarea>
         </div>
         <!-- Tujuan Penggunaan -->
         <div class="flex flex-col gap-2">
             <label class="text-sm font-semibold text-gray-700" for="tujuan">Tujuan Penggunaan Informasi <span class="text-red-500">*</span></label>
-            <textarea class="p-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-gray-800 placeholder:text-gray-400 text-sm resize-none" id="tujuan" name="tujuan_penggunaan" placeholder="Jelaskan untuk apa informasi ini akan digunakan (Cth: Penelitian Akademis)" required="" rows="3"></textarea>
+            <textarea class="p-4 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-gray-800 placeholder:text-gray-400 text-sm resize-none" id="tujuan" name="tujuan_penggunaan" placeholder="Jelaskan untuk apa informasi ini akan digunakan (Cth: Penelitian Akademis / Penyusunan Skripsi)" required="" rows="3"></textarea>
         </div>
     </div>
 </section>
@@ -274,6 +339,92 @@ document.addEventListener('alpine:init', () => {
         }
     }));
 });
+
+// Data Wilayah Kabupaten Ciamis (27 Kecamatan & Kelurahan/Desa)
+const ciamisWilayah = {
+    "Banjarsari": ["Banjarsari", "Cibadak", "Cicapar", "Ciherang", "Ciulu", "Kawasen", "Ratawangi", "Sindangsari"],
+    "Banjaranyar": ["Banjaranyar", "Cigayam", "Cikaso", "Cikupa", "Kalijaya", "Karyamukti", "Langkapsari", "Pasirlawang"],
+    "Baregbeg": ["Baregbeg", "Petirhilir", "Pusakanagara", "Saguling", "Sukamaju", "Sukamulya", "Jelat", "Karang Ampel", "Mekarjaya"],
+    "Ciamis": ["Ciamis", "Cigembor", "Kertasari", "Benteng", "Maleber", "Sindangrasa", "Linggasari", "Imbanagara", "Imbanagara Raya", "Pawindan", "Panyingkiran"],
+    "Cidolog": ["Cidolog", "Ciparay", "Hegarmanah", "Janggala", "Jelegong"],
+    "Cihaurbeuti": ["Cihaurbeuti", "Cijulang", "Cikolak", "Padamulya", "Pamokolan", "Pasirtamiang", "Sukahaji", "Sukahurip", "Sukamaju", "Sumberjaya", "Tanjungsari"],
+    "Cijeungjing": ["Bojongmengger", "Cijeungjing", "Ciharalang", "Handapherang", "Karanganyar", "Karangkamulyan", "Kertabumi", "Kertaharja", "Pamalayan", "Utama"],
+    "Cikoneng": ["Cikoneng", "Cimari", "Gegempalan", "Kujangsari", "Nasol", "Panaragan", "Sindangsari", "Sukasenang"],
+    "Cimaragas": ["Beber", "Bojongmalang", "Cimaragas", "Jayaraksa", "Raksabaya"],
+    "Cipaku": ["Bangbayang", "Buniseuri", "Cieurih", "Cipaku", "Gereba", "Jalatrang", "Mekarsari", "Muktisari", "Pusakasari", "Selacau", "Selamanik", "Sukawening", "Tanjungmulya"],
+    "Cisaga": ["Bangunharja", "Cisaga", "Danasari", "Girimukti", "Kepel", "Mekarmukti", "Sidamulya", "Sukahurip", "Tanjungjaya", "Wangunjaya"],
+    "Jatinagara": ["Bayasari", "Cintanagara", "Dayeuhluhur", "Jatinagara", "Mulyasari", "Sukanagara"],
+    "Kawali": ["Citegem", "Karangpawitan", "Kawali", "Kawalimukti", "Linggawangi", "Margamulya", "Purwasari", "Selasari", "Sindangsari", "Talagasari", "Winduraja"],
+    "Lakbok": ["Baregbeg", "Cintajaya", "Cintaratu", "Kertajaya", "Kalapasawit", "Karyamulya", "Puloerang", "Rawaapu", "Sidaharja", "Sindangangin", "Sukanagara", "Tambakreja"],
+    "Lumbung": ["Awiluar", "Cikupa", "Darmaraja", "Lumbung", "Lumbungsari", "Rawa", "Sadewata", "Sukahsari"],
+    "Pamarican": ["Bangunsari", "Bantarsari", "Kertahayu", "Margajaya", "Medangkang", "Neglasari", "Pamarican", "Pasirnagara", "Sidaharja", "Sidamulih", "Sukahurip", "Sukajadi", "Sukajaya", "Sukaparana"],
+    "Panawangan": ["Bangunjaya", "Cinyasag", "Gardujaya", "Giriluyu", "Indragiri", "Jagabaya", "Kertajaya", "Kertayasa", "Nagarajati", "Nagarajaya", "Nagarapageuh", "Panawangan", "Sadapaingan", "Sagalaherang"],
+    "Panjalu": ["Bahara", "Ciomas", "Hujungtiwu", "Kertamandala", "Mandalare", "Maparah", "Panjalu", "Sandingtaman"],
+    "Panumbangan": ["Banjarangsana", "Buanamekar", "Golat", "Jayagiri", "Kertarahayu", "Medanglayang", "Panumbangan", "Payungagung", "Payungsari", "Sindangbarang", "Sindangherang", "Sindangmukti", "Sukakerta", "Tanjungmulya"],
+    "Purwadadi": ["Bantardawa", "Karangpaningal", "Padaringan", "Pasirlawang", "Purwadadi", "Purwajaya", "Sidarahayu", "Sukamulya", "Kutawaringin"],
+    "Rajadesa": ["Andapraja", "Purwaraja", "Rajadesa", "Sirnabaya", "Sirnajaya", "Sukaharja", "Sukajaya", "Tanjungsari", "Tanjungjaya", "Tanjungukur", "Tigaherang"],
+    "Rancah": ["Bojonggedang", "Cileungsir", "Cisontrol", "Dadiharja", "Jangalaharja", "Kawunglarang", "Kiarapayung", "Patakaharja", "Rancah", "Situmukti", "Wangunsari", "Karangpari", "Giriharja"],
+    "Sadananya": ["Bendasari", "Gunungsari", "Mambang", "Sadananya", "Mekarjadi", "Sukajadi", "Tanjungsari", "Werasari"],
+    "Sindangkasih": ["Budiasih", "Budiharja", "Gunungcupu", "Sindangkasih", "Sukamanah", "Sukaraja", "Sukaresik", "Wanasigra"],
+    "Sukadana": ["Bunter", "Ciparigi", "Margaharja", "Salakaria", "Sukadana"],
+    "Sukamantri": ["Cibeureum", "Sindanglaya", "Sukamantri", "Tenggerraharja"],
+    "Tambaksari": ["Kadupandak", "Karangpaningal", "Karyamekar", "Mekarsari", "Sukasari", "Tambaksari"]
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    const kecSelect = document.getElementById('select_kecamatan');
+    if (kecSelect) {
+        Object.keys(ciamisWilayah).sort().forEach(function(kec) {
+            const opt = document.createElement('option');
+            opt.value = kec;
+            opt.textContent = 'Kecamatan ' + kec;
+            kecSelect.appendChild(opt);
+        });
+    }
+});
+
+function handleKecamatanChange() {
+    const kecSelect = document.getElementById('select_kecamatan');
+    const desaSelect = document.getElementById('select_desa');
+    const selectedKec = kecSelect.value;
+
+    desaSelect.innerHTML = '<option value="">-- Pilih Desa / Kelurahan --</option>';
+
+    if (selectedKec && ciamisWilayah[selectedKec]) {
+        desaSelect.disabled = false;
+        ciamisWilayah[selectedKec].sort().forEach(function(desa) {
+            const opt = document.createElement('option');
+            opt.value = desa;
+            opt.textContent = desa;
+            desaSelect.appendChild(opt);
+        });
+    } else {
+        desaSelect.disabled = true;
+        desaSelect.innerHTML = '<option value="">-- Pilih Kecamatan Dahulu --</option>';
+    }
+
+    updateFullAlamat();
+}
+
+function updateFullAlamat() {
+    const kec = document.getElementById('select_kecamatan').value;
+    const desa = document.getElementById('select_desa').value;
+    const detail = document.getElementById('detail_alamat').value.trim();
+    const alamatTextarea = document.getElementById('alamat');
+
+    if (!kec || !desa) {
+        alamatTextarea.value = '';
+        alamatTextarea.placeholder = 'Pilih Kecamatan dan Desa di atas untuk menghasilkan alamat lengkap...';
+        return;
+    }
+
+    let result = '';
+    if (detail) {
+        result += detail + ', ';
+    }
+    result += 'Desa/Kel. ' + desa + ', Kec. ' + kec + ', Kab. Ciamis, Jawa Barat';
+    alamatTextarea.value = result;
+}
 </script>
 
 @endsection

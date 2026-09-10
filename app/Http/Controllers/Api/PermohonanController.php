@@ -41,7 +41,7 @@ class PermohonanController extends Controller
         $validator = Validator::make($request->all(), [
             'nama_pemohon' => 'required|string|max:255',
             'kategori_pemohon_id' => 'required|exists:kategori_pemohons,id',
-            'nik_atau_no_badan_hukum' => 'required|string|max:50',
+            'nik_atau_no_badan_hukum' => ['required', 'regex:/^[0-9]{1,16}$/'],
             'no_telp' => 'required|string|max:20',
             'email' => 'required|email|max:255',
             'alamat' => 'required|string',
@@ -51,6 +51,8 @@ class PermohonanController extends Controller
             'cara_memperoleh_informasi_id' => 'required|exists:cara_memperoleh_informasis,id',
             'file_identitas' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ], [
+            'nik_atau_no_badan_hukum.required' => 'NIK / No. Identitas wajib diisi.',
+            'nik_atau_no_badan_hukum.regex' => 'NIK harus berupa angka dan tidak boleh lebih dari 16 angka.',
             'file_identitas.mimes' => 'Format file identitas harus berupa gambar (JPG, JPEG, PNG) atau dokumen (PDF). Anda mencoba mengunggah format yang tidak diizinkan.',
             'file_identitas.max' => 'Ukuran file identitas maksimal adalah 5MB.',
             'file_identitas.file' => 'File identitas harus berupa file yang valid.'
@@ -71,6 +73,12 @@ class PermohonanController extends Controller
         $validated['status'] = PermohonanStatus::Diajukan->value;
 
         $permohonan = PermohonanInformasi::create($validated);
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($permohonan->email)->send(new \App\Mail\PermohonanTerkirimMail($permohonan));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Gagal mengirim email permohonan API: ' . $e->getMessage());
+        }
 
         return response()->json([
             'message' => 'Permohonan berhasil disubmit',

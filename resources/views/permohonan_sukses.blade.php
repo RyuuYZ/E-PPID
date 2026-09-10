@@ -34,6 +34,29 @@
             </div>
         </div>
 
+        <!-- Email Notification Notice -->
+        <div class="px-6 md:px-10 pt-6">
+            <div class="p-4 bg-emerald-50/90 border border-emerald-200/90 rounded-xl flex items-start sm:items-center gap-3.5 text-left shadow-sm">
+                <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 mt-0.5 sm:mt-0">
+                    <span class="material-symbols-outlined text-2xl">mark_email_read</span>
+                </div>
+                <div class="flex-1">
+                    <h4 class="text-sm font-bold text-emerald-950 flex items-center gap-1.5">
+                        Kode Invoice / Registrasi Telah Dikirim ke Email
+                    </h4>
+                    <p class="text-xs text-emerald-800 mt-1 leading-relaxed">
+                        Bukti pendaftaran dan kode invoice pelacakan telah dikirimkan ke 
+                        @if(!empty($email))
+                            <span class="font-bold underline decoration-emerald-400 text-emerald-950">{{ $email }}</span>.
+                        @else
+                            <span class="font-semibold text-emerald-950">alamat email yang Anda daftarkan</span>.
+                        @endif
+                        Silakan periksa folder <strong>Kotak Masuk (Inbox)</strong> atau folder <strong>Spam</strong> Anda.
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <!-- Bottom Section: Next Steps -->
         <div class="py-8 px-6 md:px-12">
             <h3 class="text-lg font-bold text-gray-800 mb-6">Langkah Selanjutnya</h3>

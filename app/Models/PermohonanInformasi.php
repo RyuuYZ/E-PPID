@@ -40,6 +40,11 @@ class PermohonanInformasi extends Model
         ];
     }
 
+    public function getSubjekAttribute(): ?string
+    {
+        return $this->subjek_informasi;
+    }
+
     // ── Relationships ─────────────────────────────────────────
 
     public function unit_pengolah()
