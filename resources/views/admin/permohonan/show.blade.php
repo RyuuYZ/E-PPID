@@ -867,135 +867,170 @@
                     <!-- Atasan PPID: Tanda Tangan Elektronik (TTE) -->
                     @elseif($permohonan->status === \App\Enums\PermohonanStatus::MenungguTandaTangan)
                         @if(auth()->user()->hasRole('Atasan PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
-                            <form action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST" id="tteForm" class="space-y-4">
-                                @csrf
-                                <input type="hidden" name="target_status" value="ditandatangani">
-                                <input type="hidden" name="signature_data" id="signature_data">
-                                <input type="hidden" name="use_saved_signature" id="use_saved_signature" value="0">
-                                
-                                <div>
-                                    <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Tanda Tangan Elektronik (TTE)</h4>
-                                    <p class="text-[11px] text-slate-500 mb-3">Bubuhkan tanda tangan elektronik untuk mengesahkan draf jawaban permohonan.</p>
-                                    
-                                    @if(auth()->user()->signature_path)
-                                    <div class="mb-3 p-3 border border-blue-200 bg-blue-50/70 rounded-xl">
-                                        <label class="flex items-start gap-2.5 cursor-pointer">
-                                            <input type="checkbox" id="toggle_saved_signature" class="mt-0.5 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
-                                            <div>
-                                                <span class="text-xs font-bold text-blue-900 block">Gunakan Tanda Tangan Tersimpan</span>
-                                                <p class="text-[10px] text-blue-700 mt-0.5">Centang untuk menggunakan tanda tangan profil Anda secara otomatis.</p>
-                                            </div>
-                                        </label>
-                                        <div id="saved_signature_preview" class="mt-2.5 hidden bg-white border border-slate-200 p-2.5 rounded-lg text-center">
-                                            <img src="{{ Storage::url(auth()->user()->signature_path) }}" alt="Tanda Tangan Tersimpan" class="max-h-24 mx-auto">
-                                        </div>
-                                    </div>
-                                    @endif
-
-                                    <div id="new_signature_container" class="border border-slate-300 rounded-xl overflow-hidden bg-white shadow-2xs">
-                                        <div class="bg-slate-50 border-b border-slate-200 px-3 py-2 flex justify-between items-center">
-                                            <span class="text-[10px] text-slate-600 font-bold uppercase tracking-wider">Gambar Tanda Tangan:</span>
-                                            <button type="button" id="clear_signature" class="text-[10px] text-rose-600 hover:text-rose-800 font-bold uppercase tracking-wider flex items-center gap-0.5 cursor-pointer">
-                                                <span class="material-symbols-outlined text-[13px]">refresh</span> Bersihkan
-                                            </button>
-                                        </div>
-                                        <canvas id="signature-pad" class="w-full h-36 touch-none cursor-crosshair bg-white" width="400" height="150"></canvas>
-                                    </div>
-                                    
-                                    <div id="save_signature_option" class="mt-2">
-                                        <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-600 hover:text-slate-800">
-                                            <input type="checkbox" name="save_signature" value="1" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                                            <span>Simpan sebagai tanda tangan default di profil saya</span>
-                                        </label>
-                                    </div>
-                                </div>
-                                
-                                <button type="button" id="btnSubmitTTE" 
-                                        @click="
-                                            const useSaved = document.getElementById('use_saved_signature');
-                                            if (useSaved && useSaved.value === '1') {
-                                                openConfirm({
-                                                    title: 'Konfirmasi Pengesahan TTE',
-                                                    message: 'Surat jawaban akan disahkan secara resmi menggunakan tanda tangan tersimpan profil Anda. Lanjutkan?',
-                                                    badge: 'Pengesahan TTE Atasan PPID',
-                                                    btnText: 'Ya, Sahkan & TTD',
-                                                    btnColor: 'bg-emerald-600 hover:bg-emerald-700 text-white',
-                                                    icon: 'verified_user',
-                                                    iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-                                                    onConfirm: () => { document.getElementById('tteForm').submit(); }
-                                                });
-                                            } else if (window.currentSignaturePad && window.currentSignaturePad.isEmpty()) {
-                                                alert('Mohon gambar tanda tangan Anda terlebih dahulu, atau centang tanda tangan tersimpan.');
-                                            } else if (window.currentSignaturePad) {
-                                                document.getElementById('signature_data').value = window.currentSignaturePad.toDataURL('image/png');
-                                                openConfirm({
-                                                    title: 'Konfirmasi Pengesahan TTE',
-                                                    message: 'Surat jawaban akan disahkan secara resmi dengan tanda tangan yang Anda gambar. Lanjutkan?',
-                                                    badge: 'Pengesahan TTE Atasan PPID',
-                                                    btnText: 'Ya, Sahkan & TTD',
-                                                    btnColor: 'bg-emerald-600 hover:bg-emerald-700 text-white',
-                                                    icon: 'verified_user',
-                                                    iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-                                                    onConfirm: () => { document.getElementById('tteForm').submit(); }
-                                                });
-                                            }
-                                        }"
-                                        class="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 text-white font-bold rounded-xl py-2.5 px-4 hover:bg-emerald-700 text-xs uppercase tracking-wider shadow-sm transition-colors cursor-pointer">
-                                    <span class="material-symbols-outlined text-[16px]">verified_user</span>
-                                    Sahkan & Tandatangani Surat Jawaban
-                                </button>
-                            </form>
-                            
-                            <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
-                            <script>
-                                document.addEventListener('DOMContentLoaded', function() {
+                            <div x-data="{
+                                useSaved: {{ auth()->user()->signature_path ? 'true' : 'false' }},
+                                hasDrawn: false,
+                                isDrawing: false,
+                                lastX: 0,
+                                lastY: 0,
+                                initCanvas() {
                                     const canvas = document.getElementById('signature-pad');
+                                    if (!canvas) return;
+                                    const ctx = canvas.getContext('2d');
                                     
-                                    if(canvas) {
-                                        window.currentSignaturePad = new SignaturePad(canvas, {
-                                            backgroundColor: 'rgb(255, 255, 255)',
-                                            penColor: 'rgb(3, 34, 77)'
-                                        });
+                                    const resize = () => {
+                                        const rect = canvas.getBoundingClientRect();
+                                        canvas.width = rect.width || 400;
+                                        canvas.height = 150;
+                                        ctx.strokeStyle = '#03224d';
+                                        ctx.lineWidth = 2.5;
+                                        ctx.lineCap = 'round';
+                                        ctx.lineJoin = 'round';
+                                    };
+                                    resize();
+                                    window.addEventListener('resize', resize);
 
-                                        function resizeCanvas() {
-                                            const ratio = Math.max(window.devicePixelRatio || 1, 1);
-                                            canvas.width = canvas.offsetWidth * ratio;
-                                            canvas.height = canvas.offsetHeight * ratio;
-                                            canvas.getContext("2d").scale(ratio, ratio);
-                                            window.currentSignaturePad.clear();
-                                        }
-                                        window.addEventListener("resize", resizeCanvas);
-                                        resizeCanvas();
+                                    const getPos = (e) => {
+                                        const r = canvas.getBoundingClientRect();
+                                        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                                        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                                        return {
+                                            x: clientX - r.left,
+                                            y: clientY - r.top
+                                        };
+                                    };
 
-                                        document.getElementById('clear_signature').addEventListener('click', function () {
-                                            window.currentSignaturePad.clear();
-                                        });
+                                    const start = (e) => {
+                                        this.isDrawing = true;
+                                        const pos = getPos(e);
+                                        this.lastX = pos.x;
+                                        this.lastY = pos.y;
+                                    };
+
+                                    const draw = (e) => {
+                                        if (!this.isDrawing) return;
+                                        e.preventDefault();
+                                        const pos = getPos(e);
+                                        ctx.beginPath();
+                                        ctx.moveTo(this.lastX, this.lastY);
+                                        ctx.lineTo(pos.x, pos.y);
+                                        ctx.stroke();
+                                        this.lastX = pos.x;
+                                        this.lastY = pos.y;
+                                        this.hasDrawn = true;
+                                    };
+
+                                    const stop = () => {
+                                        this.isDrawing = false;
+                                    };
+
+                                    canvas.addEventListener('mousedown', start);
+                                    canvas.addEventListener('mousemove', draw);
+                                    window.addEventListener('mouseup', stop);
+
+                                    canvas.addEventListener('touchstart', start, { passive: false });
+                                    canvas.addEventListener('touchmove', draw, { passive: false });
+                                    window.addEventListener('touchend', stop);
+                                },
+                                clearCanvas() {
+                                    const canvas = document.getElementById('signature-pad');
+                                    if (canvas) {
+                                        const ctx = canvas.getContext('2d');
+                                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                        this.hasDrawn = false;
                                     }
-
-                                    const toggleSaved = document.getElementById('toggle_saved_signature');
-                                    const newSigContainer = document.getElementById('new_signature_container');
-                                    const saveSigOption = document.getElementById('save_signature_option');
-                                    const savedPreview = document.getElementById('saved_signature_preview');
+                                },
+                                submitTTE() {
+                                    const form = document.getElementById('tteForm');
                                     const useSavedInput = document.getElementById('use_saved_signature');
+                                    const sigDataInput = document.getElementById('signature_data');
 
-                                    if(toggleSaved) {
-                                        toggleSaved.addEventListener('change', function() {
-                                            if(this.checked) {
-                                                newSigContainer.style.display = 'none';
-                                                saveSigOption.style.display = 'none';
-                                                savedPreview.style.display = 'block';
-                                                useSavedInput.value = '1';
-                                            } else {
-                                                newSigContainer.style.display = 'block';
-                                                saveSigOption.style.display = 'block';
-                                                savedPreview.style.display = 'none';
-                                                useSavedInput.value = '0';
-                                                if(window.currentSignaturePad) window.currentSignaturePad.clear();
-                                            }
+                                    if (this.useSaved) {
+                                        useSavedInput.value = '1';
+                                        openConfirm({
+                                            title: 'Konfirmasi Pengesahan TTE',
+                                            message: 'Surat jawaban akan disahkan secara resmi menggunakan tanda tangan tersimpan profil Anda. Lanjutkan?',
+                                            badge: 'Pengesahan TTE Atasan PPID',
+                                            btnText: 'Ya, Sahkan & TTD',
+                                            btnColor: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+                                            icon: 'verified_user',
+                                            iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+                                            formId: 'tteForm',
+                                            onConfirm: () => { form.submit(); }
+                                        });
+                                    } else {
+                                        useSavedInput.value = '0';
+                                        const canvas = document.getElementById('signature-pad');
+                                        if (!this.hasDrawn || !canvas) {
+                                            alert('Mohon gambar tanda tangan Anda terlebih dahulu, atau centang tanda tangan tersimpan.');
+                                            return;
+                                        }
+                                        sigDataInput.value = canvas.toDataURL('image/png');
+                                        openConfirm({
+                                            title: 'Konfirmasi Pengesahan TTE',
+                                            message: 'Surat jawaban akan disahkan secara resmi dengan tanda tangan yang Anda gambar. Lanjutkan?',
+                                            badge: 'Pengesahan TTE Atasan PPID',
+                                            btnText: 'Ya, Sahkan & TTD',
+                                            btnColor: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+                                            icon: 'verified_user',
+                                            iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+                                            formId: 'tteForm',
+                                            onConfirm: () => { form.submit(); }
                                         });
                                     }
-                                });
-                            </script>
+                                }
+                            }" x-init="initCanvas()">
+                                <form action="{{ route('admin.permohonan.update-status', $permohonan->id) }}" method="POST" id="tteForm" class="space-y-4">
+                                    @csrf
+                                    <input type="hidden" name="target_status" value="ditandatangani">
+                                    <input type="hidden" name="signature_data" id="signature_data">
+                                    <input type="hidden" name="use_saved_signature" id="use_saved_signature" :value="useSaved ? '1' : '0'">
+                                    
+                                    <div>
+                                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Tanda Tangan Elektronik (TTE)</h4>
+                                        <p class="text-[11px] text-slate-500 mb-3">Bubuhkan tanda tangan elektronik untuk mengesahkan draf jawaban permohonan.</p>
+                                        
+                                        @if(auth()->user()->signature_path)
+                                        <div class="mb-3 p-3 border border-blue-200 bg-blue-50/70 rounded-xl">
+                                            <label class="flex items-start gap-2.5 cursor-pointer">
+                                                <input type="checkbox" x-model="useSaved" id="toggle_saved_signature" class="mt-0.5 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                                                <div>
+                                                    <span class="text-xs font-bold text-blue-900 block">Gunakan Tanda Tangan Tersimpan</span>
+                                                    <p class="text-[10px] text-blue-700 mt-0.5">Centang untuk menggunakan tanda tangan profil Anda secara otomatis.</p>
+                                                </div>
+                                            </label>
+                                            <div x-show="useSaved" class="mt-2.5 bg-white border border-slate-200 p-2.5 rounded-lg text-center">
+                                                <img src="{{ Storage::url(auth()->user()->signature_path) }}" alt="Tanda Tangan Tersimpan" class="max-h-24 mx-auto">
+                                            </div>
+                                        </div>
+                                        @endif
+
+                                        <div x-show="!useSaved" class="border border-slate-300 rounded-xl overflow-hidden bg-white shadow-2xs">
+                                            <div class="bg-slate-50 border-b border-slate-200 px-3 py-2 flex justify-between items-center">
+                                                <span class="text-[10px] text-slate-600 font-bold uppercase tracking-wider">Gambar Tanda Tangan:</span>
+                                                <button type="button" @click="clearCanvas()" class="text-[10px] text-rose-600 hover:text-rose-800 font-bold uppercase tracking-wider flex items-center gap-0.5 cursor-pointer">
+                                                    <span class="material-symbols-outlined text-[13px]">refresh</span> Bersihkan
+                                                </button>
+                                            </div>
+                                            <canvas id="signature-pad" class="w-full h-36 touch-none cursor-crosshair bg-white" width="400" height="150"></canvas>
+                                        </div>
+                                        
+                                        <div x-show="!useSaved" class="mt-2">
+                                            <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-600 hover:text-slate-800">
+                                                <input type="checkbox" name="save_signature" value="1" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                                <span>Simpan sebagai tanda tangan default di profil saya</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="button" id="btnSubmitTTE" 
+                                            @click="submitTTE()"
+                                            class="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 text-white font-bold rounded-xl py-2.5 px-4 hover:bg-emerald-700 text-xs uppercase tracking-wider shadow-sm transition-colors cursor-pointer">
+                                        <span class="material-symbols-outlined text-[16px]">verified_user</span>
+                                        Sahkan & Tandatangani Surat Jawaban
+                                    </button>
+                                </form>
+                            </div>
                         @else
                             <div class="bg-slate-50 p-5 rounded-xl text-xs text-center text-slate-600 border border-slate-200/80">
                                 <span class="material-symbols-outlined text-3xl text-slate-400 mb-1 block mx-auto">history_edu</span>

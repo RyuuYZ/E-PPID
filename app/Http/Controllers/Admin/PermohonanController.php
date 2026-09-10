@@ -359,6 +359,11 @@ class PermohonanController extends Controller
      */
     private function authorizeTransition(User $user, PermohonanStatus $target): void
     {
+        // Super Admin memiliki hak akses penuh untuk seluruh transisi alur layanan
+        if ($user->hasRole('Super Admin')) {
+            return;
+        }
+
         $allowed = match ($target) {
             PermohonanStatus::Diverifikasi,
             PermohonanStatus::MenungguKelengkapan,
@@ -374,7 +379,7 @@ class PermohonanController extends Controller
 
             PermohonanStatus::DitutupTidakLengkap => true, // System or any authorized user
 
-            default => $user->hasRole('Super Admin'),
+            default => false,
         };
 
         if (!$allowed) {
