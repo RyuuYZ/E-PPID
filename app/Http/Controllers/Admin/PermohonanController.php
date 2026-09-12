@@ -77,6 +77,15 @@ class PermohonanController extends Controller
 
         $permohonan = \App\Models\PermohonanInformasi::create($validated);
         
+        // Kirim email konfirmasi dan kode invoice jika email diisi
+        if (!empty($permohonan->email)) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($permohonan->email)->send(new \App\Mail\PermohonanTerkirimMail($permohonan));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Gagal mengirim email permohonan walk-in: ' . $e->getMessage());
+            }
+        }
+
         \App\Models\ActivityLog::create([
             'user_id' => auth()->id(),
             'action' => 'Create Permohonan Walk-in',
