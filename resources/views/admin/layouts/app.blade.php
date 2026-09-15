@@ -383,6 +383,12 @@
                 <span>Daftar Info Publik (DIP)</span>
             </a>
 
+            <!-- Banner Carousel Landing Page -->
+            <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.carousel.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.carousel.index') }}">
+                <span class="material-symbols-outlined text-[18px] {{ request()->routeIs('admin.carousel.*') ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }}">view_carousel</span>
+                <span>Banner Carousel</span>
+            </a>
+
             <!-- Keberatan Menu -->
             @if(auth()->user()->hasRole('Atasan PPID Pelaksana') || auth()->user()->hasRole('Desk Layanan') || auth()->user()->hasRole('PPID Pelaksana') || auth()->user()->hasRole('Super Admin'))
             <a class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group {{ request()->routeIs('admin.keberatan.*') ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-bold' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' }}" href="{{ route('admin.keberatan.index') }}">

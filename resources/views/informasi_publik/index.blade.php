@@ -198,7 +198,7 @@
             <div class="bg-white rounded-2xl border border-slate-200/80 hover:border-blue-300 hover:shadow-lg transition-all duration-300 flex flex-col justify-between p-6 group">
                 <div>
                     <!-- Card Top Badges -->
-                    <div class="flex items-center justify-between gap-2 mb-4">
+                    <div class="flex items-center justify-between gap-2 mb-3.5">
                         <div class="flex items-center gap-1.5 flex-wrap">
                             <!-- Kategori UU KIP Badge -->
                             @php
@@ -218,14 +218,14 @@
                                 {{ $dokumen->jenis_dokumen }}
                             </span>
                         </div>
-                        <span class="text-xs font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">
+                        <span class="text-xs font-bold text-slate-500 bg-slate-50 px-2.5 py-0.5 rounded-md border border-slate-200/80">
                             {{ $dokumen->tahun }}
                         </span>
                     </div>
 
                     <!-- Title (Clickable for Preview) -->
                     <h3 @click="openPreview('{{ route('informasi-publik.download', $dokumen->id) }}?inline=1', '{{ addslashes($dokumen->judul) }}', '{{ $dokumen->kategori?->nama_kategori }}', '{{ $dokumen->jenis_dokumen }}', '{{ $dokumen->tahun }}', '{{ route('informasi-publik.download', $dokumen->id) }}', '{{ addslashes($dokumen->penanggung_jawab) }}', '{{ $dokumen->file_size ?? 'PDF' }}')"
-                        class="text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors leading-snug mb-3 cursor-pointer"
+                        class="text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors leading-snug mb-2.5 cursor-pointer line-clamp-2"
                         title="Klik untuk preview dokumen">
                         {{ $dokumen->judul }}
                     </h3>
@@ -236,42 +236,41 @@
                     </p>
                 </div>
 
-                <div>
-                    <!-- Meta Info (Penanggung Jawab) -->
-                    <div class="pt-4 border-t border-slate-100 flex items-center gap-2 text-slate-500 text-xs mb-4">
-                        <span class="material-symbols-outlined text-[16px] text-slate-400">domain</span>
-                        <span class="truncate font-medium">{{ $dokumen->penanggung_jawab }}</span>
+                <div class="mt-2">
+                    <!-- Meta Info (Penanggung Jawab & Stats) -->
+                    <div class="pt-3.5 border-t border-slate-100 flex flex-col gap-2 mb-4">
+                        <div class="flex items-center gap-2 text-slate-500 text-xs min-w-0">
+                            <span class="material-symbols-outlined text-[15px] text-slate-400 shrink-0">domain</span>
+                            <span class="truncate font-medium">{{ $dokumen->penanggung_jawab }}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium pt-0.5">
+                            <span class="inline-flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">description</span>
+                                <span class="whitespace-nowrap">{{ $dokumen->file_size ?? 'PDF' }}</span>
+                            </span>
+                            <span class="inline-flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">download</span>
+                                <span class="whitespace-nowrap">{{ number_format($dokumen->download_count) }} kali diunduh</span>
+                            </span>
+                        </div>
                     </div>
 
-                    <!-- Card Actions: Preview & Unduh -->
-                    <div class="flex items-center justify-between pt-2 border-t border-slate-100/60">
-                        <div class="text-[11px] font-semibold text-slate-400 flex items-center gap-3">
-                            <span class="flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[14px]">description</span>
-                                {{ $dokumen->file_size ?? 'PDF' }}
-                            </span>
-                            <span class="flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[14px]">download</span>
-                                {{ $dokumen->download_count }}
-                            </span>
-                        </div>
+                    <!-- Card Actions: Preview & Unduh (Equal 50/50 Grid Ratio) -->
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <!-- Tombol Preview -->
+                        <button type="button" 
+                                @click="openPreview('{{ route('informasi-publik.download', $dokumen->id) }}?inline=1', '{{ addslashes($dokumen->judul) }}', '{{ $dokumen->kategori?->nama_kategori }}', '{{ $dokumen->jenis_dokumen }}', '{{ $dokumen->tahun }}', '{{ route('informasi-publik.download', $dokumen->id) }}', '{{ addslashes($dokumen->penanggung_jawab) }}', '{{ $dokumen->file_size ?? 'PDF' }}')"
+                                class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 font-bold text-xs transition-all border border-slate-200/80 hover:border-blue-200 cursor-pointer shadow-2xs">
+                            <span class="material-symbols-outlined text-[16px]">visibility</span>
+                            <span>Preview</span>
+                        </button>
 
-                        <div class="flex items-center gap-2">
-                            <!-- Tombol Preview -->
-                            <button type="button" 
-                                    @click="openPreview('{{ route('informasi-publik.download', $dokumen->id) }}?inline=1', '{{ addslashes($dokumen->judul) }}', '{{ $dokumen->kategori?->nama_kategori }}', '{{ $dokumen->jenis_dokumen }}', '{{ $dokumen->tahun }}', '{{ route('informasi-publik.download', $dokumen->id) }}', '{{ addslashes($dokumen->penanggung_jawab) }}', '{{ $dokumen->file_size ?? 'PDF' }}')"
-                                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 font-bold text-xs transition-all border border-slate-200/80 hover:border-blue-200 cursor-pointer shadow-2xs">
-                                <span class="material-symbols-outlined text-[16px]">visibility</span>
-                                <span>Preview</span>
-                            </button>
-
-                            <!-- Tombol Unduh -->
-                            <a href="{{ route('informasi-publik.download', $dokumen->id) }}" 
-                               class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-xs hover:scale-[1.02]">
-                                <span class="material-symbols-outlined text-[16px]">download</span>
-                                <span>Unduh</span>
-                            </a>
-                        </div>
+                        <!-- Tombol Unduh -->
+                        <a href="{{ route('informasi-publik.download', $dokumen->id) }}" 
+                           class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-xs hover:scale-[1.02]">
+                            <span class="material-symbols-outlined text-[16px]">download</span>
+                            <span>Unduh</span>
+                        </a>
                     </div>
                 </div>
             </div>

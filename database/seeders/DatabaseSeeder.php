@@ -74,6 +74,7 @@ class DatabaseSeeder extends Seeder
             KategoriInformasiPublikSeeder::class,
             PermohonanSeeder::class,
             InformasiPublikSeeder::class,
+            CarouselSeeder::class,
         ]);
     }
 }

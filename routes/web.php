@@ -9,7 +9,11 @@ Route::get('/', function () {
         ->orderBy('download_count', 'desc')
         ->take(6)
         ->get();
-    return view('welcome', compact('kategoriInformasi', 'dokumenDIP'));
+    $carousels = \App\Models\CarouselItem::active()
+        ->orderBy('order', 'asc')
+        ->orderBy('created_at', 'desc')
+        ->get();
+    return view('welcome', compact('kategoriInformasi', 'dokumenDIP', 'carousels'));
 })->name('home');
 
 Route::get('/permohonan/baru', function () {
@@ -198,6 +202,12 @@ Route::prefix('admin')->group(function () {
                 'as' => 'admin'
             ]);
             Route::resource('informasi-publik', \App\Http\Controllers\Admin\InformasiPublikController::class, [
+                'as' => 'admin'
+            ]);
+            
+            // Carousel Banner Slider Routes
+            Route::post('/carousel/{id}/toggle-status', [\App\Http\Controllers\Admin\CarouselController::class, 'toggleStatus'])->name('admin.carousel.toggle-status');
+            Route::resource('carousel', \App\Http\Controllers\Admin\CarouselController::class, [
                 'as' => 'admin'
             ]);
         });

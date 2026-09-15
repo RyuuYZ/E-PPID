@@ -35,19 +35,164 @@
         }, 300);
     }
 }" @keydown.escape.window="closePreview()" class="flex-grow flex flex-col items-center w-full">
-<!-- Hero Section -->
+<!-- Hero Carousel Section -->
+@if(isset($carousels) && $carousels->count() > 0)
+<section class="relative w-full pt-4 sm:pt-6 pb-8 sm:pb-12 px-4 sm:px-6 max-w-container-max mx-auto"
+         x-data="{
+             current: 0,
+             total: {{ $carousels->count() }},
+             timer: null,
+             isPaused: false,
+             touchStartX: 0,
+             touchEndX: 0,
+             init() {
+                 this.startAutoplay();
+             },
+             startAutoplay() {
+                 this.stopAutoplay();
+                 this.timer = setInterval(() => {
+                     if (!this.isPaused) {
+                         this.next();
+                     }
+                 }, 6000);
+             },
+             stopAutoplay() {
+                 if (this.timer) clearInterval(this.timer);
+             },
+             next() {
+                 this.current = (this.current + 1) % this.total;
+             },
+             prev() {
+                 this.current = (this.current - 1 + this.total) % this.total;
+             },
+             goTo(index) {
+                 this.current = index;
+                 this.startAutoplay();
+             },
+             handleTouchStart(e) {
+                 this.touchStartX = e.changedTouches[0].screenX;
+             },
+             handleTouchEnd(e) {
+                 this.touchEndX = e.changedTouches[0].screenX;
+                 if (this.touchStartX - this.touchEndX > 50) {
+                     this.next();
+                 } else if (this.touchEndX - this.touchStartX > 50) {
+                     this.prev();
+                 }
+             }
+         }"
+         @mouseenter="isPaused = true"
+         @mouseleave="isPaused = false"
+         @touchstart="handleTouchStart($event)"
+         @touchend="handleTouchEnd($event)">
+    
+    <!-- Carousel Stage Container -->
+    <div class="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_20px_50px_-12px_rgba(3,34,77,0.25)] border border-slate-200/80 bg-[#031b3d] min-h-[460px] sm:min-h-[500px] md:min-h-[540px] flex items-center">
+        
+        @foreach($carousels as $index => $slide)
+        <!-- Slide Item -->
+        <div x-show="current === {{ $index }}"
+             x-transition:enter="transition ease-out duration-700"
+             x-transition:enter-start="opacity-0 scale-105"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-500"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="absolute inset-0 w-full h-full flex flex-col justify-center"
+             style="{{ $index === 0 ? '' : 'display: none;' }}">
+            
+            <!-- Slide Background Artwork -->
+            <img src="{{ $slide->image_url }}" alt="{{ $slide->title }}" class="absolute inset-0 w-full h-full object-cover select-none pointer-events-none">
+            
+            <!-- High-End Multi-Layer Gradient Overlays for Crystal Clear Typography -->
+            <div class="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-[#021533]/95 via-[#03224d]/85 sm:via-[#03224d]/75 to-[#03224d]/30 sm:to-transparent z-10"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-blue-900/40 via-transparent to-transparent z-10"></div>
+            
+            <!-- Slide Content Box -->
+            <div class="relative z-20 max-w-3xl px-6 sm:px-12 md:px-16 py-12 flex flex-col items-start text-left">
+                <!-- Headline Title -->
+                <h1 class="text-2xl sm:text-4xl md:text-5xl lg:text-[50px] font-bold text-white tracking-tight leading-[1.15] mb-4 drop-shadow-sm">
+                    {{ $slide->title }}
+                </h1>
+
+                <!-- Subtitle / Description -->
+                @if($slide->subtitle)
+                <p class="text-sm sm:text-base md:text-lg text-slate-200/90 max-w-2xl leading-relaxed mb-6 sm:mb-8 font-normal drop-shadow-xs">
+                    {{ $slide->subtitle }}
+                </p>
+                @endif
+
+                <!-- Action CTA Buttons -->
+                <div class="flex flex-wrap items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                    @if($slide->button_text && $slide->button_url)
+                    <a href="{{ $slide->button_url }}" 
+                       target="{{ $slide->button_target }}"
+                       class="group bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm px-6 py-3.5 rounded-xl shadow-[0_10px_25px_-5px_rgba(37,99,235,0.4)] hover:shadow-[0_14px_28px_-6px_rgba(37,99,235,0.6)] hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer">
+                        <span>{{ $slide->button_text }}</span>
+                        <span class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    </a>
+                    @endif
+
+                    <a href="{{ route('permohonan.lacak') }}" 
+                       class="group bg-white/10 hover:bg-white/20 border border-white/25 text-white font-semibold text-xs sm:text-sm px-5 py-3.5 rounded-xl backdrop-blur-md shadow-xs hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto">
+                        <span class="material-symbols-outlined text-[18px]">travel_explore</span>
+                        <span>Lacak Status</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        @endforeach
+
+        <!-- Navigation Arrows (Desktop / Tablet) -->
+        <div class="absolute inset-y-0 left-3 sm:left-4 z-30 flex items-center">
+            <button type="button" 
+                    @click="prev()" 
+                    aria-label="Slide Sebelumnya"
+                    class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-slate-900/40 hover:bg-white/90 text-white hover:text-slate-900 border border-white/20 hover:border-white flex items-center justify-center backdrop-blur-md transition-all duration-200 shadow-md cursor-pointer hover:scale-105 active:scale-95">
+                <span class="material-symbols-outlined text-[20px] sm:text-[22px]">chevron_left</span>
+            </button>
+        </div>
+
+        <div class="absolute inset-y-0 right-3 sm:right-4 z-30 flex items-center">
+            <button type="button" 
+                    @click="next()" 
+                    aria-label="Slide Selanjutnya"
+                    class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-slate-900/40 hover:bg-white/90 text-white hover:text-slate-900 border border-white/20 hover:border-white flex items-center justify-center backdrop-blur-md transition-all duration-200 shadow-md cursor-pointer hover:scale-105 active:scale-95">
+                <span class="material-symbols-outlined text-[20px] sm:text-[22px]">chevron_right</span>
+            </button>
+        </div>
+
+        <!-- Bottom Controls Bar (Pagination Indicators & Counter) -->
+        <div class="absolute bottom-4 sm:bottom-6 inset-x-0 z-30 flex items-center justify-between px-6 sm:px-12 pointer-events-none">
+            <!-- Indicator Dots -->
+            <div class="flex items-center gap-2 pointer-events-auto bg-slate-950/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+                @foreach($carousels as $index => $slide)
+                <button type="button" 
+                        @click="goTo({{ $index }})" 
+                        :aria-label="'Buka Slide ' + ({{ $index }} + 1)"
+                        class="transition-all duration-300 rounded-full cursor-pointer h-2"
+                        :class="current === {{ $index }} ? 'w-7 bg-blue-400 shadow-sm' : 'w-2 bg-white/40 hover:bg-white/70'"></button>
+                @endforeach
+            </div>
+
+            <!-- Slide Counter Badge -->
+            <div class="hidden sm:flex items-center gap-1.5 text-[11px] font-mono font-bold text-white/80 bg-slate-950/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
+                <span class="text-blue-300" x-text="String(current + 1).padStart(2, '0')">01</span>
+                <span class="text-white/40">/</span>
+                <span x-text="String(total).padStart(2, '0')">{{ str_pad($carousels->count(), 2, '0', STR_PAD_LEFT) }}</span>
+            </div>
+        </div>
+    </div>
+</section>
+@else
+<!-- Fallback Hero Section -->
 <section class="relative w-full py-12 sm:py-20 md:py-32 flex flex-col items-center text-center px-4 sm:px-6 border-b border-gray-200/50 overflow-hidden">
-    <!-- Subtle Background Gradient -->
     <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,_var(--tw-gradient-stops))] from-blue-100/50 via-slate-50/20 to-transparent -z-10"></div>
     <div class="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent opacity-50"></div>
     
     <div class="max-w-container-max mx-auto flex flex-col items-center gap-6 sm:gap-8 relative z-10">
-        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold tracking-wide shadow-sm">
-            <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
-            Layanan Informasi Publik Terpadu
-        </div>
         <h1 class="text-[30px] sm:text-[42px] md:text-[56px] leading-[1.15] font-bold text-[#0B1B3D] max-w-4xl tracking-tight">
-            Ajukan & Pantau Permohonan <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-blue-500">Informasi Publik</span>
+            Ajukan &amp; Pantau Permohonan <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-blue-500">Informasi Publik</span>
         </h1>
         <p class="text-sm sm:text-base md:text-xl text-gray-600 max-w-2xl leading-relaxed px-2">
             Layanan informasi publik yang transparan, akuntabel, dan mudah diakses. Kami berkomitmen menyediakan informasi pemerintahan daerah secara cepat dan tepat saji.
@@ -64,6 +209,7 @@
         </div>
     </div>
 </section>
+@endif
 
 <!-- Categories Section -->
 <section class="w-full py-12 sm:py-20 px-4 sm:px-6 max-w-container-max mx-auto flex flex-col gap-8 sm:gap-12">
@@ -151,10 +297,10 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 @foreach($dokumenDIP as $doc)
-                <div class="bg-white p-4 rounded-xl border border-slate-200/80 hover:border-blue-300 hover:shadow-md transition-all flex flex-col justify-between group">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 hover:border-blue-300 hover:shadow-md transition-all flex flex-col justify-between group">
                     <div>
                         <div class="flex items-center justify-between gap-1.5 mb-2.5">
-                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                            <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
                                 {{ $doc->kategori?->nama_kategori ?? 'DIP' }}
                             </span>
                             <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
@@ -171,21 +317,26 @@
                         </p>
                     </div>
 
-                    <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                        <span class="text-[10px] text-slate-400 font-medium flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[13px]">description</span>
-                            {{ $doc->file_size ?? 'PDF' }}
-                        </span>
+                    <div class="mt-2">
+                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-medium mb-3">
+                            <span class="flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[13px]">description</span>
+                                <span class="whitespace-nowrap">{{ $doc->file_size ?? 'PDF' }}</span>
+                            </span>
+                            <span class="truncate max-w-[150px] text-slate-400 font-normal">
+                                {{ $doc->penanggung_jawab }}
+                            </span>
+                        </div>
 
-                        <div class="flex items-center gap-1.5">
+                        <div class="grid grid-cols-2 gap-2">
                             <button type="button" 
                                     @click="openPreview('{{ route('informasi-publik.download', $doc->id) }}?inline=1', '{{ addslashes($doc->judul) }}', '{{ $doc->kategori?->nama_kategori }}', '{{ $doc->jenis_dokumen }}', '{{ $doc->tahun }}', '{{ route('informasi-publik.download', $doc->id) }}', '{{ addslashes($doc->penanggung_jawab) }}', '{{ $doc->file_size ?? 'PDF' }}')"
-                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 font-bold text-[11px] border border-slate-200/80 hover:border-blue-200 transition-all cursor-pointer shadow-2xs">
+                                    class="w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 font-bold text-[11px] border border-slate-200/80 hover:border-blue-200 transition-all cursor-pointer shadow-2xs">
                                 <span class="material-symbols-outlined text-[14px]">visibility</span>
                                 <span>Preview</span>
                             </button>
                             <a href="{{ route('informasi-publik.download', $doc->id) }}" 
-                               class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] transition-all shadow-2xs hover:scale-[1.02]">
+                               class="w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] transition-all shadow-2xs hover:scale-[1.02]">
                                 <span class="material-symbols-outlined text-[14px]">download</span>
                                 <span>Unduh</span>
                             </a>

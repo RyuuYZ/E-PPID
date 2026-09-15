@@ -264,17 +264,13 @@
                         <!-- Judul & Klasifikasi -->
                         <td class="px-4 py-3">
                             <div class="flex items-start gap-2.5">
-                                <button type="button" 
-                                        @click="openPreview('{{ route('informasi-publik.download', $item->id) }}?inline=1', '{{ addslashes($item->judul) }}', '{{ $item->kategori?->nama_kategori }}', '{{ $item->jenis_dokumen }}', '{{ $item->tahun }}', '{{ addslashes($item->penanggung_jawab) }}', '{{ $item->file_size ?? 'PDF' }}', {{ $item->is_active ? 'true' : 'false' }}, '{{ route('informasi-publik.download', $item->id) }}')"
-                                        class="w-7 h-7 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center shrink-0 border border-red-100 shadow-2xs mt-0.5 transition-colors cursor-pointer"
-                                        title="Preview Dokumen PDF">
+                                <div class="w-7 h-7 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 border border-red-100 shadow-2xs mt-0.5" title="Berkas PDF">
                                     <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span>
-                                </button>
+                                </div>
                                 <div class="min-w-0 flex-1">
-                                    <a href="{{ route('informasi-publik.download', $item->id) }}?inline=1" 
-                                       @click.prevent="openPreview('{{ route('informasi-publik.download', $item->id) }}?inline=1', '{{ addslashes($item->judul) }}', '{{ $item->kategori?->nama_kategori }}', '{{ $item->jenis_dokumen }}', '{{ $item->tahun }}', '{{ addslashes($item->penanggung_jawab) }}', '{{ $item->file_size ?? 'PDF' }}', {{ $item->is_active ? 'true' : 'false' }}, '{{ route('informasi-publik.download', $item->id) }}')"
-                                       class="font-bold text-slate-900 hover:text-blue-600 transition-colors leading-snug line-clamp-1 cursor-pointer"
-                                       title="Klik untuk preview dokumen">
+                                    <a href="{{ route('admin.informasi-publik.edit', $item->id) }}" 
+                                       class="font-bold text-slate-900 hover:text-blue-600 transition-colors leading-snug line-clamp-1"
+                                       title="Edit Dokumen">
                                         {{ $item->judul }}
                                     </a>
                                     <div class="flex items-center gap-1.5 mt-1">
@@ -361,7 +357,8 @@
 
                                 <div x-data="{ open: false }" class="relative inline-block">
                                     <button @click="open = !open" @click.away="open = false" type="button" 
-                                            class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors shadow-2xs cursor-pointer">
+                                            class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors shadow-2xs cursor-pointer"
+                                            title="Menu Aksi Lainnya">
                                         <span class="material-symbols-outlined text-[18px]">more_vert</span>
                                     </button>
                                     <div x-show="open" x-cloak
@@ -372,11 +369,6 @@
                                          x-transition:leave-start="transform opacity-100 scale-100" 
                                          x-transition:leave-end="transform opacity-0 scale-95" 
                                          class="origin-top-right absolute right-0 mt-1.5 w-44 rounded-xl shadow-lg bg-white ring-1 ring-slate-200 z-50 py-1.5 border border-slate-100">
-                                        <button type="button" @click="open = false; openPreview('{{ route('informasi-publik.download', $item->id) }}?inline=1', '{{ addslashes($item->judul) }}', '{{ $item->kategori?->nama_kategori }}', '{{ $item->jenis_dokumen }}', '{{ $item->tahun }}', '{{ addslashes($item->penanggung_jawab) }}', '{{ $item->file_size ?? 'PDF' }}', {{ $item->is_active ? 'true' : 'false' }}, '{{ route('informasi-publik.download', $item->id) }}')" 
-                                           class="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors font-medium cursor-pointer text-left">
-                                            <span class="material-symbols-outlined text-[16px]">visibility</span>
-                                            Preview Dokumen
-                                        </button>
                                         <a href="{{ route('informasi-publik.download', $item->id) }}" target="_blank" 
                                            class="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors font-medium">
                                             <span class="material-symbols-outlined text-[16px]">download</span>
