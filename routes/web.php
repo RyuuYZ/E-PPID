@@ -22,7 +22,15 @@ Route::get('/permohonan/baru', function () {
     return view('permohonan', compact('kategoriPemohons', 'caraMemperoleh'));
 })->name('permohonan.create');
 
-Route::post('/permohonan/simpan', function (\Illuminate\Http\Request $request) {
+Route::post('/permohonan/simpan', function (\Illuminate\Http\Request $request, \App\Services\CaptchaService $captchaService) {
+    // 1. Cloudflare Turnstile & Checkbox Verification
+    if (!$captchaService->verifyTurnstile($request) && !$captchaService->verifyCheckbox($request)) {
+        return redirect()->back()->withInput()->withErrors([
+            'cf-turnstile-response' => 'Silakan selesaikan verifikasi keamanan Cloudflare Turnstile "Saya bukan robot" terlebih dahulu.',
+            'captcha' => 'Silakan selesaikan verifikasi keamanan Cloudflare Turnstile "Saya bukan robot" terlebih dahulu.'
+        ]);
+    }
+
     if (!$request->has('subjek_informasi') && $request->has('subjek')) {
         $request->merge(['subjek_informasi' => $request->input('subjek')]);
     }
@@ -56,14 +64,21 @@ Route::post('/permohonan/simpan', function (\Illuminate\Http\Request $request) {
         'rincian_informasi' => 'required|string',
         'tujuan_penggunaan' => 'required|string',
         'cara_memperoleh_informasi_id' => 'required|exists:cara_memperoleh_informasis,id',
-        'file_identitas' => ['required', 'file', new \App\Rules\SecureFile(['jpg', 'jpeg', 'png', 'pdf'], 5120)],
+        'file_identitas' => ['required', 'file', \App\Rules\SecureFile::identitas()],
     ], [
+        'nama_pemohon.required' => 'Nama lengkap pemohon wajib diisi.',
+        'kategori_pemohon_id.required' => 'Kategori pemohon wajib dipilih.',
         'nik_atau_no_badan_hukum.required' => 'NIK / No. Identitas wajib diisi.',
         'nik_atau_no_badan_hukum.regex' => 'NIK harus berupa angka dan tidak boleh lebih dari 16 angka.',
         'no_telp.required' => 'Nomor telepon wajib diisi.',
         'no_telp.regex' => 'Nomor telepon harus diawali dengan +62 dan hanya berisi angka yang valid.',
+        'email.required' => 'Alamat email wajib diisi.',
+        'email.email' => 'Format alamat email tidak valid.',
+        'alamat.required' => 'Alamat lengkap wajib diisi.',
         'subjek_informasi.required' => 'Judul / Subjek informasi wajib diisi.',
         'rincian_informasi.required' => 'Rincian / Isi informasi wajib diisi.',
+        'tujuan_penggunaan.required' => 'Tujuan penggunaan informasi wajib diisi.',
+        'cara_memperoleh_informasi_id.required' => 'Cara memperoleh informasi wajib dipilih.',
         'file_identitas.required' => 'File identitas (KTP/Akta) wajib diunggah.',
         'file_identitas.file' => 'File identitas harus berupa file yang valid.'
     ]);
@@ -89,7 +104,7 @@ Route::post('/permohonan/simpan', function (\Illuminate\Http\Request $request) {
         'nomor_registrasi' => $permohonan->nomor_registrasi,
         'email' => $permohonan->email,
     ]);
-})->name('permohonan.store')->middleware('throttle:5,1');
+})->name('permohonan.store')->middleware('throttle:10,1');
 
 Route::get('/permohonan/berhasil', function () {
     if (!session('nomor_registrasi')) {

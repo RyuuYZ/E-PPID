@@ -63,6 +63,14 @@ class SecureFile implements ValidationRule
     }
 
     /**
+     * Factory for Carousel / Banner uploads - Max 5MB (JPG, JPEG, PNG, WEBP)
+     */
+    public static function carousel(): self
+    {
+        return new self(['jpg', 'jpeg', 'png', 'webp'], 5120);
+    }
+
+    /**
      * Run the validation rule.
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void

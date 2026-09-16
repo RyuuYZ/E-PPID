@@ -78,6 +78,8 @@ class PermohonanTest extends TestCase
             'tujuan_penggunaan' => 'Penyusunan Tesis Magister',
             'cara_memperoleh_informasi_id' => $cara->id,
             'file_identitas' => $file,
+            'cf-turnstile-response' => 'valid-test-token',
+            '_hp_website' => '',
         ]);
 
         $response->assertRedirect(route('permohonan.sukses'));
@@ -125,6 +127,8 @@ class PermohonanTest extends TestCase
             'tujuan_penggunaan' => 'Tujuan',
             'cara_memperoleh_informasi_id' => $cara->id,
             'file_identitas' => $file,
+            'cf-turnstile-response' => 'valid-test-token',
+            '_hp_website' => '',
         ]);
         $responseLong->assertSessionHasErrors('nik_atau_no_badan_hukum');
 
@@ -141,6 +145,8 @@ class PermohonanTest extends TestCase
             'tujuan_penggunaan' => 'Tujuan',
             'cara_memperoleh_informasi_id' => $cara->id,
             'file_identitas' => $file,
+            'cf-turnstile-response' => 'valid-test-token',
+            '_hp_website' => '',
         ]);
         $responseAlpha->assertSessionHasErrors('nik_atau_no_badan_hukum');
     }

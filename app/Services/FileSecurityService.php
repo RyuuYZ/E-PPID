@@ -23,26 +23,65 @@ class FileSecurityService
      * Dangerous script content signatures to inspect within file contents.
      */
     protected const DANGEROUS_PATTERNS = [
+        // PHP Tags & Functions
         '/<\?php/i',
         '/<\?=/i',
         '/<\?\s+/i',
         '/<\?[a-zA-Z]/i',
-        '/<\%/i',                      // ASP/JSP tag
+        '/<script[\s\S]*?language=[\'"]?php[\'"]?/i',
+        '/__halt_compiler\s*\(/i',
+        '/phpinfo\s*\(/i',
+        '/eval\s*\(/i',
+        '/assert\s*\(/i',
+        '/(passthru|shell_exec|system|exec|proc_open|popen|pcntl_exec)\s*\(/i',
+        '/base64_decode\s*\(\s*["\'][A-Za-z0-9+\/=]{20,}["\']\s*\)/i',
+        '/preg_replace\s*\(\s*["\'].*\/e["\']/i',
+        '/create_function\s*\(/i',
+
+        // ASP / JSP Tags
+        '/<\%/i',
         '/<\%@/i',
         '/<\%=/i',
-        '/<script[\s\S]*?>/i',         // HTML script tag
+
+        // HTML & JavaScript Tags & Handlers
+        '/<script[\s\S]*?>/i',
         '/<\/script>/i',
-        '/<!ENTITY/i',                 // XML entity injection
-        '/<!DOCTYPE[\s\S]*?ENTITY/i',
-        '/xmlns:svg/i',
         '/javascript\s*:/i',
         '/vbscript\s*:/i',
         '/data\s*:\s*text\/html/i',
-        '/__halt_compiler\s*\(/i',
-        '/#!/i',                       // Shebang
-        '/eval\s*\(\s*(base64_decode|gzinflate|gzuncompress|str_rot13|$_POST|$_GET|$_REQUEST|$_COOKIE)/i',
-        '/(passthru|shell_exec|system|exec|proc_open|popen)\s*\(/i',
-        '/base64_decode\s*\(\s*["\'][A-Za-z0-9+\/=]{30,}["\']\s*\)/i',
+        '/<iframe[\s\S]*?>/i',
+        '/<object[\s\S]*?>/i',
+        '/<embed[\s\S]*?>/i',
+        '/<applet[\s\S]*?>/i',
+        '/<form[\s\S]*?>/i',
+        '/onload\s*=\s*["\']/i',
+        '/onerror\s*=\s*["\']/i',
+        '/onclick\s*=\s*["\']/i',
+        '/document\.cookie/i',
+        '/window\.location/i',
+
+        // XML Entity / SVG Injection
+        '/<!ENTITY/i',
+        '/<!DOCTYPE[\s\S]*?ENTITY/i',
+        '/xmlns:svg/i',
+        '/<svg[\s\S]*?>/i',
+
+        // Shell / Bash / Python / Perl / Shebang
+        '/^#!\s*\/(usr\/)?bin\/(bash|sh|zsh|dash|python|perl|ruby|node|php)/im',
+        '/#!/i',
+        '/\b(curl|wget)\b[\s\S]{1,100}\|\s*(bash|sh)/i',
+        '/\b(chmod\s+[0-7]{3,4}|chown\s+|rm\s+-rf\s+|nc\s+-e\s+|bash\s+-i)/i',
+        '/\b(import\s+(os|sys|subprocess|shutil|socket|pty|platform|requests|urllib)|from\s+(os|sys|subprocess)\s+import)\b/i',
+
+        // PowerShell & Batch Commands
+        '/\b(powershell(\.exe)?|Invoke-Expression|IEX\s*\(|cmd(\.exe)?\s+\/[ck]|@echo\s+off|wscript\.|cscript\.)\b/i',
+
+        // PDF Specific JavaScript Actions
+        '/\/JavaScript\b/i',
+        '/\/JS\b\s*[\(\<]/i',
+        '/\/Launch\b/i',
+        '/\/EmbeddedFiles\b/i',
+        '/\/RichMedia\b/i',
     ];
 
     /**
@@ -59,6 +98,7 @@ class FileSecurityService
         'xlsx' => ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/zip', 'application/x-zip'],
         'csv'  => ['text/csv', 'text/plain', 'application/csv', 'text/comma-separated-values'],
         'zip'  => ['application/zip', 'application/x-zip', 'application/x-zip-compressed'],
+        'webp' => ['image/webp'],
     ];
 
     /**
@@ -241,6 +281,13 @@ class FileSecurityService
                 }
                 break;
 
+            case 'webp':
+                // WebP starts with RIFF and has WEBP at offset 8
+                if (!str_starts_with($header, "RIFF") || substr($header, 8, 4) !== "WEBP") {
+                    return 'Header berkas WEBP tidak valid (magic bytes mismatch).';
+                }
+                break;
+
             case 'pdf':
                 // PDF must start with %PDF- (within first 1024 bytes)
                 $firstKb = @file_get_contents($path, false, null, 0, 1024);
@@ -326,7 +373,13 @@ class FileSecurityService
                 if ($gdImg === false) {
                     return 'Struktur data gambar rusak atau tidak dapat didekode oleh parser grafis.';
                 }
+                $w = @imagesx($gdImg);
+                $h = @imagesy($gdImg);
                 imagedestroy($gdImg);
+
+                if (!$w || !$h || $w <= 0 || $h <= 0) {
+                    return 'Dimensi gambar tidak valid atau gambar rusak.';
+                }
             }
         }
 
