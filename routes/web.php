@@ -57,6 +57,7 @@ Route::post('/permohonan/simpan', function (\Illuminate\Http\Request $request, \
         'nama_pemohon' => 'required|string|max:255',
         'kategori_pemohon_id' => 'required|exists:kategori_pemohons,id',
         'nik_atau_no_badan_hukum' => ['required', 'regex:/^[0-9]{1,16}$/'],
+        'pekerjaan' => 'nullable|string|max:100',
         'no_telp' => ['required', 'regex:/^\+62[0-9]{8,15}$/'],
         'email' => 'required|email|max:255',
         'alamat' => 'required|string',
@@ -64,6 +65,7 @@ Route::post('/permohonan/simpan', function (\Illuminate\Http\Request $request, \
         'rincian_informasi' => 'required|string',
         'tujuan_penggunaan' => 'required|string',
         'cara_memperoleh_informasi_id' => 'required|exists:cara_memperoleh_informasis,id',
+        'cara_mendapatkan_salinan' => 'nullable|string|max:50',
         'file_identitas' => ['required', 'file', \App\Rules\SecureFile::identitas()],
     ], [
         'nama_pemohon.required' => 'Nama lengkap pemohon wajib diisi.',

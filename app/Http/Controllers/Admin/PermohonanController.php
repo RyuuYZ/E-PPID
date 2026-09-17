@@ -47,32 +47,66 @@ class PermohonanController extends Controller
 
     public function store(Request $request)
     {
+        if (!$request->has('subjek_informasi') && $request->has('subjek')) {
+            $request->merge(['subjek_informasi' => $request->input('subjek')]);
+        }
+
+        if ($request->filled('kecamatan') && $request->filled('desa')) {
+            $detail = trim($request->input('detail_alamat', ''));
+            $alamat = ($detail !== '' ? $detail . ', ' : '') . 'Desa/Kel. ' . $request->input('desa') . ', Kec. ' . $request->input('kecamatan') . ', Kab. Ciamis, Jawa Barat';
+            $request->merge(['alamat' => $alamat]);
+        }
+
+        if ($request->filled('no_telp')) {
+            $digits = preg_replace('/[^0-9]/', '', $request->input('no_telp'));
+            if (str_starts_with($digits, '62')) {
+                $formattedPhone = '+62' . substr($digits, 2);
+            } elseif (str_starts_with($digits, '0')) {
+                $formattedPhone = '+62' . substr($digits, 1);
+            } else {
+                $formattedPhone = '+62' . $digits;
+            }
+            $request->merge(['no_telp' => $formattedPhone]);
+        }
+
         $validated = $request->validate([
             'nama_pemohon' => 'required|string|max:255',
             'kategori_pemohon_id' => 'required|exists:kategori_pemohons,id',
-            'nik_atau_no_badan_hukum' => 'required|string|max:50',
-            'no_telp' => 'required|string|max:20',
+            'nik_atau_no_badan_hukum' => ['required', 'regex:/^[0-9]{1,16}$/'],
+            'pekerjaan' => 'nullable|string|max:100',
+            'no_telp' => ['required', 'regex:/^\+62[0-9]{8,15}$/'],
             'email' => 'required|email|max:255',
             'alamat' => 'required|string',
-            'subjek' => 'required|string',
+            'subjek_informasi' => 'required|string|max:255',
             'rincian_informasi' => 'required|string',
             'tujuan_penggunaan' => 'required|string',
             'cara_memperoleh_informasi_id' => 'required|exists:cara_memperoleh_informasis,id',
+            'cara_mendapatkan_salinan' => 'nullable|string|max:50',
             'file_identitas' => ['required', 'file', \App\Rules\SecureFile::identitas()],
         ], [
+            'nama_pemohon.required' => 'Nama lengkap pemohon wajib diisi.',
+            'kategori_pemohon_id.required' => 'Kategori pemohon wajib dipilih.',
+            'nik_atau_no_badan_hukum.required' => 'NIK / No. Identitas wajib diisi.',
+            'nik_atau_no_badan_hukum.regex' => 'NIK harus berupa angka dan tidak boleh lebih dari 16 angka.',
+            'no_telp.required' => 'Nomor telepon wajib diisi.',
+            'no_telp.regex' => 'Nomor telepon harus diawali dengan +62 dan hanya berisi angka yang valid.',
+            'email.required' => 'Alamat email wajib diisi.',
+            'email.email' => 'Format alamat email tidak valid.',
+            'alamat.required' => 'Alamat lengkap wajib diisi.',
+            'subjek_informasi.required' => 'Judul / Subjek informasi wajib diisi.',
+            'rincian_informasi.required' => 'Rincian / Isi informasi wajib diisi.',
+            'tujuan_penggunaan.required' => 'Tujuan penggunaan informasi wajib diisi.',
+            'cara_memperoleh_informasi_id.required' => 'Cara memperoleh informasi wajib dipilih.',
             'file_identitas.required' => 'File identitas wajib diunggah.',
             'file_identitas.file' => 'File identitas harus berupa file yang valid.'
         ]);
 
         if ($request->hasFile('file_identitas')) {
-            // Using the same private storage path logic for admin as well if applicable, but standard public form uses 'local'. 
-            // Wait, standard form uses 'identitas' in 'local'.
             $path = $request->file('file_identitas')->store('identitas', 'local');
             $validated['file_identitas'] = $path;
         }
 
         $validated['nomor_registrasi'] = 'REG-' . date('YmdHis') . '-' . rand(1000, 9999);
-        $validated['rincian_informasi'] = $validated['subjek'] . "\n\n" . $validated['rincian_informasi'];
         $validated['status'] = \App\Enums\PermohonanStatus::Diajukan->value;
 
         $permohonan = \App\Models\PermohonanInformasi::create($validated);

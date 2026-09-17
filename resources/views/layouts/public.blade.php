@@ -186,9 +186,9 @@
             font-size: 0.8125rem !important;
             text-align: center !important;
         }
-
-        @yield('styles')
     </style>
+    @yield('styles')
+    @yield('head')
 </head>
 <body class="bg-[#f8fafc] text-gray-800 antialiased min-h-screen flex flex-col">
 <!-- TopNavBar -->

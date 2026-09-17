@@ -179,4 +179,42 @@ class PermohonanTest extends TestCase
         $response = $this->actingAs($this->adminUser)->get(route('admin.permohonan.file-identitas', $permohonan->id));
         $response->assertStatus(200);
     }
+
+    public function test_admin_can_submit_walkin_permohonan_with_full_fields()
+    {
+        \Illuminate\Support\Facades\Mail::fake();
+        \Illuminate\Support\Facades\Storage::fake('local');
+
+        $kategori = KategoriPemohon::create(['nama_kategori' => 'Perorangan']);
+        $cara = CaraMemperolehInformasi::create(['nama_cara' => 'Melihat / Membaca']);
+        $file = \Illuminate\Http\UploadedFile::fake()->image('ktp_admin.jpg', 600, 400);
+
+        $response = $this->actingAs($this->adminUser)->post(route('admin.permohonan.store'), [
+            'nama_pemohon' => 'Dedi Mulyadi',
+            'kategori_pemohon_id' => $kategori->id,
+            'nik_atau_no_badan_hukum' => '3207011508880003',
+            'pekerjaan' => 'Peneliti Madya',
+            'no_telp' => '087812345678',
+            'email' => 'dedi@example.com',
+            'kecamatan' => 'Ciamis',
+            'desa' => 'Kertasari',
+            'detail_alamat' => 'Jl. Stasiun No. 5 RT 02/RW 03',
+            'subjek_informasi' => 'Dokumen Masterplan Smart City Ciamis',
+            'rincian_informasi' => 'Rincian blueprint dan arsitektur data smart city Bappeda.',
+            'tujuan_penggunaan' => 'Studi komparasi smart governance daerah.',
+            'cara_memperoleh_informasi_id' => $cara->id,
+            'cara_mendapatkan_salinan' => 'Softcopy',
+            'file_identitas' => $file,
+        ]);
+
+        $response->assertRedirect(route('admin.permohonan.index', ['status' => 'diajukan']));
+        $this->assertDatabaseHas('permohonan_informasis', [
+            'nama_pemohon' => 'Dedi Mulyadi',
+            'nik_atau_no_badan_hukum' => '3207011508880003',
+            'pekerjaan' => 'Peneliti Madya',
+            'no_telp' => '+6287812345678',
+            'subjek_informasi' => 'Dokumen Masterplan Smart City Ciamis',
+            'cara_mendapatkan_salinan' => 'Softcopy',
+        ]);
+    }
 }
