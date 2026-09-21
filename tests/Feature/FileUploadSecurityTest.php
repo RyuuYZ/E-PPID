@@ -332,4 +332,34 @@ class FileUploadSecurityTest extends TestCase
             'email' => 'warga_pdf@example.com',
         ]);
     }
+
+    public function test_allows_real_complex_photographs_and_binary_assets()
+    {
+        Storage::fake('local');
+        Mail::fake();
+
+        // Create real photographic image with GD
+        $uploaded = UploadedFile::fake()->image('ktp_foto_asli.jpg', 1200, 800);
+
+        $response = $this->post(route('permohonan.store'), [
+            'nama_pemohon' => 'Warga Foto Asli',
+            'kategori_pemohon_id' => $this->kategoriPemohon->id,
+            'nik_atau_no_badan_hukum' => '3207011204950001',
+            'no_telp' => '+628123456789',
+            'email' => 'warga_foto@example.com',
+            'alamat' => 'Jl. Ciamis No. 3',
+            'subjek_informasi' => 'Informasi Pelayanan',
+            'rincian_informasi' => 'Rincian Pelayanan',
+            'tujuan_penggunaan' => 'Kepentingan Pribadi',
+            'cara_memperoleh_informasi_id' => $this->caraMemperoleh->id,
+            'file_identitas' => $uploaded,
+            'cf-turnstile-response' => 'test-turnstile-token',
+            '_hp_website' => '',
+        ]);
+
+        $response->assertRedirect(route('permohonan.sukses'));
+        $this->assertDatabaseHas('permohonan_informasis', [
+            'email' => 'warga_foto@example.com',
+        ]);
+    }
 }

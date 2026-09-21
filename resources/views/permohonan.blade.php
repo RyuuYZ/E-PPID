@@ -269,23 +269,85 @@
 
         <!-- Section 3: Cara Memperoleh Informasi -->
         <section class="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs">
-            <div class="mb-5 pb-3 border-b border-slate-100">
-                <h2 class="text-base font-bold text-slate-900">Cara Memperoleh Informasi</h2>
+            <div class="mb-5 pb-3 border-b border-slate-100 flex items-start justify-between flex-wrap gap-2">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Cara Memperoleh Informasi</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Pilih metode bagaimana Anda ingin menerima berkas dokumen informasi publik yang diminta.</p>
+                </div>
             </div>
 
-            <div class="flex flex-col gap-2">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    @foreach($caraMemperoleh as $cara)
-                    <label class="flex items-start gap-3 p-3.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 hover:border-slate-300 transition-all has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50/40">
-                        <input class="mt-0.5 w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500" 
-                               name="cara_memperoleh_informasi_id" type="radio" value="{{ $cara->id }}" {{ (old('cara_memperoleh_informasi_id') == $cara->id || $loop->first) ? 'checked' : '' }} required>
-                        <div class="flex flex-col">
-                            <span class="text-xs font-bold text-slate-900">{{ $cara->nama_cara }}</span>
-                            <span class="text-[11px] text-slate-500 mt-0.5 leading-snug">{{ $cara->deskripsi }}</span>
+            <div class="flex flex-col gap-3.5">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    @php
+                        // Sort so that the recommended method (Email) is displayed first on the left
+                        $sortedCaraMemperoleh = $caraMemperoleh->sortByDesc(function($item) {
+                            return str_contains(strtolower($item->nama_cara), 'email') ? 1 : 0;
+                        });
+                    @endphp
+                    @foreach($sortedCaraMemperoleh as $cara)
+                    @php
+                        $isEmail = str_contains(strtolower($cara->nama_cara), 'email');
+                        $isCetak = str_contains(strtolower($cara->nama_cara), 'cetak') || str_contains(strtolower($cara->nama_cara), 'hardcopy');
+                        
+                        // Default to Email if no old input is present, or match old input
+                        if (old('cara_memperoleh_informasi_id')) {
+                            $isSelected = old('cara_memperoleh_informasi_id') == $cara->id;
+                        } else {
+                            $isSelected = $isEmail;
+                        }
+                    @endphp
+                    <label class="relative flex flex-col justify-between p-4 border rounded-2xl cursor-pointer transition-all {{ $isEmail ? 'border-blue-300 bg-blue-50/20 hover:bg-blue-50/50 shadow-2xs' : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300' }} has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50/70 has-[:checked]:ring-2 has-[:checked]:ring-blue-100 group">
+                        
+                        <div>
+                            <div class="flex items-start justify-between gap-2 mb-2.5">
+                                <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-100 text-slate-600 group-hover:bg-slate-200 transition-colors">
+                                    @if($isEmail)
+                                        <span class="material-symbols-outlined text-[20px]">mail</span>
+                                    @elseif($isCetak)
+                                        <span class="material-symbols-outlined text-[20px]">print</span>
+                                    @else
+                                        <span class="material-symbols-outlined text-[20px]">visibility</span>
+                                    @endif
+                                </div>
+
+                                <input class="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500 mt-1 cursor-pointer" 
+                                       name="cara_memperoleh_informasi_id" type="radio" value="{{ $cara->id }}" {{ $isSelected ? 'checked' : '' }} required>
+                            </div>
+
+                            <div class="flex items-center gap-1.5 flex-wrap mb-1.5">
+                                <span class="text-xs font-bold text-slate-900 leading-snug">{{ $cara->nama_cara }}</span>
+                                @if($isEmail)
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                        <span class="material-symbols-outlined text-[12px]">recommend</span>
+                                        Disarankan
+                                    </span>
+                                @endif
+                            </div>
+
+                            <p class="text-[11px] text-slate-500 leading-relaxed">{{ $cara->deskripsi }}</p>
                         </div>
+
+                        @if($isEmail)
+                        <div class="mt-3 pt-2.5 border-t border-blue-200/60 flex items-center gap-1.5 text-[10.5px] text-blue-700 font-semibold">
+                            <span class="material-symbols-outlined text-[14px]">bolt</span>
+                            <span>Cepat & langsung terkirim ke email</span>
+                        </div>
+                        @endif
                     </label>
                     @endforeach
                 </div>
+
+                <!-- Banner Rekomendasi Pengiriman Email -->
+                <div class="flex items-start gap-3 p-3.5 sm:p-4 rounded-xl bg-blue-50/80 border border-blue-100 text-slate-700 text-xs leading-relaxed">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 shadow-2xs">
+                        <span class="material-symbols-outlined text-[18px]">forward_to_inbox</span>
+                    </div>
+                    <div>
+                        <span class="font-bold text-blue-900 block mb-0.5">Saran Pengiriman Dokumen:</span>
+                        <span>Disarankan memilih pengiriman melalui <strong>Email (Softcopy)</strong> agar dokumen informasi resmi dan surat tanggapan dari PPID Bapperida dapat diterima secara instan, aman, serta dapat langsung diunduh tanpa perlu datang fisik ke kantor.</span>
+                    </div>
+                </div>
+
                 @error('cara_memperoleh_informasi_id')
                     <p class="text-[11px] text-rose-500">{{ $message }}</p>
                 @enderror

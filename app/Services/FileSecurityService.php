@@ -20,68 +20,36 @@ class FileSecurityService
     ];
 
     /**
-     * Dangerous script content signatures to inspect within file contents.
+     * Dangerous PHP executable signatures that must NEVER appear in any uploaded file (prevents polyglot webshells).
      */
-    protected const DANGEROUS_PATTERNS = [
-        // PHP Tags & Functions
+    protected const PHP_PATTERNS = [
         '/<\?php/i',
         '/<\?=/i',
-        '/<\?\s+/i',
-        '/<\?[a-zA-Z]/i',
         '/<script[\s\S]*?language=[\'"]?php[\'"]?/i',
         '/__halt_compiler\s*\(/i',
-        '/phpinfo\s*\(/i',
-        '/eval\s*\(/i',
-        '/assert\s*\(/i',
-        '/(passthru|shell_exec|system|exec|proc_open|popen|pcntl_exec)\s*\(/i',
-        '/base64_decode\s*\(\s*["\'][A-Za-z0-9+\/=]{20,}["\']\s*\)/i',
-        '/preg_replace\s*\(\s*["\'].*\/e["\']/i',
-        '/create_function\s*\(/i',
+    ];
 
-        // ASP / JSP Tags
-        '/<\%/i',
-        '/<\%@/i',
-        '/<\%=/i',
-
-        // HTML & JavaScript Tags & Handlers
+    /**
+     * Dangerous HTML & Client-side script signatures to prevent stored XSS or HTML injection.
+     */
+    protected const HTML_SCRIPT_PATTERNS = [
         '/<script[\s\S]*?>/i',
         '/<\/script>/i',
         '/javascript\s*:/i',
         '/vbscript\s*:/i',
-        '/data\s*:\s*text\/html/i',
         '/<iframe[\s\S]*?>/i',
         '/<object[\s\S]*?>/i',
         '/<embed[\s\S]*?>/i',
         '/<applet[\s\S]*?>/i',
-        '/<form[\s\S]*?>/i',
-        '/onload\s*=\s*["\']/i',
-        '/onerror\s*=\s*["\']/i',
-        '/onclick\s*=\s*["\']/i',
-        '/document\.cookie/i',
-        '/window\.location/i',
+    ];
 
-        // XML Entity / SVG Injection
-        '/<!ENTITY/i',
-        '/<!DOCTYPE[\s\S]*?ENTITY/i',
-        '/xmlns:svg/i',
-        '/<svg[\s\S]*?>/i',
-
-        // Shell / Bash / Python / Perl / Shebang
-        '/^#!\s*\/(usr\/)?bin\/(bash|sh|zsh|dash|python|perl|ruby|node|php)/im',
-        '/#!/i',
-        '/\b(curl|wget)\b[\s\S]{1,100}\|\s*(bash|sh)/i',
-        '/\b(chmod\s+[0-7]{3,4}|chown\s+|rm\s+-rf\s+|nc\s+-e\s+|bash\s+-i)/i',
-        '/\b(import\s+(os|sys|subprocess|shutil|socket|pty|platform|requests|urllib)|from\s+(os|sys|subprocess)\s+import)\b/i',
-
-        // PowerShell & Batch Commands
-        '/\b(powershell(\.exe)?|Invoke-Expression|IEX\s*\(|cmd(\.exe)?\s+\/[ck]|@echo\s+off|wscript\.|cscript\.)\b/i',
-
-        // PDF Specific JavaScript Actions
+    /**
+     * PDF specific executable action dictionaries (Adobe Reader automated JavaScript/Launch).
+     */
+    protected const PDF_ACTION_PATTERNS = [
         '/\/JavaScript\b/i',
-        '/\/JS\b\s*[\(\<]/i',
+        '/\/JS\s*[\(\<]/i',
         '/\/Launch\b/i',
-        '/\/EmbeddedFiles\b/i',
-        '/\/RichMedia\b/i',
     ];
 
     /**
@@ -160,13 +128,13 @@ class FileSecurityService
         }
 
         // 5. Deep Malicious Script & Polyglot Payload Inspection
-        $scriptError = $this->scanForMaliciousContent($realPath);
+        $scriptError = $this->scanForMaliciousContent($realPath, $clientExtension);
         if ($scriptError !== null) {
             return $scriptError;
         }
 
         // 6. Format-Specific Deep Structure Verification
-        if (in_array($clientExtension, ['jpg', 'jpeg', 'png'], true)) {
+        if (in_array($clientExtension, ['jpg', 'jpeg', 'png', 'webp'], true)) {
             $imageError = $this->validateImageStructure($realPath, $clientExtension);
             if ($imageError !== null) {
                 return $imageError;
@@ -324,9 +292,9 @@ class FileSecurityService
     }
 
     /**
-     * Deep content scanning for PHP, ASP, Shebang, and malicious script signatures.
+     * Deep content scanning for PHP polyglots, HTML/JS injection, and malicious script signatures.
      */
-    protected function scanForMaliciousContent(string $path): ?string
+    protected function scanForMaliciousContent(string $path, string $extension = ''): ?string
     {
         // Read up to 8MB of the file for content inspection
         $content = @file_get_contents($path, false, null, 0, 8 * 1024 * 1024);
@@ -334,11 +302,37 @@ class FileSecurityService
             return null;
         }
 
-        foreach (self::DANGEROUS_PATTERNS as $pattern) {
+        // 1. Universal Check: PHP Executable Code Tags (polyglot shell prevention)
+        foreach (self::PHP_PATTERNS as $pattern) {
             if (preg_match($pattern, $content)) {
-                Log::alert("Blocked malicious payload upload matching pattern {$pattern}");
+                Log::alert("Blocked PHP payload upload matching {$pattern} in file {$path}");
                 return 'Berkas ditolak: isi berkas terdeteksi mengandung kode skrip atau payload yang tidak diizinkan.';
             }
+        }
+
+        // 2. Client-Side Script Injection (XSS in HTML / SVG / disguised files)
+        foreach (self::HTML_SCRIPT_PATTERNS as $pattern) {
+            if (preg_match($pattern, $content)) {
+                Log::alert("Blocked script payload upload matching {$pattern} in file {$path}");
+                return 'Berkas ditolak: isi berkas terdeteksi mengandung kode skrip atau payload yang tidak diizinkan.';
+            }
+        }
+
+        // 3. PDF Specific JavaScript Actions
+        if ($extension === 'pdf') {
+            foreach (self::PDF_ACTION_PATTERNS as $pattern) {
+                if (preg_match($pattern, $content)) {
+                    Log::alert("Blocked PDF with automated JavaScript action matching {$pattern} in file {$path}");
+                    return 'Berkas ditolak: isi berkas terdeteksi mengandung kode skrip atau payload yang tidak diizinkan.';
+                }
+            }
+        }
+
+        // 4. Shebang Check (only at offset 0 / start of file)
+        $first512 = substr($content, 0, 512);
+        if (preg_match('/^#!\s*\/(usr\/)?bin\//i', ltrim($first512))) {
+            Log::alert("Blocked shebang script upload in file {$path}");
+            return 'Berkas ditolak: isi berkas terdeteksi sebagai skrip executable command line.';
         }
 
         return null;
