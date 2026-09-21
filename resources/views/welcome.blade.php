@@ -87,7 +87,7 @@
          @touchend="handleTouchEnd($event)">
     
     <!-- Carousel Stage Container -->
-    <div class="relative w-full min-h-[480px] sm:min-h-[540px] md:min-h-[600px] lg:min-h-[640px] flex items-center">
+    <div class="relative w-full h-[calc(100vh-73px)] min-h-[480px] flex items-center">
         
         @foreach($carousels as $index => $slide)
         <!-- Slide Item -->
@@ -110,41 +110,33 @@
             <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-blue-950/50 via-transparent to-transparent z-10"></div>
             
             <!-- Slide Content Box Aligned with Page Container -->
-            <div class="relative z-20 w-full max-w-container-max mx-auto px-6 sm:px-12 md:px-16 lg:px-20 py-16 sm:py-20 md:py-24 flex flex-col items-start text-left">
+            <div class="relative z-20 w-full max-w-container-max mx-auto px-6 sm:px-12 md:px-16 lg:px-20 py-8 sm:py-10 md:py-12 flex flex-col items-start text-left">
                 <div class="max-w-3xl">
-                    <!-- Badge (if present) -->
-                    @if($slide->badge_text)
-                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-white/90 text-xs sm:text-sm font-medium mb-4 sm:mb-5 shadow-sm">
-                        <span class="w-2 h-2 rounded-full bg-blue-400"></span>
-                        <span>{{ $slide->badge_text }}</span>
-                    </div>
-                    @endif
-
                     <!-- Headline Title -->
-                    <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-[54px] font-bold text-white tracking-tight leading-[1.15] mb-4 sm:mb-5 drop-shadow-sm">
+                    <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-[40px] font-bold text-white tracking-tight leading-[1.2] mb-3 sm:mb-3.5 drop-shadow-sm">
                         {{ $slide->title }}
                     </h1>
 
                     <!-- Subtitle / Description -->
                     @if($slide->subtitle)
-                    <p class="text-sm sm:text-base md:text-lg text-slate-200/90 max-w-2xl leading-relaxed mb-6 sm:mb-8 font-normal drop-shadow-xs">
+                    <p class="text-xs sm:text-sm md:text-base text-slate-200/90 max-w-2xl leading-relaxed mb-4 sm:mb-5 font-normal drop-shadow-xs line-clamp-3 sm:line-clamp-none">
                         {{ $slide->subtitle }}
                     </p>
                     @endif
 
                     <!-- Action CTA Buttons -->
-                    <div class="flex flex-wrap items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                    <div class="flex flex-wrap items-center gap-2.5 sm:gap-3.5 w-full sm:w-auto">
                         @if($slide->button_text && $slide->button_url)
                         <a href="{{ $slide->button_url }}" 
                            target="{{ $slide->button_target }}"
-                           class="group bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm px-6 py-3.5 rounded-xl shadow-[0_10px_25px_-5px_rgba(37,99,235,0.4)] hover:shadow-[0_14px_28px_-6px_rgba(37,99,235,0.6)] hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer">
+                           class="group bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl shadow-[0_10px_25px_-5px_rgba(37,99,235,0.4)] hover:shadow-[0_14px_28px_-6px_rgba(37,99,235,0.6)] hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer">
                             <span>{{ $slide->button_text }}</span>
                             <span class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
                         </a>
                         @endif
 
                         <a href="{{ route('permohonan.lacak') }}" 
-                           class="group bg-white/10 hover:bg-white/20 border border-white/25 text-white font-semibold text-xs sm:text-sm px-5 py-3.5 rounded-xl backdrop-blur-md shadow-xs hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto">
+                           class="group bg-white/10 hover:bg-white/20 border border-white/25 text-white font-semibold text-xs sm:text-sm px-4.5 py-2.5 sm:px-5 sm:py-3 rounded-xl backdrop-blur-md shadow-xs hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto">
                             <span class="material-symbols-outlined text-[18px]">travel_explore</span>
                             <span>Lacak Status</span>
                         </a>
@@ -159,8 +151,8 @@
             <button type="button" 
                     @click="prev()" 
                     aria-label="Slide Sebelumnya"
-                    class="pointer-events-auto w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-900/50 hover:bg-slate-900/80 text-white border border-white/20 hover:border-white flex items-center justify-center backdrop-blur-md transition-all duration-200 shadow-lg cursor-pointer hover:scale-105 active:scale-95">
-                <span class="material-symbols-outlined text-[20px] sm:text-[24px]">chevron_left</span>
+                    class="pointer-events-auto w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-slate-900/50 hover:bg-slate-900/80 text-white border border-white/20 hover:border-white flex items-center justify-center backdrop-blur-md transition-all duration-200 shadow-lg cursor-pointer hover:scale-105 active:scale-95">
+                <span class="material-symbols-outlined text-[18px] sm:text-[22px]">chevron_left</span>
             </button>
         </div>
 
@@ -168,26 +160,26 @@
             <button type="button" 
                     @click="next()" 
                     aria-label="Slide Selanjutnya"
-                    class="pointer-events-auto w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-900/50 hover:bg-slate-900/80 text-white border border-white/20 hover:border-white flex items-center justify-center backdrop-blur-md transition-all duration-200 shadow-lg cursor-pointer hover:scale-105 active:scale-95">
-                <span class="material-symbols-outlined text-[20px] sm:text-[24px]">chevron_right</span>
+                    class="pointer-events-auto w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-slate-900/50 hover:bg-slate-900/80 text-white border border-white/20 hover:border-white flex items-center justify-center backdrop-blur-md transition-all duration-200 shadow-lg cursor-pointer hover:scale-105 active:scale-95">
+                <span class="material-symbols-outlined text-[18px] sm:text-[22px]">chevron_right</span>
             </button>
         </div>
 
         <!-- Bottom Controls Bar (Pagination Indicators & Counter) -->
-        <div class="absolute bottom-5 sm:bottom-8 inset-x-0 z-30 flex items-center justify-center sm:justify-between px-6 sm:px-12 md:px-16 max-w-container-max mx-auto pointer-events-none">
+        <div class="absolute bottom-4 sm:bottom-6 md:bottom-8 inset-x-0 z-30 flex items-center justify-center sm:justify-between px-6 sm:px-12 md:px-16 max-w-container-max mx-auto pointer-events-none">
             <!-- Indicator Dots -->
             <div class="flex items-center gap-2 pointer-events-auto bg-slate-950/40 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 shadow-md">
                 @foreach($carousels as $index => $slide)
                 <button type="button" 
                         @click="goTo({{ $index }})" 
                         :aria-label="'Buka Slide ' + ({{ $index }} + 1)"
-                        class="transition-all duration-300 rounded-full cursor-pointer h-2.5"
-                        :class="current === {{ $index }} ? 'w-8 bg-blue-500 shadow-sm' : 'w-2.5 bg-white/40 hover:bg-white/70'"></button>
+                        class="transition-all duration-300 rounded-full cursor-pointer h-2"
+                        :class="current === {{ $index }} ? 'w-7 bg-blue-500 shadow-sm' : 'w-2 bg-white/40 hover:bg-white/70'"></button>
                 @endforeach
             </div>
 
             <!-- Slide Counter Badge -->
-            <div class="hidden sm:flex items-center gap-1.5 text-[11px] font-mono font-bold text-white/80 bg-slate-950/40 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 shadow-md">
+            <div class="hidden sm:flex items-center gap-1.5 text-[11px] font-mono font-bold text-white/80 bg-slate-950/40 backdrop-blur-md px-3.5 py-1 rounded-full border border-white/10 shadow-md">
                 <span class="text-blue-300" x-text="String(current + 1).padStart(2, '0')">01</span>
                 <span class="text-white/40">/</span>
                 <span x-text="String(total).padStart(2, '0')">{{ str_pad($carousels->count(), 2, '0', STR_PAD_LEFT) }}</span>
